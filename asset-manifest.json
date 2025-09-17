@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/resto-app/static/css/main.369b7290.css",
+    "main.js": "/resto-app/static/js/main.c47c5a7e.js",
+    "index.html": "/resto-app/index.html",
+    "main.369b7290.css.map": "/resto-app/static/css/main.369b7290.css.map",
+    "main.c47c5a7e.js.map": "/resto-app/static/js/main.c47c5a7e.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.369b7290.css",
+    "static/js/main.c47c5a7e.js"
+  ]
+}
