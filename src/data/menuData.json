@@ -1,0 +1,50 @@
+[
+  {
+    "id": "item1",
+    "name": "特選和牛カルビ",
+    "price": 1200,
+    "description": "口の中でとろける厳選和牛。",
+    "image": "https://placehold.co/400x300/a39c9c/e6e6e6?text=WAGYU",
+    "category": "肉料理"
+  },
+  {
+    "id": "item2",
+    "name": "新鮮野菜サラダ",
+    "price": 680,
+    "description": "採れたて野菜を使ったシャキシャキサラダ。",
+    "image": "https://placehold.co/400x300/c7d3b5/e6e6e6?text=SALAD",
+    "category": "サラダ"
+  },
+  {
+    "id": "item3",
+    "name": "鶏もも唐揚げ",
+    "price": 750,
+    "description": "ジューシーな鶏もも肉をサクサクに揚げました。",
+    "image": "https://placehold.co/400x300/f0b489/e6e6e6?text=KARAAGE",
+    "category": "揚げ物"
+  },
+  {
+    "id": "item4",
+    "name": "海鮮盛り合わせ",
+    "price": 1500,
+    "description": "旬の新鮮な海の幸をお楽しみください。",
+    "image": "https://placehold.co/400x300/808080/FFFFFF?text=SEAFOOD",
+    "category": "海鮮"
+  },
+  {
+    "id": "item5",
+    "name": "本日のパスタ",
+    "price": 950,
+    "description": "シェフ特製の本格パスタです。",
+    "image": "https://placehold.co/400x300/f5cba7/e6e6e6?text=PASTA",
+    "category": "その他"
+  },
+  {
+    "id": "item6",
+    "name": "ミックスピザ",
+    "price": 1050,
+    "description": "とろーりチーズと具沢山の定番ピザ。",
+    "image": "https://placehold.co/400x300/e0b1ba/e6e6e6?text=PIZZA",
+    "category": "その他"
+  }
+]

@@ -1,0 +1,289 @@
+/* 共通スタイル */
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  padding: 30px;
+}
+
+h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+/* ボタンの共通スタイル */
+button {
+  padding: 12px 24px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* メンバー入力画面 */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.member-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="number"],
+input[type="text"] {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 注文画面レイアウト */
+.order-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .order-layout {
+    flex-direction: row;
+  }
+}
+
+.order-screen {
+  flex: 3;
+  padding-right: 20px;
+}
+
+.cart-sidebar {
+  flex: 1;
+  background-color: #fafafa;
+  border-left: 1px solid #e0e0e0;
+  padding: 30px;
+}
+
+.menu-controls {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.menu-controls input,
+.menu-controls select {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.menu-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.menu-item {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  transition: transform 0.2s ease;
+}
+
+.menu-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.item-info h3 {
+  font-size: 1.2em;
+  color: #34495e;
+}
+
+.item-info p {
+  font-size: 0.9em;
+  color: #7f8c8d;
+}
+
+.item-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.item-controls select,
+.item-controls button {
+  width: 100%;
+}
+
+.cart-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cart-sidebar-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.cart-sidebar-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-name {
+  font-weight: bold;
+}
+
+.item-details {
+  font-size: 0.9em;
+  color: #7f8c8d;
+}
+
+.cart-sidebar-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-sidebar-item-controls button {
+  padding: 5px 10px;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  font-size: 1.2em;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.cart-sidebar-item-controls button:hover {
+  background-color: #c0392b;
+}
+
+/* 会計画面 */
+.split-bill-details {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.split-member-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #ecf0f1;
+}
+
+.payment-method-section {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.payment-method-section button {
+  flex: 1;
+  background-color: #95a5a6;
+}
+
+.payment-method-section button.active {
+  background-color: #2c3e50;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.total {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.total strong {
+  color: #e74c3c;
+}
+
+/* 注文完了画面 */
+.complete-screen .status {
+  font-weight: bold;
+  color: #27ae60;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+/* その他の調整 */
+.screen > h2:first-child {
+  margin-top: 0;
+}

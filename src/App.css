@@ -1,38 +1,394 @@
-.App {
+/* App.css */
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* 上部に寄せる */
+  padding: 20px;
+  background-color: #f5f5f5; /* 全体の背景色 */
+  min-height: 100vh; /* 画面全体の高さを確保 */
+}
+
+.screen {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 10px;
+}
+
+/* PartyInputScreen */
+.party-input-screen {
+  width: 400px;
+  text-align: center;
+}
+.party-input-screen h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+.member-input-list div {
+  margin-bottom: 10px;
+}
+.member-input-list input[type="text"] {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: calc(100% - 20px);
+}
+.member-input-list button {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.member-input-list button:hover {
+  background-color: #0056b3;
+}
+.party-controls {
+  margin-top: 20px;
+}
+.party-controls button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 0 5px;
+}
+.party-controls button:hover {
+  background-color: #218838;
+}
+
+/* OrderScreen & Cart Sidebar Layout */
+.order-layout {
+  display: flex;
+  flex-direction: row; /* 横並びにする */
+  width: 90%; /* 全体の幅 */
+  max-width: 1200px; /* 最大幅 */
+}
+
+.order-screen {
+  flex: 3; /* メニュー部分が広め */
+  margin-right: 20px; /* カートとの間にスペース */
+}
+
+.cart-sidebar {
+  flex: 1; /* カート部分が狭め */
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  position: sticky; /* スクロールしても追従 */
+  top: 20px; /* 上からの位置 */
+  max-height: calc(100vh - 40px); /* 画面の高さに合わせる */
+  overflow-y: auto; /* カートアイテムが多い場合にスクロール */
+}
+
+.order-screen h2,
+.cart-sidebar h2 {
+  color: #333;
+  margin-bottom: 20px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Menu List */
+.menu-list {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(200px, 1fr)
+  ); /* レスポンシブなグリッド */
+  gap: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.menu-item {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+}
+
+.menu-item img {
+  width: 100%;
+  height: 120px; /* 画像の高さを固定 */
+  object-fit: cover; /* 画像の比率を維持 */
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.menu-item h3 {
+  font-size: 1.1em;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.menu-item p {
+  font-size: 0.9em;
+  color: #777;
+  margin-bottom: 10px;
+  flex-grow: 1; /* 説明文が長い場合でもレイアウトが崩れないように */
+}
+
+.item-controls {
+  margin-top: 10px;
+}
+.item-controls select,
+.item-controls button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  cursor: pointer;
+}
+.item-controls button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+.item-controls button:hover {
+  background-color: #0056b3;
+}
+
+/* Cart Sidebar */
+.cart-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cart-sidebar-item {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.cart-sidebar-item:last-child {
+  border-bottom: none;
+}
+
+.cart-sidebar-item-info {
+  flex-grow: 1;
+}
+
+.cart-sidebar-item-info span {
+  display: block;
+}
+
+.cart-sidebar-item-info .item-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.cart-sidebar-item-info .item-details {
+  font-size: 0.85em;
+  color: #777;
+}
+
+.cart-sidebar-item-controls {
+  display: flex;
+  align-items: center;
+}
+
+.cart-sidebar-item-controls button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.cart-sidebar-item-controls button:hover {
+  background-color: #c82333;
+}
+
+.cart-sidebar-item-controls span {
+  margin: 0 10px;
+  font-weight: bold;
+}
+
+.cart-sidebar .total {
+  text-align: right;
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.cart-sidebar .goto-checkout-btn {
+  width: 100%;
+  background-color: #28a745;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1em;
+  margin-top: 20px;
+}
+.cart-sidebar .goto-checkout-btn:hover {
+  background-color: #218838;
+}
+
+/* CheckoutScreen */
+.checkout-screen,
+.complete-screen {
+  width: 600px;
+  text-align: center;
+}
+.checkout-screen h2,
+.complete-screen h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+.checkout-list {
+  list-style: none;
+  padding: 0;
+}
+.checkout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.checkout-item span {
+  flex: 1;
+  text-align: left;
+}
+.checkout-item span:last-child {
+  text-align: right;
+}
+.checkout-screen .total {
+  text-align: right;
+  margin-top: 20px;
+  font-size: 1.2em;
+  color: #333;
+}
+.button-group {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-around;
+}
+.button-group button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+.button-group button:first-child {
+  background-color: #6c757d;
   color: white;
 }
-
-.App-link {
-  color: #61dafb;
+.button-group button:first-child:hover {
+  background-color: #5a6268;
+}
+.button-group button:last-child {
+  background-color: #007bff;
+  color: white;
+}
+.button-group button:last-child:hover {
+  background-color: #0056b3;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Split bill styles */
+.split-bill-section {
+  margin-top: 30px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+  text-align: left;
+}
+
+.split-bill-section h3 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.split-bill-options button {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+.split-bill-options button.active {
+  background-color: #28a745;
+}
+
+.split-bill-details {
+  margin-top: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.split-member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e9ecef;
+}
+.split-member-item:last-child {
+  border-bottom: none;
+}
+
+.split-member-item span {
+  font-weight: bold;
+}
+
+.split-item-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.split-item-list li {
+  margin-left: 15px;
+  text-align: left;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .order-layout {
+    flex-direction: column; /* 縦並びにする */
+    width: 100%;
   }
-  to {
-    transform: rotate(360deg);
+
+  .order-screen {
+    margin-right: 0;
+    margin-bottom: 20px;
+  }
+
+  .cart-sidebar {
+    position: static; /* stickyを解除 */
+    max-height: none;
+    width: 100%;
+  }
+
+  .app-container {
+    padding: 10px;
+  }
+
+  .screen {
+    margin: 5px;
+    padding: 15px;
   }
 }
