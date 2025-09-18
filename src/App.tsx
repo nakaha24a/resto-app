@@ -89,5 +89,6 @@ const App: React.FC = () => {
     </div>
   );
 };
-
+//あいうえお
 export default App;
+
