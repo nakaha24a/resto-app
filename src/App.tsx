@@ -56,6 +56,10 @@ const App: React.FC = () => {
     }, 10000);
   };
 
+  const handleBackToPartyInput = () => {
+    setCurrentScreen("partyInput");
+  };
+
   return (
     <div className="app-container">
       {/* 画面の表示を制御 */}
@@ -68,6 +72,7 @@ const App: React.FC = () => {
           cart={cart}
           onUpdateCart={handleUpdateCart}
           onGoToCheckout={handleGoToCheckout}
+          onBackToPartyInput={handleBackToPartyInput}
         />
       )}
       {currentScreen === "checkout" && (
