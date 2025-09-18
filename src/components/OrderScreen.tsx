@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import menuData from "../data/menuData.json";
 import { Member, CartItem, MenuItem } from "../types";
 
+/*abcde*/
 interface OrderScreenProps {
   members: Member[];
   cart: CartItem[];
   onUpdateCart: (cart: CartItem[]) => void;
   onGoToCheckout: () => void;
+  onBackToPartyInput: () => void;
 }
 
 const OrderScreen: React.FC<OrderScreenProps> = ({
@@ -14,6 +16,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   cart,
   onUpdateCart,
   onGoToCheckout,
+  onBackToPartyInput,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("すべて");
@@ -90,6 +93,11 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   return (
     <div className="order-layout">
+      <div className="controls-row">
+        <button className="back-button" onClick={onBackToPartyInput}>
+          戻る
+        </button>
+      </div>
       <div className="screen order-screen">
         <h2>メニュー</h2>
         <div className="menu-controls">

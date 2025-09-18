@@ -6,21 +6,29 @@ interface PartyInputProps {
 }
 
 const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
-  const [memberCount, setMemberCount] = useState<number>(1);
+  const [memberCount, setMemberCount] = useState<number | string>(1);
   const [members, setMembers] = useState<Member[]>([{ id: 1, name: "" }]);
 
   const handleMemberCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const count = Math.max(1, Number(e.target.value));
-    setMemberCount(count);
+    const value = e.target.value;
 
-    const newMembers: Member[] = [];
-    for (let i = 0; i < count; i++) {
-      newMembers.push({
-        id: i + 1,
-        name: members[i]?.name || "",
-      });
+    if (value === "" || /^[0-9\b]+$/.test(value)) {
+      setMemberCount(value);
+
+      const count = Number(value);
+      if (count >= 1) {
+        const newMembers: Member[] = [];
+        for (let i = 0; i < count; i++) {
+          newMembers.push({
+            id: i + 1,
+            name: members[i]?.name || "",
+          });
+        }
+        setMembers(newMembers);
+      } else if (value === "") {
+        setMembers([]);
+      }
     }
-    setMembers(newMembers);
   };
 
   const handleNameChange = (id: number, newName: string) => {
@@ -32,10 +40,19 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
   };
 
   const handleSubmit = () => {
-    const finalizedMembers: Member[] = members.map((member) => ({
-      ...member,
-      name: member.name || `参加者${member.id}`,
-    }));
+    const finalCount =
+      typeof memberCount === "string" ? parseInt(memberCount, 10) : memberCount;
+    const count = finalCount > 0 ? finalCount : 1;
+
+    const finalizedMembers: Member[] = [];
+    for (let i = 0; i < count; i++) {
+      const existingMember = members.find((m) => m.id === i + 1);
+      finalizedMembers.push({
+        id: i + 1,
+        name: existingMember?.name || `参加者${i + 1}`,
+      });
+    }
+
     onStartOrder(finalizedMembers);
   };
 
@@ -45,7 +62,7 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
       <div className="form-group">
         <label>人数：</label>
         <input
-          type="number"
+          type="text"
           min="1"
           value={memberCount}
           onChange={handleMemberCountChange}
