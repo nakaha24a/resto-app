@@ -6,7 +6,7 @@ interface OrderScreenProps {
   members: Member[];
   cart: CartItem[];
   onUpdateCart: (cart: CartItem[]) => void;
-  onGoToCheckout: () => void;
+  onGoToCart: () => void;
   onBackToPartyInput: () => void;
 }
 
@@ -14,7 +14,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   members,
   cart,
   onUpdateCart,
-  onGoToCheckout,
+  onGoToCart,
   onBackToPartyInput,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -86,11 +86,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   return (
     <div className="order-layout">
-      <div className="controls-row">
-        <button className="back-button" onClick={onBackToPartyInput}>
-          戻る
-        </button>
-      </div>
       <div className="controls-row">
         <button className="back-button" onClick={onBackToPartyInput}>
           戻る

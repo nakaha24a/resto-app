@@ -6,12 +6,12 @@ interface PartyInputProps {
 }
 
 const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
-  const [memberCount, setMemberCount] = useState<number | string | string>(1);
+  const [memberCount, setMemberCount] = useState<number | string>(1);
   const [members, setMembers] = useState<Member[]>([{ id: 1, name: "" }]);
 
   const handleMemberCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     if (value === "" || /^[0-9\b]+$/.test(value)) {
       setMemberCount(value);
 
@@ -40,12 +40,13 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
   };
 
   const handleSubmit = () => {
-    const finalCount = typeof memberCount === 'string' ? parseInt(memberCount, 10) : memberCount;
+    const finalCount =
+      typeof memberCount === "string" ? parseInt(memberCount, 10) : memberCount;
     const count = finalCount > 0 ? finalCount : 1;
 
     const finalizedMembers: Member[] = [];
     for (let i = 0; i < count; i++) {
-      const existingMember = members.find(m => m.id === i + 1);
+      const existingMember = members.find((m) => m.id === i + 1);
       finalizedMembers.push({
         id: i + 1,
         name: existingMember?.name || `参加者${i + 1}`,
@@ -62,7 +63,6 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
         <label>人数：</label>
         <input
           type="text"
-          type="text"
           min="1"
           value={memberCount}
           onChange={handleMemberCountChange}
@@ -74,14 +74,14 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
             <label>参加者{member.id}:</label>
             <input
               type="text"
-              placeholder={`名前 (任意)`}
               value={member.name}
               onChange={(e) => handleNameChange(member.id, e.target.value)}
+              placeholder={`参加者${member.id}`}
             />
           </div>
         ))}
       </div>
-      <button onClick={handleSubmit}>注文開始</button>
+      <button onClick={handleSubmit}>注文を始める</button>
     </div>
   );
 };

@@ -7,7 +7,6 @@ import PaymentScreen from "./components/PaymentScreen";
 import CompleteScreen from "./components/CompleteScreen";
 import { Member, CartItem, Order } from "./types";
 import "./components/styles.css";
-
 // 画面の種類を定義する型
 type Screen =
   | "partyInput"
@@ -79,9 +78,10 @@ const App: React.FC = () => {
     }, 10000);
   };
 
-  const handleBackToPartyInput = () => {
-    setCurrentScreen("partyInput");
-  };
+  // 画面遷移の戻るボタン用ハンドラ
+  const handleBackToPartyInput = () => setCurrentScreen("partyInput");
+  const handleBackToCart = () => setCurrentScreen("cart");
+  const handleBackToSplitBill = () => setCurrentScreen("splitBill");
 
   return (
     <div className="app-container">
@@ -94,7 +94,7 @@ const App: React.FC = () => {
           members={members}
           cart={cart}
           onUpdateCart={handleUpdateCart}
-          onGoToCheckout={handleGoToCheckout}
+          onGoToCart={handleGoToCart}
           onBackToPartyInput={handleBackToPartyInput}
         />
       )}
@@ -125,5 +125,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-//あいうえお
+
 export default App;
