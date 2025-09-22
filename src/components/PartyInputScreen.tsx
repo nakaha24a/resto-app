@@ -6,7 +6,7 @@ interface PartyInputProps {
 }
 
 const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
-  const [memberCount, setMemberCount] = useState<number | string>(1);
+  const [memberCount, setMemberCount] = useState<number | string | string>(1);
   const [members, setMembers] = useState<Member[]>([{ id: 1, name: "" }]);
 
   const handleMemberCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +61,7 @@ const PartyInputScreen: React.FC<PartyInputProps> = ({ onStartOrder }) => {
       <div className="form-group">
         <label>人数：</label>
         <input
+          type="text"
           type="text"
           min="1"
           value={memberCount}

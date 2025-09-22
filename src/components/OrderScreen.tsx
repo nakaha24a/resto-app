@@ -42,7 +42,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     const existingItemIndex = cart.findIndex(
       (cartItem) => cartItem.id === item.id && cartItem.orderedBy === memberId
     );
-
     if (existingItemIndex !== -1) {
       const newCart = [...cart];
       newCart[existingItemIndex] = {
@@ -58,24 +57,24 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     }
   };
 
+  const getMemberName = (id: number): string => {
+    const member = members.find((m) => m.id === id);
+    return member?.name || `参加者${id}`;
+  };
+
   const handleUpdateQuantity = (
     itemId: string,
     memberId: number,
     newQuantity: number
   ) => {
-    if (newQuantity <= 0) {
-      const newCart = cart.filter(
-        (item) => !(item.id === itemId && item.orderedBy === memberId)
-      );
-      onUpdateCart(newCart);
-    } else {
-      const newCart = cart.map((item) =>
+    const newCart = cart
+      .map((item) =>
         item.id === itemId && item.orderedBy === memberId
           ? { ...item, quantity: newQuantity }
           : item
-      );
-      onUpdateCart(newCart);
-    }
+      )
+      .filter((item) => item.quantity > 0);
+    onUpdateCart(newCart);
   };
 
   const handleRemoveFromCart = (itemId: string, memberId: number) => {
@@ -85,13 +84,13 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     onUpdateCart(newCart);
   };
 
-  const getMemberName = (id: number): string => {
-    const member = members.find((m) => m.id === id);
-    return member?.name || `参加者${id}`;
-  };
-
   return (
     <div className="order-layout">
+      <div className="controls-row">
+        <button className="back-button" onClick={onBackToPartyInput}>
+          戻る
+        </button>
+      </div>
       <div className="controls-row">
         <button className="back-button" onClick={onBackToPartyInput}>
           戻る
@@ -116,7 +115,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
         </div>
         <div className="menu-list">
           {filteredMenu.length > 0 ? (
-            filteredMenu.map((item: MenuItem) => (
+            filteredMenu.map((item) => (
               <div key={item.id} className="menu-item">
                 <img src={item.image} alt={item.name} />
                 <div className="item-info">
@@ -126,7 +125,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
                   <div className="item-controls">
                     {members.length > 1 ? (
                       <select
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        onChange={(e) =>
                           handleAddToCart(item, Number(e.target.value))
                         }
                         defaultValue=""
@@ -156,7 +155,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           )}
         </div>
       </div>
-
       <div className="cart-sidebar">
         <h2>カート</h2>
         {cart.length === 0 ? (
@@ -219,8 +217,8 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
                 )}
               </strong>
             </div>
-            <button className="goto-checkout-btn" onClick={onGoToCheckout}>
-              会計に進む
+            <button className="goto-checkout-btn" onClick={onGoToCart}>
+              カートを見る ({cart.length})
             </button>
           </>
         )}

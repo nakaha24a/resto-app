@@ -1,13 +1,21 @@
 import React, { useState } from "react";
 import PartyInputScreen from "./components/PartyInputScreen";
 import OrderScreen from "./components/OrderScreen";
-import CheckoutScreen from "./components/CheckoutScreen";
+import CartScreen from "./components/CartScreen";
+import SplitBillScreen from "./components/SplitBillScreen";
+import PaymentScreen from "./components/PaymentScreen";
 import CompleteScreen from "./components/CompleteScreen";
 import { Member, CartItem, Order } from "./types";
 import "./components/styles.css";
 
 // 画面の種類を定義する型
-type Screen = "partyInput" | "order" | "checkout" | "complete";
+type Screen =
+  | "partyInput"
+  | "order"
+  | "cart"
+  | "splitBill"
+  | "payment"
+  | "complete";
 // 注文状況を定義する型
 type OrderStatus = "注文受付済み" | "調理中" | "準備完了" | "お渡し済み";
 
@@ -30,12 +38,27 @@ const App: React.FC = () => {
     setCart(newCart);
   };
 
-  // 注文画面から会計画面へ遷移する
-  const handleGoToCheckout = () => {
-    setCurrentScreen("checkout");
+  // 注文画面からカート画面へ
+  const handleGoToCart = () => {
+    setCurrentScreen("cart");
   };
 
-  // 会計画面から注文完了画面へ遷移し、注文処理を行う
+  // 注文画面からカート画面へ
+  const handleBackToOrder = () => {
+    setCurrentScreen("order");
+  };
+
+  // カート画面から割り勘画面へ
+  const handleGoToSplitBill = () => {
+    setCurrentScreen("splitBill");
+  };
+
+  // 割り勘画面から支払い方法選択画面へ
+  const handleGoToPayment = () => {
+    setCurrentScreen("payment");
+  };
+
+  // 支払い方法選択画面から注文完了画面へ
   const handleCompleteOrder = () => {
     const newOrder: Order = {
       id: Date.now(),
@@ -75,11 +98,24 @@ const App: React.FC = () => {
           onBackToPartyInput={handleBackToPartyInput}
         />
       )}
-      {currentScreen === "checkout" && (
-        <CheckoutScreen
+      {currentScreen === "cart" && (
+        <CartScreen
           cart={cart}
           members={members}
-          onBackToOrder={() => setCurrentScreen("order")}
+          onUpdateCart={handleUpdateCart}
+          onBackToOrder={handleBackToOrder}
+          onGoToSplitBill={handleGoToSplitBill}
+        />
+      )}
+      {currentScreen === "splitBill" && (
+        <SplitBillScreen
+          onBackToCart={handleBackToCart}
+          onGoToPayment={handleGoToPayment}
+        />
+      )}
+      {currentScreen === "payment" && (
+        <PaymentScreen
+          onBackToSplitBill={handleBackToSplitBill}
           onCompleteOrder={handleCompleteOrder}
         />
       )}
@@ -89,5 +125,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
+//あいうえお
 export default App;
