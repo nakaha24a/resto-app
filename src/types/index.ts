@@ -1,26 +1,25 @@
-// 参加者（メンバー）の型定義
 export interface Member {
   id: number;
   name: string;
 }
 
-// 商品の型定義
 export interface MenuItem {
   id: string;
   name: string;
-  price: number;
+  category: string;
   description: string;
+  price: number;
   image: string;
-  category: string; // ✅ 追加
+  allergens: string[];
+  toppings?: string[];
+  spiceLevels?: string[];
 }
 
-// カート内の商品の型定義
 export interface CartItem extends MenuItem {
+  orderedBy: number;
   quantity: number;
-  orderedBy: number; // 注文したメンバーのID
 }
 
-// 注文データの型定義
 export interface Order {
   id: number;
   members: Member[];

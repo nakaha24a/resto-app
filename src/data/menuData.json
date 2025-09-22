@@ -1,50 +1,51 @@
 [
   {
-    "id": "item1",
-    "name": "特選和牛カルビ",
-    "price": 1200,
-    "description": "口の中でとろける厳選和牛。",
-    "image": "https://placehold.co/400x300/a39c9c/e6e6e6?text=WAGYU",
-    "category": "肉料理"
+    "id": "m-01",
+    "name": "醤油ラーメン",
+    "category": "ラーメン",
+    "description": "定番のあっさり醤油味。",
+    "price": 850,
+    "image": "https://placehold.co/150x150/F2F2F2/black?text=ラーメン",
+    "allergens": ["小麦", "卵"],
+    "toppings": ["チャーシュー", "メンマ", "ネギ"],
+    "spiceLevels": ["なし"]
   },
   {
-    "id": "item2",
-    "name": "新鮮野菜サラダ",
-    "price": 680,
-    "description": "採れたて野菜を使ったシャキシャキサラダ。",
-    "image": "https://placehold.co/400x300/c7d3b5/e6e6e6?text=SALAD",
-    "category": "サラダ"
+    "id": "m-02",
+    "name": "味噌ラーメン",
+    "category": "ラーメン",
+    "description": "コク深い味噌と野菜の甘みが絶妙。",
+    "price": 900,
+    "image": "https://placehold.co/150x150/F2F2F2/black?text=味噌ラーメン",
+    "allergens": ["小麦", "乳", "大豆"],
+    "toppings": ["コーン", "バター"],
+    "spiceLevels": ["なし", "普通", "辛口"]
   },
   {
-    "id": "item3",
-    "name": "鶏もも唐揚げ",
-    "price": 750,
-    "description": "ジューシーな鶏もも肉をサクサクに揚げました。",
-    "image": "https://placehold.co/400x300/f0b489/e6e6e6?text=KARAAGE",
-    "category": "揚げ物"
+    "id": "m-03",
+    "name": "チャーハン",
+    "category": "ご飯もの",
+    "description": "香ばしい炒めご飯。",
+    "price": 700,
+    "image": "https://placehold.co/150x150/F2F2F2/black?text=チャーハン",
+    "allergens": ["小麦", "卵", "エビ"]
   },
   {
-    "id": "item4",
-    "name": "海鮮盛り合わせ",
-    "price": 1500,
-    "description": "旬の新鮮な海の幸をお楽しみください。",
-    "image": "https://placehold.co/400x300/808080/FFFFFF?text=SEAFOOD",
-    "category": "海鮮"
+    "id": "m-04",
+    "name": "餃子",
+    "category": "サイドメニュー",
+    "description": "ジューシーな肉汁が溢れる餃子。",
+    "price": 400,
+    "image": "https://placehold.co/150x150/F2F2F2/black?text=餃子",
+    "allergens": ["小麦", "豚肉"]
   },
   {
-    "id": "item5",
-    "name": "本日のパスタ",
-    "price": 950,
-    "description": "シェフ特製の本格パスタです。",
-    "image": "https://placehold.co/400x300/f5cba7/e6e6e6?text=PASTA",
-    "category": "その他"
-  },
-  {
-    "id": "item6",
-    "name": "ミックスピザ",
-    "price": 1050,
-    "description": "とろーりチーズと具沢山の定番ピザ。",
-    "image": "https://placehold.co/400x300/e0b1ba/e6e6e6?text=PIZZA",
-    "category": "その他"
+    "id": "m-05",
+    "name": "生ビール",
+    "category": "ドリンク",
+    "description": "冷えた生ビール。",
+    "price": 550,
+    "image": "https://placehold.co/150x150/F2F2F2/black?text=ビール",
+    "allergens": []
   }
 ]
