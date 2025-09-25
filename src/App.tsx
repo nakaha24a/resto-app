@@ -2,62 +2,49 @@ import React, { useState } from "react";
 import PartyInputScreen from "./components/PartyInputScreen";
 import OrderScreen from "./components/OrderScreen";
 import CartScreen from "./components/CartScreen";
-import SplitBillScreen from "./components/SplitBillScreen";
+import CheckoutScreen from "./components/CheckoutScreen";
 import PaymentScreen from "./components/PaymentScreen";
 import CompleteScreen from "./components/CompleteScreen";
+import TitleScreen from "./components/TitleScreen";
 import { Member, CartItem, Order } from "./types";
 import "./components/styles.css";
-// 画面の種類を定義する型
-type Screen =
-  | "partyInput"
-  | "order"
-  | "cart"
-  | "splitBill"
-  | "payment"
-  | "complete";
-// 注文状況を定義する型
-type OrderStatus = "注文受付済み" | "調理中" | "準備完了" | "お渡し済み";
 
 const App: React.FC = () => {
-  // アプリケーションの状態を管理
-  const [currentScreen, setCurrentScreen] = useState<Screen>("partyInput");
+  const [currentScreen, setCurrentScreen] = useState<string>("title");
   const [members, setMembers] = useState<Member[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [order, setOrder] = useState<Order | null>(null);
-  const [orderStatus, setOrderStatus] = useState<OrderStatus>("注文受付済み");
+  const [orderStatus, setOrderStatus] = useState<string>("注文受付中");
 
-  // 参加者入力画面から注文画面へ遷移する
-  const handleStartOrder = (finalizedMembers: Member[]) => {
-    setMembers(finalizedMembers);
+  const handleStartOrder = (members: Member[]) => {
+    setMembers(members);
     setCurrentScreen("order");
   };
 
-  // カートの内容を更新する
-  const handleUpdateCart = (newCart: CartItem[]) => {
-    setCart(newCart);
-  };
-
-  // 注文画面からカート画面へ
   const handleGoToCart = () => {
     setCurrentScreen("cart");
   };
 
-  // 注文画面からカート画面へ
   const handleBackToOrder = () => {
     setCurrentScreen("order");
   };
 
-  // カート画面から割り勘画面へ
-  const handleGoToSplitBill = () => {
-    setCurrentScreen("splitBill");
+  const handleGoToCheckout = () => {
+    setCurrentScreen("checkout");
   };
 
-  // 割り勘画面から支払い方法選択画面へ
   const handleGoToPayment = () => {
     setCurrentScreen("payment");
   };
 
-  // 支払い方法選択画面から注文完了画面へ
+  const handleBackToPartyInput = () => {
+    setCurrentScreen("partyInput");
+  };
+
+  const handleUpdateCart = (newCart: CartItem[]) => {
+    setCart(newCart);
+  };
+
   const handleCompleteOrder = () => {
     const newOrder: Order = {
       id: Date.now(),
@@ -69,61 +56,67 @@ const App: React.FC = () => {
     setOrder(newOrder);
     setCurrentScreen("complete");
 
-    // 注文状況を段階的に更新（シミュレーション）
+    // 注文状況をシミュレート
+    setOrderStatus("注文受付中");
     setTimeout(() => {
       setOrderStatus("調理中");
     }, 3000);
     setTimeout(() => {
-      setOrderStatus("準備完了");
-    }, 10000);
+      setOrderStatus("完了");
+    }, 8000);
   };
 
-  // 画面遷移の戻るボタン用ハンドラ
-  const handleBackToPartyInput = () => setCurrentScreen("partyInput");
-  const handleBackToCart = () => setCurrentScreen("cart");
-  const handleBackToSplitBill = () => setCurrentScreen("splitBill");
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case "title":
+        return <TitleScreen onStart={() => setCurrentScreen("partyInput")} />;
+      case "partyInput":
+        return <PartyInputScreen onStartOrder={handleStartOrder} />;
+      case "order":
+        return (
+          <OrderScreen
+            members={members}
+            cart={cart}
+            onUpdateCart={handleUpdateCart}
+            onGoToCart={handleGoToCart}
+            onBackToPartyInput={handleBackToPartyInput}
+          />
+        );
+      case "cart":
+        return (
+          <CartScreen
+            cart={cart}
+            members={members}
+            onUpdateCart={handleUpdateCart}
+            onBackToOrder={handleBackToOrder}
+            onGoToSplitBill={handleGoToCheckout}
+          />
+        );
+      case "checkout":
+        return (
+          <CheckoutScreen
+            cart={cart}
+            members={members}
+            onBackToOrder={handleBackToOrder}
+            onGoToPayment={handleGoToPayment}
+          />
+        );
+      case "payment":
+        // ★ この部分が正しく「PaymentScreen」を呼び出していることを確認してください
+        return (
+          <PaymentScreen
+            onBackToSplitBill={handleGoToCheckout}
+            onCompleteOrder={handleCompleteOrder}
+          />
+        );
+      case "complete":
+        return <CompleteScreen order={order} status={orderStatus} />;
+      default:
+        return <TitleScreen onStart={() => setCurrentScreen("partyInput")} />;
+    }
+  };
 
-  return (
-    <div className="app-container">
-      {/* 画面の表示を制御 */}
-      {currentScreen === "partyInput" && (
-        <PartyInputScreen onStartOrder={handleStartOrder} />
-      )}
-      {currentScreen === "order" && (
-        <OrderScreen
-          members={members}
-          cart={cart}
-          onUpdateCart={handleUpdateCart}
-          onGoToCart={handleGoToCart}
-          onBackToPartyInput={handleBackToPartyInput}
-        />
-      )}
-      {currentScreen === "cart" && (
-        <CartScreen
-          cart={cart}
-          members={members}
-          onUpdateCart={handleUpdateCart}
-          onBackToOrder={handleBackToOrder}
-          onGoToSplitBill={handleGoToSplitBill}
-        />
-      )}
-      {currentScreen === "splitBill" && (
-        <SplitBillScreen
-          onBackToCart={handleBackToCart}
-          onGoToPayment={handleGoToPayment}
-        />
-      )}
-      {currentScreen === "payment" && (
-        <PaymentScreen
-          onBackToSplitBill={handleBackToSplitBill}
-          onCompleteOrder={handleCompleteOrder}
-        />
-      )}
-      {currentScreen === "complete" && (
-        <CompleteScreen order={order} status={orderStatus} />
-      )}
-    </div>
-  );
+  return <div className="app-container">{renderScreen()}</div>;
 };
 
 export default App;

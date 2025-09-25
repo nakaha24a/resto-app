@@ -5,14 +5,14 @@ interface CheckoutScreenProps {
   cart: CartItem[];
   members: Member[];
   onBackToOrder: () => void;
-  onCompleteOrder: () => void;
+  onGoToPayment: () => void;
 }
 
 const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
   cart,
   members,
   onBackToOrder,
-  onCompleteOrder,
+  onGoToPayment,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<
     "individual" | "representative"
@@ -26,16 +26,11 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
   const calculatePayments = () => {
     const payments = members.map((member) => ({
       member,
-      amount: 0,
+      items: cart.filter((item) => item.orderedBy === member.id),
+      amount: cart
+        .filter((item) => item.orderedBy === member.id)
+        .reduce((sum, item) => sum + item.price * item.quantity, 0),
     }));
-    cart.forEach((item) => {
-      const memberPayment = payments.find(
-        (p) => p.member.id === item.orderedBy
-      );
-      if (memberPayment) {
-        memberPayment.amount += item.price * item.quantity;
-      }
-    });
     return payments;
   };
 
@@ -52,8 +47,17 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       <div className="split-bill-details">
         {memberPayments.map((payment) => (
           <div key={payment.member.id} className="split-member-item">
-            <span>{payment.member.name}の注文:</span>
-            <span>¥{payment.amount.toLocaleString()}</span>
+            <h3 style={{ marginBottom: "5px" }}>{payment.member.name}</h3>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {payment.items.map((item, index) => (
+                <li key={index} style={{ fontSize: "0.9rem", color: "#666" }}>
+                  {item.name} x {item.quantity} (¥{item.price * item.quantity})
+                </li>
+              ))}
+            </ul>
+            <div style={{ fontWeight: "bold", marginTop: "10px" }}>
+              合計: ¥{payment.amount.toLocaleString()}
+            </div>
           </div>
         ))}
       </div>
@@ -61,14 +65,22 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       <div className="payment-method-section">
         <h3>支払い方法</h3>
         <button
+          className={
+            paymentMethod === "representative"
+              ? "split-button active"
+              : "split-button"
+          }
           onClick={() => setPaymentMethod("representative")}
-          className={paymentMethod === "representative" ? "active" : ""}
         >
           代表払い
         </button>
         <button
+          className={
+            paymentMethod === "individual"
+              ? "split-button active"
+              : "split-button"
+          }
           onClick={() => setPaymentMethod("individual")}
-          className={paymentMethod === "individual" ? "active" : ""}
           disabled={members.length === 1}
         >
           個別払い
@@ -80,11 +92,11 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       </div>
 
       <div className="button-group">
-        <button onClick={onBackToOrder}>メニューに戻る</button>
-        <button className="goto-checkout-btn" onClick={onCompleteOrder}>
-          {paymentMethod === "representative"
-            ? "代表者がまとめて決済"
-            : "決済へ進む"}
+        <button className="back-button" onClick={onBackToOrder}>
+          メニューに戻る
+        </button>
+        <button className="cta-button" onClick={onGoToPayment}>
+          決済へ進む
         </button>
       </div>
     </div>
