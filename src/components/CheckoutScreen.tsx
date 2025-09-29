@@ -1,102 +1,64 @@
-import React, { useState } from "react";
-import { CartItem, Member } from "../types";
+// src/components/CheckoutScreen.tsx
+
+import React from "react";
+import { CartItem, Order } from "../types";
 
 interface CheckoutScreenProps {
-  cart: CartItem[];
-  members: Member[];
+  orderItems: CartItem[];
+  onPlaceOrder: (orderData: Order) => void;
   onBackToOrder: () => void;
-  onGoToPayment: () => void;
 }
 
 const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
-  cart,
-  members,
+  orderItems,
+  onPlaceOrder,
   onBackToOrder,
-  onGoToPayment,
 }) => {
-  const [paymentMethod, setPaymentMethod] = useState<
-    "individual" | "representative"
-  >("representative");
-
-  const getMemberName = (id: number): string => {
-    const member = members.find((m) => m.id === id);
-    return member?.name || `参加者${id}`;
-  };
-
-  const calculatePayments = () => {
-    const payments = members.map((member) => ({
-      member,
-      items: cart.filter((item) => item.orderedBy === member.id),
-      amount: cart
-        .filter((item) => item.orderedBy === member.id)
-        .reduce((sum, item) => sum + item.price * item.quantity, 0),
-    }));
-    return payments;
-  };
-
-  const memberPayments = calculatePayments();
-
-  const totalAmount = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const calculateTotal = orderItems.reduce(
+    (total, item) => total + item.price * item.quantity,
     0
   );
 
+  const handlePlaceOrderClick = () => {
+    // 注文オブジェクトを作成
+    const newOrder: Order = {
+      id: new Date().getTime().toString(), // 仮の注文ID
+      tableNumber: "", // App.tsxでタブレットIDに上書きされる
+      items: orderItems,
+    };
+
+    // App.tsxのhandlePlaceOrderを呼び出し、注文を確定する
+    onPlaceOrder(newOrder);
+  };
+
   return (
     <div className="screen checkout-screen">
-      <h2>会計</h2>
-      <div className="split-bill-details">
-        {memberPayments.map((payment) => (
-          <div key={payment.member.id} className="split-member-item">
-            <h3 style={{ marginBottom: "5px" }}>{payment.member.name}</h3>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {payment.items.map((item, index) => (
-                <li key={index} style={{ fontSize: "0.9rem", color: "#666" }}>
-                  {item.name} x {item.quantity} (¥{item.price * item.quantity})
-                </li>
-              ))}
-            </ul>
-            <div style={{ fontWeight: "bold", marginTop: "10px" }}>
-              合計: ¥{payment.amount.toLocaleString()}
-            </div>
-          </div>
-        ))}
+      <h2>最終注文確認</h2>
+
+      <div className="order-details-box">
+        <h3>ご注文内容の確認</h3>
+        <ul className="final-order-list">
+          {orderItems.map((item) => (
+            <li key={item.id}>
+              {item.name} x {item.quantity} = ¥{item.price * item.quantity}
+            </li>
+          ))}
+        </ul>
+
+        <h1>合計金額: ¥{calculateTotal}</h1>
+
+        <p className="note">代金は後ほどお席でスタッフにお支払いください。</p>
+        <p className="confirm-message">
+          この内容でよろしければ、「注文を完了する」ボタンを押してください。
+        </p>
       </div>
 
-      <div className="payment-method-section">
-        <h3>支払い方法</h3>
-        <button
-          className={
-            paymentMethod === "representative"
-              ? "split-button active"
-              : "split-button"
-          }
-          onClick={() => setPaymentMethod("representative")}
-        >
-          代表払い
+      <div className="checkout-controls">
+        <button onClick={onBackToOrder} className="back-button">
+          注文内容を修正する
         </button>
-        <button
-          className={
-            paymentMethod === "individual"
-              ? "split-button active"
-              : "split-button"
-          }
-          onClick={() => setPaymentMethod("individual")}
-          disabled={members.length === 1}
-        >
-          個別払い
-        </button>
-      </div>
-
-      <div className="total">
-        <strong>合計金額: ¥{totalAmount.toLocaleString()}</strong>
-      </div>
-
-      <div className="button-group">
-        <button className="back-button" onClick={onBackToOrder}>
-          メニューに戻る
-        </button>
-        <button className="cta-button" onClick={onGoToPayment}>
-          決済へ進む
+        <button onClick={handlePlaceOrderClick} className="place-order-button">
+          注文を完了する
         </button>
       </div>
     </div>

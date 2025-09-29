@@ -1,118 +1,163 @@
+// src/App.tsx
+
 import React, { useState } from "react";
-import PartyInputScreen from "./components/PartyInputScreen";
-import OrderScreen from "./components/OrderScreen";
-import CartScreen from "./components/CartScreen";
-import CheckoutScreen from "./components/CheckoutScreen";
-import PaymentScreen from "./components/PaymentScreen";
-import CompleteScreen from "./components/CompleteScreen";
+// types.tsの型定義に 'TITLE' が含まれていることを確認してください
+import { Order, Screen, OrderItem, CartItem } from "./types";
+
+// componentsフォルダからのインポート
 import TitleScreen from "./components/TitleScreen";
-import { Member, CartItem, Order } from "./types";
+import OrderScreen from "./components/OrderScreen";
+import CheckoutScreen from "./components/CheckoutScreen";
+import CompleteScreen from "./components/CompleteScreen";
+// ★新しく SplitBillScreen をインポート（後ほど作成）
+import SplitBillScreen from "./components/SplitBillScreen";
+
 import "./components/styles.css";
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<string>("title");
-  const [members, setMembers] = useState<Member[]>([]);
+  const [currentScreen, setCurrentScreen] = useState<Screen>("TITLE");
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [order, setOrder] = useState<Order | null>(null);
-  const [orderStatus, setOrderStatus] = useState<string>("注文受付中");
+  // ★新しく会計金額の状態を追加
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
-  const handleStartOrder = (members: Member[]) => {
-    setMembers(members);
-    setCurrentScreen("order");
+  const handleUpdateCart = (item: OrderItem, quantityChange: number) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
+
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + quantityChange;
+        if (newQuantity <= 0) {
+          return prevCart.filter((cartItem) => cartItem.id !== item.id);
+        }
+        return prevCart.map((cartItem) =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: newQuantity }
+            : cartItem
+        );
+      } else if (quantityChange > 0) {
+        return [...prevCart, { ...item, quantity: quantityChange }];
+      }
+      return prevCart;
+    });
   };
 
-  const handleGoToCart = () => {
-    setCurrentScreen("cart");
-  };
+  const handlePlaceOrder = (orderData: Order) => {
+    const tabletId = "T-05";
 
-  const handleBackToOrder = () => {
-    setCurrentScreen("order");
-  };
-
-  const handleGoToCheckout = () => {
-    setCurrentScreen("checkout");
-  };
-
-  const handleGoToPayment = () => {
-    setCurrentScreen("payment");
-  };
-
-  const handleBackToPartyInput = () => {
-    setCurrentScreen("partyInput");
-  };
-
-  const handleUpdateCart = (newCart: CartItem[]) => {
-    setCart(newCart);
-  };
-
-  const handleCompleteOrder = () => {
-    const newOrder: Order = {
-      id: Date.now(),
-      members: members,
-      items: cart,
-      total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      timestamp: new Date().toISOString(),
+    const finalOrder: Order = {
+      ...orderData,
+      tableNumber: tabletId,
     };
-    setOrder(newOrder);
-    setCurrentScreen("complete");
 
-    // 注文状況をシミュレート
-    setOrderStatus("注文受付中");
-    setTimeout(() => {
-      setOrderStatus("調理中");
-    }, 3000);
-    setTimeout(() => {
-      setOrderStatus("完了");
-    }, 8000);
+    console.log("Final Order with Tablet ID:", finalOrder);
+
+    setCurrentOrder(finalOrder);
+    setCart([]);
+    setCurrentScreen("COMPLETE");
   };
 
+  // ★店員呼び出しハンドラをシンプルに修正
+  const handleCallStaff = () => {
+    const tabletId = "T-05";
+    console.log(`Staff called from ${tabletId}.`);
+    alert(`スタッフを呼び出しています。すぐにお伺いします。`);
+  };
+
+  // ★会計機能の開始（合計金額を計算し、画面遷移）
+  const handleGoToPayment = () => {
+    const total = cart.reduce((t, item) => t + item.price * item.quantity, 0);
+    setTotalAmount(total);
+    setCurrentScreen("PAYMENT_OPTIONS"); // 新しい画面に遷移
+  };
+
+  // ★会計オプション画面から分割画面へ遷移
+  const handleSplitBill = () => {
+    setCurrentScreen("SPLIT_BILL");
+  };
+
+  const handleGoBackToTitle = () => {
+    setCurrentOrder(null);
+    setCurrentScreen("TITLE");
+  };
+
+  // 画面のレンダリング
   const renderScreen = () => {
     switch (currentScreen) {
-      case "title":
-        return <TitleScreen onStart={() => setCurrentScreen("partyInput")} />;
-      case "partyInput":
-        return <PartyInputScreen onStartOrder={handleStartOrder} />;
-      case "order":
+      case "TITLE":
+        return <TitleScreen onStart={() => setCurrentScreen("ORDER")} />;
+
+      case "ORDER":
+      case "CART":
         return (
           <OrderScreen
-            members={members}
             cart={cart}
             onUpdateCart={handleUpdateCart}
-            onGoToCart={handleGoToCart}
-            onBackToPartyInput={handleBackToPartyInput}
-          />
-        );
-      case "cart":
-        return (
-          <CartScreen
-            cart={cart}
-            members={members}
-            onUpdateCart={handleUpdateCart}
-            onBackToOrder={handleBackToOrder}
-            onGoToSplitBill={handleGoToCheckout}
-          />
-        );
-      case "checkout":
-        return (
-          <CheckoutScreen
-            cart={cart}
-            members={members}
-            onBackToOrder={handleBackToOrder}
+            onGoToCheckout={() => setCurrentScreen("CHECKOUT")}
+            // ★店員呼び出しのハンドラを渡す
+            onCallStaff={handleCallStaff}
+            // ★会計機能の開始ハンドラを渡す
             onGoToPayment={handleGoToPayment}
           />
         );
-      case "payment":
-        // ★ この部分が正しく「PaymentScreen」を呼び出していることを確認してください
+
+      case "CHECKOUT":
         return (
-          <PaymentScreen
-            onBackToSplitBill={handleGoToCheckout}
-            onCompleteOrder={handleCompleteOrder}
+          <CheckoutScreen
+            orderItems={cart}
+            onPlaceOrder={handlePlaceOrder}
+            onBackToOrder={() => setCurrentScreen("ORDER")}
           />
         );
-      case "complete":
-        return <CompleteScreen order={order} status={orderStatus} />;
+
+      // ★新しい会計オプション画面
+      case "PAYMENT_OPTIONS":
+        return (
+          <div className="screen payment-options-screen">
+            <h2>会計オプション</h2>
+            <p>
+              合計金額:{" "}
+              <strong style={{ fontSize: "1.5em" }}>¥{totalAmount}</strong>
+            </p>
+            <p>この金額をレジでお支払いください。</p>
+            <div className="payment-controls">
+              <button className="option-button" onClick={handleSplitBill}>
+                均等に割り勘する
+              </button>
+              <button className="option-button" onClick={handleCallStaff}>
+                会計を依頼する (スタッフ呼び出し)
+              </button>
+              <button
+                className="back-button"
+                onClick={() => setCurrentScreen("ORDER")}
+              >
+                注文に戻る
+              </button>
+            </div>
+          </div>
+        );
+
+      // ★割り勘画面
+      case "SPLIT_BILL":
+        return (
+          <SplitBillScreen
+            totalAmount={totalAmount}
+            onCallStaff={handleCallStaff}
+            onBack={() => setCurrentScreen("PAYMENT_OPTIONS")}
+          />
+        );
+
+      case "COMPLETE":
+        return (
+          <CompleteScreen
+            order={currentOrder}
+            status="注文受付済み"
+            onGoBack={handleGoBackToTitle}
+          />
+        );
+
       default:
-        return <TitleScreen onStart={() => setCurrentScreen("partyInput")} />;
+        return <TitleScreen onStart={() => setCurrentScreen("ORDER")} />;
     }
   };
 

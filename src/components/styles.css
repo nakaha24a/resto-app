@@ -1,481 +1,230 @@
-/* === 全体的なスタイル === */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
-@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
-
-body {
+body,
+html,
+#root {
   margin: 0;
-  font-family: "Inter", sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* スクロールを禁止し、タブレット画面にフィットさせる */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f4f9;
 }
 
 .app-container {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
 }
 
-/* === 共通の画面スタイル === */
+/* 画面コンテナ (各Screenコンポーネント用) */
 .screen {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  box-sizing: border-box;
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 800px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
 }
 
-h1,
-h2,
-h3 {
-  color: #2c3e50;
-  border-bottom: 2px solid #e0e0e0;
+/* ------------------------------------- */
+/* 2. OrderScreen (メイン画面) のレスポンシブレイアウト */
+/* ------------------------------------- */
+
+.main-layout {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column; /* 縦方向に要素を配置（上部と下部のバー）*/
+  overflow: hidden;
+}
+
+.content-area {
+  flex-grow: 1;
+  display: flex; /* 子要素（メニューとカート）を横に並べる */
+  overflow: hidden;
+  height: 100%;
+}
+
+/* メニューペイン (左側) */
+.menu-pane {
+  flex-basis: 70%; /* 幅の70%を使用 */
+  padding: 15px;
+  border-right: 1px solid #ccc;
+  overflow-y: auto; /* メニューが多い場合、縦スクロール可能にする */
+  background-color: #ffffff;
+}
+.menu-pane h2 {
+  margin-top: 0;
+  border-bottom: 2px solid #eee;
   padding-bottom: 10px;
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-}
-
-button:active {
-  transform: translateY(1px);
-}
-
-.button-group {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  gap: 10px;
-}
-
-.button-group button {
-  flex: 1;
-}
-
-.cta-button {
-  background-color: #3498db;
-  color: white;
-}
-
-.cta-button:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.back-button {
-  background-color: #e0e0e0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-/* === TitleScreen === */
-.title-screen {
-  text-align: center;
-  max-width: 500px;
-}
-.title-screen h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  border-bottom: none;
-  margin-bottom: 0;
-}
-.title-screen p {
-  color: #555;
-  margin-top: 5px;
-  margin-bottom: 30px;
-}
-
-/* === PartyInputScreen === */
-.party-input-screen {
-  text-align: center;
-  max-width: 400px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.members-list {
-  margin-top: 20px;
-}
-
-.member-input {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.member-input label {
-  flex-shrink: 0;
-}
-
-/* === OrderScreen === */
-.order-layout {
-  display: flex;
-  flex-direction: row;
-  gap: 30px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.controls-row {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto 20px;
-  box-sizing: border-box;
-}
-
-.screen.order-screen {
-  flex: 2;
-  margin-bottom: 0;
-}
-
-.menu-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.menu-controls input,
-.menu-controls select {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.menu-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  padding: 0;
-  list-style: none;
-}
-
-.menu-item {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-item img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-
-.item-info {
+/* カートペイン (右側) */
+.cart-pane {
+  flex-basis: 30%; /* 幅の30%を使用 */
   padding: 15px;
+  background-color: #fafafa;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  flex-grow: 1;
 }
-
-.item-info h3 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.item-info p {
-  margin: 5px 0;
-  color: #555;
-}
-
-.item-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* === Cart Sidebar === */
-.cart-sidebar {
-  flex: 1;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  height: fit-content;
+.cart-pane h3 {
+  margin-top: 0;
+  color: #333;
 }
 
 .cart-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  flex-grow: 1;
 }
-
-.cart-sidebar-item {
+.cart-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px dashed #e0e0e0;
+  padding: 8px 0;
+  border-bottom: 1px dashed #ddd;
 }
 
-.cart-sidebar-item:last-child {
-  border-bottom: none;
+.cart-summary {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 2px solid #333;
+  font-size: 1.2em;
 }
 
-.cart-sidebar-item-info {
+/* ------------------------------------- */
+/* 3. コントロールバー (下部) の固定デザイン */
+/* ------------------------------------- */
+
+.control-bar {
   display: flex;
-  flex-direction: column;
-}
-
-.item-name {
-  font-weight: bold;
-}
-
-.item-details {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.cart-sidebar-item-controls {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 5px;
-}
-
-.cart-sidebar-item-controls button {
-  padding: 4px 8px;
-  font-size: 0.8rem;
-}
-
-.total {
-  text-align: right;
-  margin-top: 20px;
-  font-size: 1.2rem;
-}
-
-.goto-checkout-btn {
-  background-color: #27ae60;
+  padding: 10px 15px;
+  background-color: #333;
   color: white;
-  width: 100%;
-  margin-top: 20px;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+  min-height: 60px; /* 押しやすい高さ */
+  flex-shrink: 0; /* 縮小させない */
 }
 
-/* === CartScreen === */
-.cart-screen .cart-list {
-  padding: 0;
-  margin: 0;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.cart-item-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.quantity-controls {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.call-buttons button {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 10px 15px;
   margin-right: 10px;
+  cursor: pointer;
+  font-size: 1em;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+.call-buttons button:hover {
+  background-color: #777;
 }
 
-.quantity-controls button {
-  padding: 4px 8px;
-}
-
-/* === CheckoutScreen (旧SplitBillScreen) === */
-.split-bill-details {
-  margin-top: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 15px;
-}
-
-.split-member-item {
-  border-bottom: 1px dashed #e0e0e0;
-  padding: 10px 0;
-}
-
-.split-member-item:last-child {
-  border-bottom: none;
-}
-
-.payment-method-section {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.split-button {
-  padding: 15px 30px;
-  background-color: #f2f2f2;
-  border: 2px solid #ddd;
-  color: #555;
+.checkout-button,
+.confirm-button {
+  font-size: 1.1em;
   font-weight: bold;
-  text-align: center;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.split-button.active {
+.checkout-button {
+  /* 会計ボタン */
+  background-color: #e67e22; /* オレンジ系 */
+  color: white;
+  margin-right: 15px;
+}
+
+.confirm-button {
+  /* 注文確定ボタン */
+  background-color: #2ecc71; /* 緑系 */
+  color: white;
+}
+.confirm-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------- */
+/* 4. その他の要素のスタイル */
+/* ------------------------------------- */
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+.menu-item button {
   background-color: #3498db;
   color: white;
-  border-color: #3498db;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
 }
 
-/* === PaymentScreen === */
-.payment-options {
+/* CheckoutScreen スタイル */
+.checkout-screen {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+.checkout-controls {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
+  justify-content: space-between;
+  margin-top: 30px;
 }
-
-.payment-button {
-  padding: 15px 30px;
-  background-color: #f2f2f2;
-  border: 2px solid #ddd;
-  color: #555;
-  text-align: left;
+.back-button,
+.place-order-button {
+  padding: 15px 25px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
-
-.payment-button.active {
-  background-color: #27ae60;
+.back-button {
+  background-color: #95a5a6;
   color: white;
-  border-color: #27ae60;
+}
+.place-order-button {
+  background-color: #2ecc71;
+  color: white;
 }
 
-.payment-button i {
-  margin-right: 10px;
-}
-
-/* === CompleteScreen === */
+/* CompleteScreen スタイル */
 .complete-screen {
   text-align: center;
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  border-radius: 10px;
+  background-color: #ecf0f1;
 }
-
-.complete-text {
-  color: #27ae60;
-  font-size: 2rem;
+.order-summary-details {
+  border: 1px solid #bdc3c7;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 6px;
 }
-
-.thanks-text {
-  font-size: 1.2rem;
-}
-
-/* === レスポンシブデザイン === */
-/* タブレット向け (横向き) */
-@media (min-width: 769px) and (max-width: 1200px) {
-  .menu-list {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-}
-
-/* スマホ向けレスポンシブデザイン */
-@media (max-width: 768px) {
-  .order-layout {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .screen.order-screen,
-  .cart-sidebar {
-    width: 100%;
-    margin: 0;
-  }
-
-  .cart-sidebar {
-    order: 1;
-  }
-
-  .screen.order-screen {
-    order: 2;
-  }
-
-  .controls-row {
-    margin: 0 auto 10px;
-    padding: 0;
-  }
-
-  .button-group {
-    flex-direction: column-reverse;
-  }
-
-  .split-options,
-  .payment-options {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .menu-list {
-    grid-template-columns: 1fr;
-  }
-
-  .menu-item {
-    flex-direction: row;
-    align-items: center;
-    padding: 10px;
-  }
-
-  .menu-item img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-  }
-
-  .item-info {
-    flex: 1;
-    margin-left: 10px;
-    padding: 0;
-  }
-
-  .item-info h3 {
-    font-size: 1rem;
-  }
-
-  .item-controls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .item-controls select,
-  .item-controls button {
-    width: 100%;
-  }
-
-  .menu-controls {
-    flex-direction: column;
-  }
+.complete-screen button {
+  margin-top: 20px;
+  background-color: #3498db;
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1em;
+  cursor: pointer;
 }

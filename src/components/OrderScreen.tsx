@@ -1,222 +1,124 @@
-import React, { useState } from "react";
-import menuData from "../data/menuData.json";
-import { Member, CartItem, MenuItem } from "../types";
+// src/components/OrderScreen.tsx
+
+import React from "react";
+import { OrderItem, CartItem, MenuItem } from "../types";
 
 interface OrderScreenProps {
-  members: Member[];
   cart: CartItem[];
-  onUpdateCart: (cart: CartItem[]) => void;
-  onGoToCart: () => void;
-  onBackToPartyInput: () => void;
+  onUpdateCart: (item: OrderItem, quantityChange: number) => void;
+  onGoToCheckout: () => void;
+  // ★店員呼び出しの理由指定をなくし、シンプルなハンドラに変更
+  onCallStaff: () => void;
+  // ★会計機能の開始ハンドラを追加
+  onGoToPayment: () => void;
 }
 
 const OrderScreen: React.FC<OrderScreenProps> = ({
-  members,
   cart,
   onUpdateCart,
-  onGoToCart,
-  onBackToPartyInput,
+  onGoToCheckout,
+  onCallStaff, // シンプルな呼び出し
+  onGoToPayment, // 会計開始
 }) => {
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("すべて");
-
-  const categories = [
-    "すべて",
-    ...new Set(menuData.map((item) => item.category)),
+  // 例として、ハードコードされた商品データ (省略)
+  const menuItems: MenuItem[] = [
+    { id: "1", name: "ハンバーガー", price: 500 },
+    { id: "2", name: "ポテト", price: 300 },
+    { id: "3", name: "コーラ", price: 200 },
+    { id: "4", name: "サラダ", price: 450 },
   ];
 
-  const filteredMenu = menuData.filter((item) => {
-    const matchesSearch = item.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "すべて" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleAddToCart = (
-    item: MenuItem,
-    memberId: number,
-    quantity: number = 1
-  ) => {
-    const existingItemIndex = cart.findIndex(
-      (cartItem) => cartItem.id === item.id && cartItem.orderedBy === memberId
-    );
-    if (existingItemIndex !== -1) {
-      const newCart = [...cart];
-      newCart[existingItemIndex] = {
-        ...newCart[existingItemIndex],
-        quantity: newCart[existingItemIndex].quantity + quantity,
-      };
-      onUpdateCart(newCart);
-    } else {
-      onUpdateCart([
-        ...cart,
-        { ...item, quantity: quantity, orderedBy: memberId },
-      ]);
-    }
+  const handleAddItem = (item: MenuItem) => {
+    const itemWithQuantity: OrderItem = { ...item, quantity: 1 };
+    onUpdateCart(itemWithQuantity, 1);
   };
 
-  const getMemberName = (id: number): string => {
-    const member = members.find((m) => m.id === id);
-    return member?.name || `参加者${id}`;
+  const handleUpdateQuantity = (item: CartItem, change: number) => {
+    onUpdateCart(item, change);
   };
 
-  const handleUpdateQuantity = (
-    itemId: string,
-    memberId: number,
-    newQuantity: number
-  ) => {
-    const newCart = cart
-      .map((item) =>
-        item.id === itemId && item.orderedBy === memberId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-      .filter((item) => item.quantity > 0);
-    onUpdateCart(newCart);
-  };
-
-  const handleRemoveFromCart = (itemId: string, memberId: number) => {
-    const newCart = cart.filter(
-      (item) => !(item.id === itemId && item.orderedBy === memberId)
-    );
-    onUpdateCart(newCart);
-  };
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const calculateTotal = cart.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
   return (
-    <div className="order-layout">
-      <div className="controls-row">
-        <button className="back-button" onClick={onBackToPartyInput}>
-          戻る
-        </button>
-      </div>
-      <div className="screen order-screen">
-        <h2>メニュー</h2>
-        <div className="menu-controls">
-          <input
-            type="text"
-            placeholder="商品を検索..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select onChange={(e) => setSelectedCategory(e.target.value)}>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="menu-list">
-          {filteredMenu.length > 0 ? (
-            filteredMenu.map((item) => (
+    <div className="main-layout">
+      {/* 1. メインコンテンツエリア (メニューとカート) (省略なし) */}
+      <div className="content-area">
+        {/* 左側: メニュー */}
+        <div className="menu-pane">
+          <h2>メニュー一覧</h2>
+          <div className="menu-list">
+            {menuItems.map((item) => (
               <div key={item.id} className="menu-item">
-                <img src={item.image} alt={item.name} />
-                <div className="item-info">
-                  <h3>{item.name}</h3>
-                  <p>{item.description}</p>
-                  <p>¥{item.price}</p>
-                  <div className="item-controls">
-                    {members.length > 1 ? (
-                      <select
-                        onChange={(e) =>
-                          handleAddToCart(item, Number(e.target.value))
-                        }
-                        defaultValue=""
-                      >
-                        <option value="" disabled>
-                          注文者を選択
-                        </option>
-                        {members.map((member) => (
-                          <option key={member.id} value={member.id}>
-                            {member.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <button
-                        onClick={() => handleAddToCart(item, members[0].id)}
-                      >
-                        カートに追加
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <span>
+                  {item.name} (¥{item.price})
+                </span>
+                <button onClick={() => handleAddItem(item)}>追加</button>
               </div>
-            ))
-          ) : (
-            <p>該当する商品が見つかりません。</p>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="cart-sidebar">
-        <h2>カート</h2>
-        {cart.length === 0 ? (
-          <p>カートは空です。</p>
-        ) : (
-          <>
+
+        {/* 右側: カート */}
+        <div className="cart-pane">
+          <h3>注文内容 ({totalItems}点)</h3>
+          {cart.length === 0 ? (
+            <p>カートに商品が入っていません。</p>
+          ) : (
             <ul className="cart-list">
               {cart.map((item) => (
-                <li
-                  key={`${item.id}-${item.orderedBy}`}
-                  className="cart-sidebar-item"
-                >
-                  <div className="cart-sidebar-item-info">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-details">
-                      {getMemberName(item.orderedBy)} / ¥{item.price}
-                    </span>
-                  </div>
-                  <div className="cart-sidebar-item-controls">
-                    <button
-                      onClick={() =>
-                        handleUpdateQuantity(
-                          item.id,
-                          item.orderedBy,
-                          item.quantity - 1
-                        )
-                      }
-                    >
+                <li key={item.id}>
+                  <span>{item.name}</span>
+                  <div className="quantity-control">
+                    <button onClick={() => handleUpdateQuantity(item, -1)}>
                       -
                     </button>
                     <span>{item.quantity}</span>
-                    <button
-                      onClick={() =>
-                        handleUpdateQuantity(
-                          item.id,
-                          item.orderedBy,
-                          item.quantity + 1
-                        )
-                      }
-                    >
+                    <button onClick={() => handleUpdateQuantity(item, 1)}>
                       +
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleRemoveFromCart(item.id, item.orderedBy)
-                      }
-                    >
-                      削除
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
-            <div className="total">
-              <strong>
-                合計: ¥
-                {cart.reduce(
-                  (sum, item) => sum + item.price * item.quantity,
-                  0
-                )}
-              </strong>
-            </div>
-            <button className="goto-checkout-btn" onClick={onGoToCart}>
-              カートを見る ({cart.length})
-            </button>
-          </>
-        )}
+          )}
+          <div className="cart-summary">
+            <p>
+              合計金額: <strong>¥{calculateTotal}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. コントロールバー (下部) */}
+      <div className="control-bar">
+        {/* ★店員呼び出しボタンをシンプルに */}
+        <button className="call-staff-button" onClick={onCallStaff}>
+          <span role="img" aria-label="bell">
+            🛎️
+          </span>{" "}
+          店員を呼ぶ
+        </button>
+
+        {/* ★会計ボタン */}
+        <button className="checkout-button" onClick={onGoToPayment}>
+          <span role="img" aria-label="money bag">
+            💰
+          </span>{" "}
+          会計ボタン
+        </button>
+
+        {/* 注文確定ボタン */}
+        <button
+          className="confirm-button"
+          onClick={onGoToCheckout}
+          disabled={cart.length === 0}
+        >
+          注文を確定する (¥{calculateTotal})
+        </button>
       </div>
     </div>
   );
