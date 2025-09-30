@@ -1,11 +1,11 @@
-// src/components/CompleteScreen.tsx
+// src/components/CompleteScreen.tsx (修正)
 
 import React from "react";
 import { Order } from "../types";
 
 interface CompleteScreenProps {
   order: Order | null;
-  status: string;
+  status: string; // "ORDER" | "PAYMENT"
   onGoBack: () => void;
 }
 
@@ -14,51 +14,50 @@ const CompleteScreen: React.FC<CompleteScreenProps> = ({
   status,
   onGoBack,
 }) => {
+  // 注文がない場合のエラーハンドリング
   if (!order) {
     return (
-      <div className="screen complete-screen">
-        <h2>注文がありません</h2>
-        <p>前の画面に戻って注文を完了してください。</p>
-        <button onClick={onGoBack}>メニューに戻る</button>
+      <div className="screen complete-screen error-state">
+        <h2 className="title-text">❌ エラー</h2>
+        <p className="message-text">注文情報が見つかりません。</p>
+        <button onClick={onGoBack} className="main-action-button back-to-menu">
+          メニューに戻る
+        </button>
       </div>
     );
   }
 
-  const calculateTotal = () => {
-    // order.itemsはOrderItem型（quantityを含む）なので計算可能
-    return order.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-  };
+  // ステータスに応じたメッセージの切り替え
+  const title = status === "ORDER" ? "✅ ご注文完了" : "✅ 会計依頼完了";
+  const message =
+    status === "ORDER"
+      ? `ご注文ありがとうございます。\nご注文内容を準備中です。`
+      : `会計依頼を承りました。\nスタッフがお席（${order.tableNumber}）へお伺いします。しばらくお待ちください。`;
+
+  // 注文合計金額の計算 (シンプル化のため表示はしませんが、関数は残します)
+  const calculateTotal = order.items.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
   return (
+    // CSSクラス 'complete-screen' で中央寄せと全体スタイルを適用
     <div className="screen complete-screen">
-      <h2>ご注文完了</h2>
-      <p>
-        ご注文番号：<strong>#{order.id}</strong>
-      </p>
-      <p className="order-summary-message">
-        ご注文ありがとうございます。お席（**席番号：{order.tableNumber}
-        **）まで担当者がお伺いします。
-      </p>
-
-      {/* 注文内容の表示 */}
-      <div className="order-summary-details">
-        <h3>ご注文内容</h3>
-        <ul>
-          {order.items.map((item) => (
-            <li key={item.id}>
-              {item.name} x {item.quantity} - ¥{item.price * item.quantity}
-            </li>
-          ))}
-        </ul>
-        <p>
-          <strong>合計金額: ¥{calculateTotal()}</strong>
+      <div className="complete-content-box">
+        <h2 className="title-text">{title}</h2>
+        <p className="order-id-display">
+          受付番号: <strong>#{order.id}</strong>
         </p>
-      </div>
+        <p className="message-text whitespace-pre-wrap">{message}</p>
 
-      <button onClick={onGoBack}>追加注文する</button>
+        {/*
+          お客様の要望に基づき、シンプルに「メニューに戻る」ボタンのみ
+          注文概要の表示は削除
+        */}
+        <button onClick={onGoBack} className="main-action-button back-to-menu">
+          メニューに戻る
+        </button>
+      </div>
     </div>
   );
 };

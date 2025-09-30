@@ -1,15 +1,14 @@
-// src/components/SplitBillScreen.tsx
+// src/components/SplitBillScreen.tsx (修正)
 
 import React, { useState, useMemo } from "react";
 
 interface SplitBillScreenProps {
   totalAmount: number;
-  onCallStaff: () => void;
-  onBack: () => void; // 戻るボタンのハンドラ (ORDER画面へ)
+  onCallStaff: (message: string) => void;
+  onBack: () => void;
 }
 
-// 端数処理のオプション型
-type RoundingOption = "CEIL" | "NONE"; // CEIL: 切り上げ, NONE: 代表者調整
+type RoundingOption = "CEIL" | "NONE";
 
 const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
   totalAmount,
@@ -17,10 +16,9 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
   onBack,
 }) => {
   const [personCount, setPersonCount] = useState<number>(2);
-  // 初期値は一律切り上げ（CEIL）
   const [roundingOption, setRoundingOption] = useState<RoundingOption>("CEIL");
 
-  // 1人あたりの金額と端数（お釣り）を計算するロジック
+  // 計算ロジック
   const { amountPerPerson, remainder, baseAmount, lastPersonAmount } =
     useMemo(() => {
       if (totalAmount <= 0)
@@ -38,19 +36,16 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
       let lastPerson = 0;
 
       if (roundingOption === "CEIL") {
-        // オプション1: 一律切り上げ
-        finalAmount = Math.ceil(rawAmount);
-        remainderCalc = finalAmount * personCount - totalAmount; // 浮いた金額 (余剰金)
-        base = finalAmount;
-        lastPerson = finalAmount;
+        // 全員切り上げ方式
+        finalAmount = Math.ceil(rawAmount / 10) * 10; // 10円単位で切り上げ
+        remainderCalc = finalAmount * personCount - totalAmount; // お釣りの合計
       } else {
-        // オプション2: 代表者調整
-        base = Math.floor(rawAmount); // 他の全員が支払う額 (切り捨て)
-        const paidByOthers = base * (personCount - 1);
-        lastPerson = totalAmount - paidByOthers; // 代表者が支払う額
-
-        finalAmount = base;
-        remainderCalc = lastPerson - base; // 代表者が調整する額
+        // 代表者調整方式
+        base = Math.floor(rawAmount / 10) * 10; // 10円未満を切り捨てた額
+        // 代表者以外の金額
+        const totalOther = base * (personCount - 1);
+        // 代表者の金額 (端数調整)
+        lastPerson = totalAmount - totalOther;
       }
 
       return {
@@ -61,136 +56,119 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
       };
     }, [totalAmount, personCount, roundingOption]);
 
-  const handleCountChange = (change: number) => {
-    // 人数は最低1人
-    setPersonCount((prevCount) => Math.max(1, prevCount + change));
+  const handleCallForPayment = () => {
+    const message = `会計依頼 (合計: ${totalAmount.toLocaleString()}円 / 割り勘人数: ${personCount}人)`;
+    onCallStaff(message);
   };
 
-  const handleCallForPayment = () => {
-    // 店員呼び出しのロジックを実行
-    onCallStaff();
-    // TODO: Firestoreに会計依頼のステータスを書き込む処理
+  const handleCountChange = (change: number) => {
+    setPersonCount((prev) => Math.max(2, prev + change));
   };
 
   return (
     <div className="screen split-bill-screen">
-      <div className="split-card">
-        <h2>💸 割り勘計算シミュレーション</h2>
+      <h2 className="screen-title">🧑‍🤝‍🧑 お会計 (割り勘計算)</h2>
 
-        <div className="summary-box">
-          <p style={{ fontSize: "1.2rem", fontWeight: "bold" }}>合計金額:</p>
-          <strong>¥{totalAmount.toLocaleString()}</strong>
-        </div>
-
-        {/* 割り勘人数コントロール */}
-        <div className="split-control">
-          <h3>👥 割り勘する人数</h3>
-          <div className="person-counter">
+      <div className="split-controls">
+        {/* 人数選択 */}
+        <div className="control-group person-count-selector">
+          <label>割り勘人数:</label>
+          <div className="count-stepper">
             <button
               onClick={() => handleCountChange(-1)}
-              disabled={personCount <= 1}
+              disabled={personCount <= 2}
             >
-              -
+              ー
             </button>
-            <span className="count-display">{personCount}</span>
-            <button onClick={() => handleCountChange(1)}>+</button>
+            <span className="current-count">{personCount} 人</span>
+            <button onClick={() => handleCountChange(1)}>＋</button>
           </div>
         </div>
 
-        {/* 端数処理オプション */}
-        <div className="rounding-control">
-          <h3>🧮 端数処理方法の選択</h3>
-          <div className="rounding-options">
-            <label>
-              <input
-                type="radio"
-                name="rounding"
-                value="CEIL"
-                checked={roundingOption === "CEIL"}
-                onChange={() => setRoundingOption("CEIL")}
-              />
-              <span>**一律切り上げ** (全員が同じ額を払い、後で調整)</span>
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="rounding"
-                value="NONE"
-                checked={roundingOption === "NONE"}
-                onChange={() => setRoundingOption("NONE")}
-              />
-              <span>
-                **代表者調整**
-                (他の人は切り捨て額、代表者が端数を含む額を支払う)
-              </span>
-            </label>
+        {/* 端数処理選択 */}
+        <div className="control-group rounding-options">
+          <label>端数処理方法:</label>
+          <div className="option-buttons">
+            <button
+              className={`option-btn ${
+                roundingOption === "CEIL" ? "active" : ""
+              }`}
+              onClick={() => setRoundingOption("CEIL")}
+            >
+              全員切り上げ (¥10単位)
+            </button>
+            <button
+              className={`option-btn ${
+                roundingOption === "NONE" ? "active" : ""
+              }`}
+              onClick={() => setRoundingOption("NONE")}
+            >
+              代表者が調整
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* 計算結果 */}
-        <div className="result-box">
-          <h3>支払目安額</h3>
-          {roundingOption === "CEIL" ? (
-            <>
-              <p style={{ fontSize: "1.2rem" }}>1人あたりの支払額:</p>
-              <p className="amount-result">
-                <strong>¥{amountPerPerson.toLocaleString()}</strong>
-              </p>
-              {remainder > 0 && (
-                <p
-                  style={{
-                    marginTop: "5px",
-                    color: "#e74c3c",
-                    fontWeight: "bold",
-                  }}
-                >
-                  ※合計より¥{remainder.toLocaleString()}
-                  多くお支払いいただきます。（余剰金）
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              <p style={{ fontSize: "1.2rem" }}>
-                代表者以外の支払額 (人数: {personCount - 1}人):
-              </p>
-              <p className="amount-result">
-                <strong>¥{baseAmount.toLocaleString()}</strong>
-              </p>
-              <p style={{ fontSize: "1.2rem", marginTop: "15px" }}>
-                代表者の支払額 (1人):
-              </p>
-              <p
-                className="amount-result"
-                style={{ fontSize: "3.5em", color: "#c0392b" }}
-              >
-                <strong>¥{lastPersonAmount.toLocaleString()}</strong>
-              </p>
-              <p style={{ marginTop: "5px", color: "#34495e" }}>
-                ※代表者が端数 (¥{remainder.toLocaleString()}) を調整します。
-              </p>
-            </>
-          )}
-        </div>
+      <div className="summary-section">
+        <p className="total-display">
+          全体の合計金額: <strong>¥{totalAmount.toLocaleString()}</strong>
+        </p>
+      </div>
 
-        {/* アクションボタン */}
-        <div className="split-controls-footer">
-          <button
-            className="call-staff-button-large"
-            onClick={handleCallForPayment}
-          >
-            <span role="img" aria-label="hand">
-              ✋
-            </span>{" "}
-            会計依頼 (店員呼び出し)
-          </button>
-          <button className="back-button" onClick={onBack}>
-            <span role="img" aria-label="back">
-              ↩️
-            </span>{" "}
-            注文画面に戻る
-          </button>
-        </div>
+      <div className="calculation-result-box">
+        <h3 className="result-title">計算結果</h3>
+
+        {roundingOption === "CEIL" ? (
+          <>
+            <p className="amount-label">1人あたりの支払額 (全員):</p>
+            <p className="amount-result main-amount">
+              <strong>¥{amountPerPerson.toLocaleString()}</strong>
+            </p>
+            <p className="note-text">
+              ※10円単位で切り上げました。合計で¥{remainder.toLocaleString()}
+              のお釣りが出ます。
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="amount-label">
+              代表者以外の支払額 ({personCount - 1}人):
+            </p>
+            <p className="amount-result sub-amount">
+              <strong>¥{baseAmount.toLocaleString()}</strong>
+            </p>
+            <p className="amount-label adjusted-label">代表者の支払額 (1人):</p>
+            <p className="amount-result main-amount adjusted-amount">
+              <strong>¥{lastPersonAmount.toLocaleString()}</strong>
+            </p>
+            <p className="note-text adjusted-note">
+              ※代表者が端数 (¥
+              {lastPersonAmount - baseAmount * (personCount - 1) > baseAmount
+                ? lastPersonAmount - baseAmount * (personCount - 1) - baseAmount
+                : 0}
+              円) を調整します。
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* アクションボタン */}
+      <div className="split-controls-footer">
+        <button className="back-button" onClick={onBack}>
+          <span role="img" aria-label="back">
+            ←
+          </span>{" "}
+          戻る
+        </button>
+        <button
+          className="call-staff-button-large"
+          onClick={handleCallForPayment}
+        >
+          <span role="img" aria-label="hand">
+            ✋
+          </span>{" "}
+          会計依頼 (店員呼び出し)
+        </button>
       </div>
     </div>
   );

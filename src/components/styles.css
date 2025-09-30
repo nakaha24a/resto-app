@@ -1,6 +1,8 @@
-/* src/components/styles.css - 注文システム画像レイアウト用スタイル */
+/* src/components/styles.css - 注文システムレイアウト用スタイル */
 
-/* 全体のコンテナ */
+/* ------------------------------------- */
+/* 共通/基本レイアウト */
+/* ------------------------------------- */
 .app-container {
   font-family: "Inter", sans-serif;
   display: flex;
@@ -17,266 +19,482 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden; /* メインコンテンツエリアのサイズ調整用 */
+  overflow: hidden;
+  width: 100%;
 }
 
 /* ------------------------------------- */
-/* TITLE SCREEN (変更なし) */
+/* TITLE SCREEN STYLES (スタート画面) */
 /* ------------------------------------- */
 .title-screen {
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   background-color: #1e272e;
   color: white;
   text-align: center;
 }
+
 .title-screen-header {
   position: absolute;
   top: 20px;
   right: 20px;
+}
+
+.tablet-id-text {
   font-size: 0.9em;
   color: #bdc3c7;
 }
-/* ... (その他TitleScreenスタイルは省略) ... */
+
+.title-center-content {
+  margin-top: -10vh;
+}
+
+.main-title {
+  font-size: 5rem;
+  font-weight: 800;
+  margin-bottom: 5px;
+  color: #f39c12; /* 明るいオレンジ */
+}
+
+.sub-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #ecf0f1;
+}
+
+.start-button-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.start-prompt {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #bdc3c7;
+}
+
+.start-button {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: #2ecc71; /* 緑 */
+  color: white;
+  font-size: 2.5rem;
+  font-weight: bold;
+  border: 10px solid #27ae60;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px rgba(46, 204, 113, 0.4);
+}
+
+.start-button:hover:not(.pressed) {
+  background-color: #27ae60;
+}
+
+.start-button.pressed {
+  transform: scale(0.95);
+  box-shadow: 0 5px 10px rgba(46, 204, 113, 0.4);
+}
+
+.start-button-icon {
+  font-size: 3rem;
+  margin-bottom: 5px;
+}
 
 /* ------------------------------------- */
-/* ORDER SCREEN LAYOUT (画像レイアウトに合わせて大幅変更) */
+/* ORDER SCREEN LAYOUT (メイン画面) */
 /* ------------------------------------- */
-
 .order-screen-layout {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   overflow: hidden;
+  background-color: #f8f9fa;
 }
 
-.content-area-main {
+/* 1. ヘッダー */
+.order-header {
+  height: 60px;
   display: flex;
-  flex-grow: 1;
-  overflow: hidden;
-}
-
-/* 1. メニューペイン (左側) */
-.menu-pane {
-  flex: 3;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  background-color: white;
-}
-
-/* メニューナビゲーション (カテゴリタブとサブフィルター) */
-.menu-navigation {
-  padding: 10px 20px;
-  background-color: #ecf0f1; /* 明るいグレーの背景 */
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.category-tabs {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 5px;
-}
-
-.category-tab {
-  padding: 10px 15px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-.category-tab.active {
-  background-color: #d35400; /* オレンジ */
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: #34495e;
   color: white;
-  border-color: #d35400;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
-.sub-filters {
-  display: flex;
-  gap: 10px;
+.tablet-info {
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
-.sub-filter-button {
-  padding: 8px 12px;
-  border: 2px solid #e67e22;
-  background-color: #f9e9d9;
-  color: #d35400;
-  border-radius: 6px;
-  font-size: 0.9em;
+.call-staff-button-header {
+  background-color: #e67e22; /* オレンジ */
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
 }
 
-/* メニューコンテンツ (画像グリッド) */
-.menu-content {
+/* 2. メインエリア */
+.order-main-area {
   flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  background-color: #f8f9fa; /* メニュー背景を明るく */
+  display: flex; /* Flexコンテナとして設定 */
+  overflow: hidden;
 }
 
-.menu-card-grid {
+/* --- ORDERタブ (3カラムレイアウト) のスタイル --- */
+
+.order-main-area > .category-nav,
+.order-main-area > .menu-list-container,
+.order-main-area > .order-sidebar {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 1. Category Navigation (左側) */
+.category-nav {
+  flex: 0 0 150px; /* 幅固定 */
+  background-color: #ecf0f1;
+  padding: 10px 0;
+  border-right: 1px solid #bdc3c7;
+}
+
+.category-tab {
+  display: block;
+  width: 100%;
+  padding: 15px 10px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 5px solid transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #34495e;
+  transition: all 0.2s;
+}
+
+.category-tab.active {
+  background-color: white;
+  border-left: 5px solid #e67e22; /* オレンジで強調 */
+  font-weight: bold;
+}
+
+/* 2. Menu List (中央) */
+.menu-list-container {
+  flex-grow: 1; /* 残りのスペースを全て使用 */
+  background-color: white;
+  padding: 20px;
+}
+
+.menu-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
-.menu-card {
-  background-color: white;
-  border-radius: 12px;
+.menu-item {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  transition: transform 0.2s;
-}
-.menu-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
-.menu-card img {
+.menu-image {
   width: 100%;
   height: 150px;
   object-fit: cover;
 }
 
-.menu-card-info {
-  padding: 10px;
-  text-align: center;
+.menu-info {
+  padding: 15px;
+  flex-grow: 1;
 }
 
-.menu-card-name {
-  font-size: 1.1rem;
+.menu-name {
+  font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 5px;
   color: #2c3e50;
 }
 
-.menu-card-price {
-  position: absolute;
-  bottom: 55px; /* 画像の少し上に配置 */
-  right: 10px;
-  background-color: rgba(211, 84, 0, 0.9); /* オレンジ */
-  color: white;
-  padding: 5px 8px;
-  border-radius: 6px;
-  font-weight: bold;
+.menu-description {
   font-size: 0.9rem;
+  color: #7f8c8d;
+  height: 3em; /* 2行でクリップ */
+  overflow: hidden;
 }
 
-/* 2. カート/注文確認ペイン (右側) */
-.cart-right-pane {
-  flex: 1;
-  min-width: 350px;
-  background-color: white;
-  border-left: 1px solid #ddd;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.cart-right-pane h3 {
-  font-size: 1.8rem;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 10px;
-  margin-bottom: 0;
-}
-
-.order-confirmation-box {
-  padding: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-}
-
-.order-item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex-grow: 1;
-  overflow-y: auto;
-}
-
-.order-item-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px dashed #ddd;
+.menu-price {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #e74c3c;
+  margin-top: 10px;
 }
 
 .quantity-control {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: flex-end;
+  padding: 0 15px 15px;
 }
-.quantity-control button {
-  background-color: #bdc3c7;
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
+
+.quantity-button {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 1.5rem;
   font-weight: bold;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.quantity-button.minus {
+  background-color: #e74c3c;
+}
+.quantity-button.plus {
+  background-color: #2ecc71;
+}
+
+.quantity-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.quantity-display {
+  font-size: 1.4rem;
+  font-weight: bold;
+  width: 40px;
+  text-align: center;
+}
+
+/* 3. Cart Sidebar (右側) */
+.order-sidebar {
+  flex: 0 0 320px; /* 幅固定 */
+  background-color: #f4f6f8;
+  padding: 20px;
+  border-left: 1px solid #bdc3c7;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 5px;
+}
+
+.empty-cart-message {
+  color: #7f8c8d;
+  font-style: italic;
+  margin-top: 20px;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.cart-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed #bdc3c7;
+}
+
+.item-name {
+  flex-grow: 1;
+  font-size: 1rem;
+}
+
+.item-control {
+  display: flex;
+  align-items: center;
+  margin: 0 10px;
+}
+
+.cart-qty-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #bdc3c7;
+  background: white;
+  font-size: 0.8rem;
+  line-height: 1;
   cursor: pointer;
 }
 
-.confirm-order-button {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.2rem;
+.item-quantity {
+  margin: 0 5px;
+  font-size: 1rem;
   font-weight: bold;
-  background-color: #27ae60;
-  color: white;
-  border-radius: 10px;
-  border: none;
-  transition: background-color 0.2s;
-}
-.confirm-order-button:hover:not(:disabled) {
-  background-color: #1e8449;
 }
 
-/* 3. 固定フッター (Bottom Bar) */
+.item-price {
+  font-weight: bold;
+  color: #e74c3c;
+  min-width: 80px;
+  text-align: right;
+}
+
+.cart-summary {
+  padding-top: 20px;
+  border-top: 2px solid #34495e;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.summary-amount {
+  color: #e74c3c;
+  font-size: 2rem;
+}
+
+.order-confirm-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #2ecc71; /* 確定は緑 */
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-confirm-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+/* --- HISTORYタブ (2カラムレイアウト) のスタイル --- */
+
+.history-pane-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.history-content-main {
+  flex-grow: 1; /* リスト部分が広いスペースを取る */
+  padding: 20px;
+  background-color: white;
+  overflow-y: auto;
+}
+
+.history-summary-sidebar {
+  flex: 0 0 350px; /* サイドバーは幅固定 */
+  background-color: #f4f6f8;
+  padding: 20px;
+  border-left: 1px solid #bdc3c7;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 履歴カードのスタイル */
+.order-history-card {
+  border: 1px solid #bdc3c7;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+.order-header-info {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #bdc3c7;
+  padding-bottom: 5px;
+}
+
+.order-total {
+  color: #c0392b;
+  font-size: 1.1rem;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+
+.item-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #555;
+  padding: 3px 0;
+}
+
+/* 3. 固定フッター */
 .fixed-bottom-bar {
-  height: 70px; /* 高さ固定 */
-  background-color: #34495e; /* ダークグレー */
+  height: 80px; /* 高さ固定 */
   display: flex;
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+  background-color: white;
+  border-top: 1px solid #bdc3c7;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 .nav-tab {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: #bdc3c7; /* 通常のグレー */
+  color: #bdc3c7;
   cursor: pointer;
   padding: 5px 0;
   position: relative;
   font-size: 0.85em;
   font-weight: 500;
   transition: color 0.2s;
+  flex: 1;
+  height: 100%;
 }
 
 .nav-tab.active {
-  color: #e67e22; /* アクティブなタブはオレンジ */
+  color: #e67e22;
   font-weight: bold;
+  border-top: 3px solid #e67e22;
 }
 
 .nav-tab-icon {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   margin-bottom: 2px;
 }
 
@@ -284,54 +502,537 @@
   position: absolute;
   top: 5px;
   right: 20%;
-  background-color: #c0392b; /* 赤 */
+  background-color: #e74c3c;
   color: white;
   border-radius: 50%;
   padding: 2px 6px;
   font-size: 0.7rem;
   font-weight: 900;
+  min-width: 20px;
+  text-align: center;
 }
 
-/* スタッフ呼び出しボタンはフッター内で特別にデザイン */
-.staff-call-button-footer {
-  padding: 10px 15px;
+/* お会計ボタン (フッター内で大きく表示) */
+.payment-button-footer {
+  flex: 1.5; /* 他のタブより大きく */
+  height: 100%;
   background-color: #e74c3c; /* 赤 */
   color: white;
   border: none;
-  border-radius: 8px;
+  font-size: 1.2rem;
   font-weight: bold;
-  margin-left: 15px;
-  font-size: 1em;
+  cursor: pointer;
   transition: background-color 0.2s;
 }
-.staff-call-button-footer:hover {
-  background-color: #c0392b;
+
+.payment-button-footer:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
 }
 
 /* ------------------------------------- */
-/* SPLIT BILL SCREEN (割り勘画面) */
+/* CHECKOUT SCREEN STYLES (最終注文確認) */
+/* ------------------------------------- */
+.checkout-screen-full {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 30px 5%;
+  background-color: #f0f4f7;
+  align-items: center;
+}
+
+.checkout-screen-full .screen-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  border-bottom: 4px solid #3498db;
+  padding-bottom: 10px;
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
+}
+
+.order-details-box {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 900px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.order-details-box .list-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3498db;
+  margin-bottom: 15px;
+}
+
+.checkout-list-scroll {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 15px;
+}
+
+.order-list {
+  list-style: none;
+  padding: 0;
+}
+
+.order-item-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px dashed #ecf0f1;
+}
+
+.order-item-detail .item-name {
+  flex-grow: 1;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.order-item-detail .item-quantity {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  width: 80px;
+  text-align: right;
+}
+
+.order-item-detail .item-price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e74c3c;
+  width: 120px;
+  text-align: right;
+}
+
+.total-summary-area {
+  width: 100%;
+  max-width: 900px;
+  padding: 20px 30px;
+  background-color: #dbe4f1;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.summary-row-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.total-label {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.total-amount-large {
+  font-size: 5rem;
+  font-weight: 900;
+  color: #e74c3c;
+}
+
+.checkout-controls-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 900px;
+  gap: 20px;
+}
+
+.checkout-controls-footer .control-button {
+  flex: 1;
+  padding: 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkout-controls-footer .primary-btn {
+  background-color: #2ecc71; /* 確定は緑 */
+  color: white;
+}
+
+.checkout-controls-footer .primary-btn:hover {
+  background-color: #27ae60;
+}
+
+.checkout-controls-footer .secondary-btn {
+  background-color: #bdc3c7; /* 修正はグレー */
+  color: #2c3e50;
+}
+
+.checkout-controls-footer .secondary-btn:hover {
+  background-color: #95a5a6;
+}
+
+/* ------------------------------------- */
+/* COMPLETE SCREEN STYLES (注文完了) */
+/* ------------------------------------- */
+.complete-screen {
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  text-align: center;
+}
+
+.complete-content-box {
+  background: white;
+  padding: 50px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  width: 80%;
+  max-width: 600px;
+}
+
+.complete-content-box .title-text {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #27ae60; /* 緑 */
+  margin-bottom: 20px;
+  border-bottom: 4px solid #2ecc71;
+  padding-bottom: 15px;
+}
+
+.complete-content-box .order-id-display {
+  font-size: 1.5rem;
+  color: #7f8c8d;
+  margin-bottom: 25px;
+}
+
+.complete-content-box .message-text {
+  font-size: 1.8rem;
+  line-height: 1.4;
+  margin-bottom: 40px;
+  color: #34495e;
+}
+
+.complete-content-box .main-action-button {
+  width: 100%;
+  padding: 18px;
+  background-color: #3498db; /* 青 */
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.complete-content-box .main-action-button:hover {
+  background-color: #2980b9;
+}
+
+/* ------------------------------------- */
+/* PAYMENT OPTIONS SCREEN STYLES (会計選択) */
+/* ------------------------------------- */
+.payment-options-screen {
+  padding: 40px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.payment-options-screen .screen-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  width: 100%;
+  text-align: center;
+}
+
+.payment-summary {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 20px 40px;
+  border: 3px solid #e74c3c;
+  border-radius: 10px;
+  background-color: #ffeaea;
+}
+
+.total-label {
+  font-size: 1.2rem;
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.total-amount-display {
+  font-size: 5rem;
+  font-weight: 900;
+  color: #e74c3c;
+  margin-top: 5px;
+}
+
+.payment-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  width: 100%;
+  max-width: 900px;
+}
+
+.option-card {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.option-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.card-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.card-description {
+  color: #7f8c8d;
+  margin-bottom: 20px;
+}
+
+.option-card.full-payment .card-title {
+  color: #3498db;
+}
+.option-card.split-payment .card-title {
+  color: #f39c12;
+}
+
+.option-button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.option-button.primary {
+  background-color: #3498db;
+  color: white;
+}
+.option-button.secondary {
+  background-color: #f39c12;
+  color: white;
+}
+
+.back-button-bottom {
+  position: absolute;
+  bottom: 20px;
+  left: 40px;
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid #bdc3c7;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* ------------------------------------- */
+/* SPLIT BILL SCREEN STYLES (割り勘) */
 /* ------------------------------------- */
 .split-bill-screen {
-  /* ... (前のスタイルを維持) ... */
+  padding: 40px;
+  align-items: center;
+  justify-content: flex-start;
 }
 
-/* ------------------------------------- */
-/* MEDIA QUERIES (RESPONSIVENESS) */
-/* ------------------------------------- */
-@media (max-width: 900px) {
-  .content-area-main {
-    flex-direction: column;
-  }
-  .menu-pane {
-    flex: none;
-    height: 60vh;
-  }
-  .cart-right-pane {
-    min-width: auto;
-    flex: none;
-    height: 30vh;
-  }
-  .fixed-bottom-bar {
-    height: 60px;
-  }
+.split-bill-screen .screen-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  width: 100%;
+  text-align: center;
+}
+
+.split-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 30px;
+}
+
+.control-group {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.control-group label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.count-stepper {
+  display: flex;
+  align-items: center;
+}
+
+.count-stepper button {
+  width: 50px;
+  height: 50px;
+  font-size: 2rem;
+  background-color: #ecf0f1;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.count-stepper button:hover:not(:disabled) {
+  background-color: #bdc3c7;
+}
+
+.current-count {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0 15px;
+  min-width: 80px;
+  text-align: center;
+  color: #34495e;
+}
+
+.option-buttons .option-btn {
+  padding: 10px 15px;
+  margin-right: 10px;
+  border: 2px solid #bdc3c7;
+  background: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.option-buttons .option-btn.active {
+  background-color: #e67e22;
+  color: white;
+  border-color: #e67e22;
+  font-weight: bold;
+}
+
+.summary-section {
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-bottom: 2px solid #bdc3c7;
+  text-align: right;
+}
+
+.total-display {
+  font-size: 1.5rem;
+  color: #34495e;
+}
+
+.calculation-result-box {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 700px;
+}
+
+.result-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3498db;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+}
+
+.amount-label {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-top: 15px;
+}
+
+.amount-result {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #e74c3c;
+  margin-bottom: 10px;
+}
+
+.amount-result.sub-amount {
+  font-size: 2rem;
+  color: #2c3e50;
+}
+
+.adjusted-label {
+  margin-top: 30px; /* 代表者の金額表示は間隔を空ける */
+}
+
+.note-text {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  margin-top: 10px;
+}
+
+.split-controls-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 40px;
+}
+
+.split-controls-footer .back-button {
+  padding: 15px 30px;
+  background-color: #bdc3c7;
+  color: #2c3e50;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.split-controls-footer .call-staff-button-large {
+  padding: 15px 30px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.split-controls-footer .call-staff-button-large:hover {
+  background-color: #c0392b;
 }

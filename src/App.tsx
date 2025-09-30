@@ -1,229 +1,304 @@
-// src/App.tsx
+// src/App.tsx (修正完了版)
 
-import React, { useState, useMemo, useCallback } from "react";
-import "./styles.css"; // 全体のスタイル
+import React, { useState, useMemo } from "react";
+// types.ts (または index.ts) に定義されている型をインポート
+import { MenuItem, CartItem, Order, OrderItem } from "./types";
 
-// 画面コンポーネント
+// コンポーネントのインポート
 import TitleScreen from "./components/TitleScreen";
-import PartyInputScreen from "./components/PartyInputScreen"; // 席番号入力
 import OrderScreen, { NavTab } from "./components/OrderScreen";
-import CartScreen from "./components/CartScreen";
 import CheckoutScreen from "./components/CheckoutScreen";
 import CompleteScreen from "./components/CompleteScreen";
+import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
+
+// スタイルシート
 import "./components/styles.css";
 
-// 型定義
-import { Screen, MenuItem, CartItem, Order } from "./types";
+// 画面遷移の状態
+type AppScreen =
+  | "TITLE"
+  | "ORDER" // メイン画面 (注文、履歴タブを含む)
+  | "CHECKOUT" // 注文最終確認画面 (全画面)
+  | "COMPLETE_ORDER" // 注文完了画面 (全画面)
+  | "PAYMENT_OPTIONS" // 会計選択画面 (全画面)
+  | "SPLIT_BILL" // 割り勘計算画面 (全画面)
+  | "COMPLETE_PAYMENT"; // 会計依頼完了画面 (全画面)
 
-// ダミーデータ
-const DUMMY_MENU_ITEMS: MenuItem[] = [
+// ======================================
+// MOCK DATA (メニュー、実際のシステムではAPIから取得)
+// ======================================
+const MOCK_MENU: MenuItem[] = [
   {
     id: "M001",
     name: "マルゲリータ",
-    price: 1200,
-    description: "定番のトマトソースとモッツァレラ",
-    category: "Pick up",
-    imageUrl: "/images/pizza.webp",
+    price: 1280,
+    description: "定番のイタリアンピザ",
+    category: "ピザ",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PIZZA",
   },
   {
     id: "M002",
     name: "シーザーサラダ",
-    price: 850,
-    description: "シャキシャキのレタスと自家製ドレッシング",
+    price: 880,
+    description: "新鮮野菜とベーコン",
     category: "サラダ",
-    imageUrl: "/images/caesar.webp",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=SALAD",
   },
   {
     id: "M003",
-    name: "魚介のパスタ",
-    price: 1580,
-    description: "新鮮な魚介とトマトクリームソース",
+    name: "カルボナーラ",
+    price: 1450,
+    description: "濃厚なチーズと卵黄",
     category: "パスタ",
-    imageUrl: "/images/seafood_pasta.webp",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PASTA",
   },
   {
     id: "M004",
-    name: "フォンダンショコラ",
-    price: 650,
-    description: "温かい濃厚チョコケーキ",
-    category: "デザート",
-    imageUrl: "/images/chocolate.webp",
+    name: "アイスコーヒー",
+    price: 350,
+    description: "さっぱりとしたアイス",
+    category: "ドリンク",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=COFFEE",
   },
   {
     id: "M005",
-    name: "アイスコーヒー",
-    price: 400,
-    description: "すっきりとした味わいのアイスコーヒー",
-    category: "ドリンク",
-    imageUrl: "/images/coffee.webp",
+    name: "ティラミス",
+    price: 550,
+    description: "ほろ苦い大人のデザート",
+    category: "デザート",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=DESSERT",
   },
   {
     id: "M006",
-    name: "おすすめピザ",
-    price: 1450,
-    description: "シェフの気まぐれピザ",
-    category: "Pick up",
-    imageUrl: "/images/special_pizza.webp",
+    name: "海老とアボカドのサラダ",
+    price: 980,
+    description: "女性に人気の組み合わせ",
+    category: "サラダ",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=SHRIMP",
   },
-  // その他省略
+  {
+    id: "M007",
+    name: "ペペロンチーノ",
+    price: 1100,
+    description: "ニンニクと唐辛子のオイルベース",
+    category: "パスタ",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PEPERO",
+  },
+  {
+    id: "M008",
+    name: "オレンジジュース",
+    price: 300,
+    description: "果汁100%のフレッシュジュース",
+    category: "ドリンク",
+    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=OJ",
+  },
 ];
 
-const TABLET_ID = "T-01"; // タブレット固有のID（初期画面表示用）
+const TABLE_ID = "T-05";
 
 const App: React.FC = () => {
-  // ----------------------------------------------------
-  // ステート管理
-  // ----------------------------------------------------
-  const [currentScreen, setCurrentScreen] = useState<Screen>("TITLE");
-  const [tableNumber, setTableNumber] = useState<string>(""); // 席番号 (PARTY_INPUTで設定)
+  // --- State管理 ---
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>("TITLE");
+  const [tableNumber] = useState<string>(TABLE_ID);
   const [cart, setCart] = useState<CartItem[]>([]); // 現在のカート内容
-  const [activeTab, setActiveTab] = useState<NavTab>("ORDER"); // OrderScreen内のアクティブタブ
-  const [pendingOrders, setPendingOrders] = useState<Order[]>([]); // 過去の注文履歴
+  // 未会計の確定済み注文のリスト
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+  // 完了画面表示用
+  const [lastCompletedOrder, setLastCompletedOrder] = useState<Order | null>(
+    null
+  );
+  // OrderScreen内のタブ
+  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER");
 
-  // 注文が確定した最後の注文（CompleteScreen表示用）
-  const [lastOrder, setLastOrder] = useState<Order | null>(null);
-
-  // ----------------------------------------------------
-  // 計算ロジック
-  // ----------------------------------------------------
-
-  // カートの合計金額を計算
-  const totalAmount = useMemo(() => {
+  // --- 計算値 ---
+  const cartTotalAmount = useMemo(() => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [cart]);
 
-  // 注文履歴の合計金額（お会計画面用 - 今回はカートの合計を使用）
-  const orderHistoryTotalAmount = useMemo(() => {
-    return pendingOrders.reduce((total, order) => total + order.totalAmount, 0);
+  const pendingOrderTotalAmount = useMemo(() => {
+    // 確定済み注文の合計金額を計算
+    return pendingOrders.reduce(
+      (orderTotal, order) =>
+        orderTotal +
+        order.items.reduce(
+          (itemTotal, item) => itemTotal + item.price * item.quantity,
+          0
+        ),
+      0
+    );
   }, [pendingOrders]);
 
-  // ----------------------------------------------------
-  // ハンドラ関数
-  // ----------------------------------------------------
+  // ======================================
+  // 画面遷移ハンドラ
+  // ======================================
 
-  // 1. 席番号入力完了
-  const handleStartOrder = useCallback((num: string) => {
-    setTableNumber(num);
+  const handleStart = () => {
+    // TitleScreenからメイン画面へ遷移
     setCurrentScreen("ORDER");
-    setActiveTab("ORDER");
-  }, []);
+    setActiveOrderTab("ORDER");
+  };
 
-  // 2. カートの数量更新
-  const handleUpdateCart = useCallback(
-    (menuItemId: string, newQuantity: number) => {
-      const menuItem = DUMMY_MENU_ITEMS.find((item) => item.id === menuItemId);
+  const handleBackToOrderMenu = () => {
+    // 注文画面 (ORDERタブ) に戻る
+    setCurrentScreen("ORDER");
+    setActiveOrderTab("ORDER");
+  };
 
-      if (!menuItem) return;
+  const handleBackToOrderHistory = () => {
+    // 注文画面 (HISTORYタブ) に戻る
+    setCurrentScreen("ORDER");
+    setActiveOrderTab("HISTORY");
+  };
 
-      setCart((prevCart) => {
-        const existingItem = prevCart.find(
+  // OrderScreen内のタブ切り替えを処理
+  const handleNavigateOrderTab = (tab: NavTab) => {
+    setActiveOrderTab(tab);
+    // TOP, ORDER, HISTORYのタブ切り替えはAppScreen 'ORDER' に留まる
+    setCurrentScreen("ORDER");
+  };
+
+  // ======================================
+  // 注文ロジック
+  // ======================================
+
+  const handleUpdateCart = (menuItemId: string, newQuantity: number) => {
+    const menuItem = MOCK_MENU.find((m) => m.id === menuItemId);
+    if (!menuItem) return;
+
+    if (newQuantity <= 0) {
+      setCart((prev) => prev.filter((item) => item.menuItemId !== menuItemId));
+    } else {
+      setCart((prev) => {
+        const existingItem = prev.find(
           (item) => item.menuItemId === menuItemId
         );
-
         if (existingItem) {
-          if (newQuantity > 0) {
-            // 既存アイテムの数量を更新
-            return prevCart.map((item) =>
-              item.menuItemId === menuItemId
-                ? { ...item, quantity: newQuantity }
-                : item
-            );
-          } else {
-            // 数量が0以下ならカートから削除
-            return prevCart.filter((item) => item.menuItemId !== menuItemId);
-          }
-        } else if (newQuantity > 0) {
-          // 新しいアイテムを追加
-          return [
-            ...prevCart,
-            {
-              id: menuItem.id, // CartItem の id は MenuItem の id と同じで簡略化
-              menuItemId: menuItem.id,
-              name: menuItem.name,
-              price: menuItem.price,
-              quantity: newQuantity,
-            },
-          ];
+          return prev.map((item) =>
+            item.menuItemId === menuItemId
+              ? { ...item, quantity: newQuantity }
+              : item
+          );
+        } else {
+          const newCartItem: CartItem = {
+            id: `C${Date.now()}`,
+            menuItemId: menuItemId,
+            name: menuItem.name,
+            price: menuItem.price,
+            quantity: newQuantity,
+          };
+          return [...prev, newCartItem];
         }
-        return prevCart;
       });
-    },
-    []
-  );
+    }
+  };
 
-  // 3. 注文確定（CheckoutScreenから呼び出される）
-  const handlePlaceOrder = useCallback(() => {
-    if (cart.length === 0 || tableNumber === "") return;
+  const handleGoToCheckout = () => {
+    if (cart.length > 0) {
+      setCurrentScreen("CHECKOUT"); // 注文最終確認画面へ
+    }
+  };
+
+  const handlePlaceOrder = () => {
+    // CartItemをOrderItemに変換 (OrderItemはMenuItemの全情報+quantityを持つ)
+    const orderItems: OrderItem[] = cart.map((cartItem) => {
+      const menuItem = MOCK_MENU.find((m) => m.id === cartItem.menuItemId);
+
+      // OrderItem型に不足しているMenuItemのプロパティを補完
+      return {
+        id: cartItem.menuItemId,
+        name: cartItem.name,
+        price: cartItem.price,
+        description: menuItem?.description ?? "",
+        category: menuItem?.category ?? "",
+        imageUrl: menuItem?.imageUrl ?? "",
+        quantity: cartItem.quantity,
+      } as OrderItem; // OrderItem型を明示
+    });
 
     const newOrder: Order = {
-      id: Date.now().toString(), // ユニークな注文ID
+      id: `O${Date.now()}`,
       tableNumber: tableNumber,
-      items: cart,
-      totalAmount: totalAmount,
+      items: orderItems,
+      totalAmount: cartTotalAmount, // OrderインターフェースにtotalAmountとtimestampが必要
       timestamp: Date.now(),
     };
 
-    // 注文履歴に追加し、カートをクリア
-    setPendingOrders((prevOrders) => [newOrder, ...prevOrders]);
+    // 2. 注文履歴に追加 (未会計リスト)
+    setPendingOrders((prev) => [...prev, newOrder]);
+
+    // 3. カートをリセット
     setCart([]);
-    setLastOrder(newOrder); // 完了画面表示用
-    setCurrentScreen("COMPLETE");
-  }, [cart, tableNumber, totalAmount]);
 
-  // 4. スタッフ呼び出し（OrderScreen/SplitBillScreenから）
-  const handleCallStaff = useCallback(() => {
-    alert("スタッフを呼び出しています...🛎️");
-    // 実際にはAPIコール
-  }, []);
+    // 4. 注文完了画面へ遷移
+    setLastCompletedOrder(newOrder);
+    setCurrentScreen("COMPLETE_ORDER");
+  };
 
-  // 5. お会計に進む（Historyタブから/Cartから）
-  const handleGoToPayment = useCallback(() => {
-    // 注文履歴があれば会計オプションへ、なければスタッフ呼び出しを促すなど
-    // 今回は直接SPLIT_BILLへ進むか、お会計の合計金額を表示する画面を経由
-    setCurrentScreen("SPLIT_BILL"); // 直接割り勘画面へ
-  }, []);
+  // ======================================
+  // 会計ロジック
+  // ======================================
 
-  // ----------------------------------------------------
+  const handleGoToPaymentOptions = () => {
+    // 注文または履歴画面から、会計選択画面へ
+    if (pendingOrders.length === 0) {
+      // 🚨 alert() の代わりにカスタムUIを使用することが推奨されますが、
+      // ここではロジックの確認のためconsole.logとreturnを使用
+      console.log("確定済みのご注文がないため、お会計に進めません。");
+      return;
+    }
+    setCurrentScreen("PAYMENT_OPTIONS");
+  };
+
+  const handleGoToSplitBill = () => {
+    // 会計選択画面から、割り勘計算画面へ
+    setCurrentScreen("SPLIT_BILL");
+  };
+
+  const handleCallStaff = (message: string) => {
+    // 1. スタッフ呼び出し処理 (APIコールをシミュレート)
+    console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
+
+    // 2. 会計依頼完了画面へ遷移し、未会計リストをクリア
+    setLastCompletedOrder({
+      id: `P${Date.now()}`, // Payment IDとして使用
+      tableNumber: tableNumber,
+      items: [],
+      totalAmount: pendingOrderTotalAmount,
+      timestamp: Date.now(),
+    });
+    setPendingOrders([]); // 会計処理が始まったら、未会計リストをクリア
+    setCurrentScreen("COMPLETE_PAYMENT");
+  };
+
+  // ======================================
   // 画面レンダリング
-  // ----------------------------------------------------
+  // ======================================
+
   const renderScreen = () => {
     switch (currentScreen) {
       case "TITLE":
-        return (
-          <TitleScreen
-            onStart={() => setCurrentScreen("PARTY_INPUT")}
-            tabletId={TABLET_ID}
-          />
-        );
-
-      case "PARTY_INPUT":
-        return <PartyInputScreen onStartOrder={handleStartOrder} />;
+        return <TitleScreen onStart={handleStart} tabletId={tableNumber} />;
 
       case "ORDER":
         return (
           <OrderScreen
-            userId={tableNumber} // 席番号をユーザーIDとして利用
-            menuItems={DUMMY_MENU_ITEMS}
+            userId={tableNumber}
+            menuItems={MOCK_MENU}
             cart={cart}
-            totalAmount={totalAmount}
+            totalAmount={cartTotalAmount}
             onUpdateCart={handleUpdateCart}
-            onConfirmOrder={() => setCurrentScreen("CART")}
-            onCallStaff={handleCallStaff}
-            onGoToPayment={handleGoToPayment}
-            onNavigate={setActiveTab}
-            activeTab={activeTab}
+            onConfirmOrder={handleGoToCheckout} // 注文確認画面へ
+            onCallStaff={() =>
+              handleCallStaff(`スタッフ呼び出し (${tableNumber})`)
+            }
+            onGoToPayment={handleGoToPaymentOptions} // 会計オプション画面へ
+            onNavigate={handleNavigateOrderTab}
+            activeTab={activeOrderTab}
             pendingOrderCount={pendingOrders.length}
-          />
-        );
-
-      case "CART":
-        return (
-          <CartScreen
-            cart={cart}
-            onUpdateCart={handleUpdateCart}
-            onGoToCheckout={() => setCurrentScreen("CHECKOUT")}
-            onBackToOrder={() => setCurrentScreen("ORDER")}
+            // 履歴タブに必要な情報を渡す
+            pendingOrders={pendingOrders}
+            pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
         );
 
@@ -231,39 +306,57 @@ const App: React.FC = () => {
         return (
           <CheckoutScreen
             orderItems={cart}
-            onPlaceOrder={handlePlaceOrder}
-            onBackToOrder={() => setCurrentScreen("CART")}
+            onPlaceOrder={handlePlaceOrder} // 注文確定
+            onBackToOrder={handleBackToOrderMenu}
           />
         );
 
-      case "COMPLETE":
+      case "COMPLETE_ORDER":
         return (
           <CompleteScreen
-            order={lastOrder}
-            status="確定済み"
-            onGoBack={() => {
-              setCurrentScreen("ORDER");
-              setActiveTab("ORDER"); // メインの注文タブに戻す
-            }}
+            order={lastCompletedOrder}
+            status="ORDER" // 注文完了
+            onGoBack={handleBackToOrderMenu}
+          />
+        );
+
+      case "PAYMENT_OPTIONS":
+        return (
+          <PaymentOptionsScreen
+            totalAmount={pendingOrderTotalAmount}
+            onGoToSplitBill={handleGoToSplitBill}
+            onCallStaff={() =>
+              handleCallStaff(`会計依頼: 現金/カード (${tableNumber})`)
+            } // 会計依頼完了へ遷移
+            onBack={handleBackToOrderHistory} // 履歴タブに戻る
           />
         );
 
       case "SPLIT_BILL":
         return (
           <SplitBillScreen
-            // 会計対象は「過去の注文合計 + カートの合計」とすべきだが、今回はカートの合計で簡略化
-            totalAmount={totalAmount + orderHistoryTotalAmount} // 全ての未会計分
-            onCallStaff={handleCallStaff}
-            onBack={() => setCurrentScreen("ORDER")}
+            totalAmount={pendingOrderTotalAmount}
+            onCallStaff={() =>
+              handleCallStaff(`会計依頼: 割り勘希望 (${tableNumber})`)
+            } // 会計依頼完了へ遷移
+            onBack={handleGoToPaymentOptions} // 会計オプション画面に戻る
+          />
+        );
+
+      case "COMPLETE_PAYMENT":
+        return (
+          <CompleteScreen
+            order={lastCompletedOrder}
+            status="PAYMENT" // 会計依頼完了
+            onGoBack={handleBackToOrderHistory} // 履歴タブに戻る
           />
         );
 
       default:
-        return <div>404: 画面が見つかりません</div>;
+        return <TitleScreen onStart={handleStart} tabletId={TABLE_ID} />;
     }
   };
 
-  // アプリケーション全体コンテナ
   return <div className="app-container">{renderScreen()}</div>;
 };
 

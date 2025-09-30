@@ -1,10 +1,16 @@
-// src/components/OrderScreen.tsx - 画像レイアウトに合わせた刷新
+// src/components/OrderScreen.tsx - UI/UX改善とエラー修正を適用した完全版
 
 import React, { useMemo, useState } from "react";
-import { CartItem, MenuItem } from "../types";
+import { CartItem, MenuItem, Order, OrderItem } from "../types";
+// 履歴タブの内容は別ファイル（OrderHistoryPane.tsx）で実装されていると想定しインポート
+import OrderHistoryPane from "./OrderHistoryPane";
+
+// ======================================
+// 1. 型定義と定数
+// ======================================
 
 // フッタータブの種類
-export type NavTab = "TOP" | "ORDER" | "HISTORY" | "PAYMENT";
+export type NavTab = "TOP" | "ORDER" | "HISTORY"; // PAYMENTは全画面遷移になったため削除
 
 interface OrderScreenProps {
   userId: string;
@@ -12,200 +18,259 @@ interface OrderScreenProps {
   cart: CartItem[];
   totalAmount: number;
   onUpdateCart: (menuItemId: string, quantity: number) => void;
-  onConfirmOrder: () => void;
+  onConfirmOrder: () => void; // CheckoutScreenへ遷移
   onCallStaff: () => void;
-  onGoToPayment: () => void;
-  // 新しいプロパティ
+  onGoToPayment: () => void; // PaymentOptionsScreenへ遷移
+
+  // ナビゲーション
   onNavigate: (tab: NavTab) => void;
   activeTab: NavTab;
   pendingOrderCount: number; // 注文バッジ用
+
+  // HISTORYタブ表示用プロパティ (App.tsxから渡される)
+  pendingOrders: Order[];
+  pendingOrderTotalAmount: number;
 }
 
-// メニューカテゴリの抽出
-const CATEGORIES = ["Pick up", "サラダ", "パスタ", "デザート", "ドリンク"];
+// メニューカテゴリの抽出 (App.tsxのMOCK_MENUに合わせて適宜調整してください)
+const CATEGORIES = [
+  "Pick up",
+  "ピザ",
+  "サラダ",
+  "パスタ",
+  "デザート",
+  "ドリンク",
+];
 
-// メニューコンテンツ（画像グリッド）
+// ======================================
+// 2. 内部コンポーネント (注文メニュー表示用)
+// ======================================
+
+// 2.1. カテゴリナビゲーション (左側カラム)
+const CategoryNav: React.FC<{
+  categories: string[];
+  selectedCategory: string;
+  onSelectCategory: (c: string) => void;
+}> = ({ categories, selectedCategory, onSelectCategory }) => {
+  return (
+    <div className="category-nav">
+      {categories.map((category) => (
+        <button
+          key={category}
+          className={`category-tab ${
+            selectedCategory === category ? "active" : ""
+          }`}
+          onClick={() => onSelectCategory(category)}
+        >
+          {category}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// 2.2. メニューコンテンツ (中央カラム)
 const MenuContent: React.FC<{
   menuItems: MenuItem[];
+  cart: CartItem[]; // 現在のカート情報を参照するために追加
   onUpdateCart: (id: string, q: number) => void;
   selectedCategory: string;
-}> = ({ menuItems, onUpdateCart, selectedCategory }) => {
+}> = ({ menuItems, cart, onUpdateCart, selectedCategory }) => {
   // カテゴリでフィルタリング
   const filteredItems = useMemo(() => {
     if (selectedCategory === "Pick up") {
-      // Pick upカテゴリは全て表示として扱う
       return menuItems;
     }
     return menuItems.filter((item) => item.category === selectedCategory);
   }, [menuItems, selectedCategory]);
 
-  return (
-    <div className="menu-content">
-      <div className="menu-card-grid">
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className="menu-card"
-            onClick={() => onUpdateCart(item.id, 1)}
-            role="button"
-          >
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              // 画像がロードできない場合のフォールバック（目立つ色と文字）
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src = `https://placehold.co/200x150/d35400/ffffff?text=${item.name}`;
-              }}
-            />
-            <span className="menu-card-price">
-              ¥{item.price.toLocaleString()}
-            </span>
-            <div className="menu-card-info">
-              <p className="menu-card-name">{item.name}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// カート/注文確認ペイン（右側）
-const CartRightPane: React.FC<{
-  cart: CartItem[];
-  totalAmount: number;
-  onUpdateCart: (id: string, q: number) => void;
-  onConfirmOrder: () => void;
-}> = ({ cart, totalAmount, onUpdateCart, onConfirmOrder }) => {
-  // 画像ではカートアイテム一つ分の確認画面のように見えるが、ここでは現在のカート内容を表示する
-  // カートの合計額と注文確定ボタンを配置する
-  const isOrderReady = cart.length > 0;
+  const getItemQuantity = (menuItemId: string) => {
+    return cart.find((item) => item.menuItemId === menuItemId)?.quantity || 0;
+  };
 
   return (
-    <div className="cart-right-pane">
-      <h3>この内容で注文しますか？</h3>
+    <div className="menu-list-container">
+      <h2>{selectedCategory}</h2>
+      <div className="menu-content">
+        {filteredItems.map((item) => {
+          const quantity = getItemQuantity(item.id);
+          return (
+            <div key={item.id} className="menu-item">
+              <img src={item.imageUrl} alt={item.name} className="menu-image" />
+              <div className="menu-info">
+                <p className="menu-name">{item.name}</p>
+                <p className="menu-description">{item.description}</p>
+                <p className="menu-price">¥{item.price.toLocaleString()}</p>
+              </div>
 
-      <div className="order-confirmation-box">
-        {cart.length === 0 ? (
-          <p style={{ color: "#7f8c8d", fontStyle: "italic" }}>
-            メニューを選択してください。
-          </p>
-        ) : (
-          <>
-            <ul className="order-item-list" style={{ maxHeight: "40vh" }}>
-              {cart.map((item) => (
-                <li key={item.id}>
-                  <div style={{ flexGrow: 1 }}>{item.name}</div>
-                  <div className="quantity-control">
-                    <button
-                      onClick={() =>
-                        onUpdateCart(item.menuItemId, item.quantity - 1)
-                      }
-                      disabled={item.quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <span style={{ padding: "0 8px" }}>{item.quantity}点</span>
-                    <button
-                      onClick={() =>
-                        onUpdateCart(item.menuItemId, item.quantity + 1)
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div style={{ marginLeft: "10px" }}>
-                    ¥{(item.price * item.quantity).toLocaleString()}
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="cart-summary" style={{ padding: "15px 0 0" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                }}
-              >
-                <p style={{ fontWeight: "bold" }}>合計 (税込):</p>
-                <strong style={{ color: "#d35400" }}>
-                  ¥{totalAmount.toLocaleString()}
-                </strong>
+              <div className="quantity-control">
+                {/* 数量マイナスボタン */}
+                <button
+                  className="quantity-button minus"
+                  onClick={() => onUpdateCart(item.id, quantity - 1)}
+                  disabled={quantity === 0}
+                >
+                  −
+                </button>
+                <span className="quantity-display">{quantity}</span>
+                {/* 数量プラスボタン */}
+                <button
+                  className="quantity-button plus"
+                  onClick={() => onUpdateCart(item.id, quantity + 1)}
+                >
+                  ＋
+                </button>
               </div>
             </div>
-          </>
-        )}
+          );
+        })}
       </div>
-
-      <button
-        className="confirm-order-button"
-        onClick={onConfirmOrder}
-        disabled={!isOrderReady}
-      >
-        注文を確定する
-      </button>
     </div>
   );
 };
 
-// Order Screen (メインコンポーネント)
-const OrderScreen: React.FC<OrderScreenProps> = (props) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("パスタ");
-
-  // どのタブがアクティブかによって表示内容を切り替えるロジックをOrderScreen側で持たせる
-  // (ここでは画像デザインに集中するため、ORDERタブが常にアクティブな想定でレイアウトを構築)
+// 2.3. カートサイドバー (右側カラム)
+const CartSidebar: React.FC<{
+  cart: CartItem[];
+  totalAmount: number;
+  onUpdateCart: (menuItemId: string, quantity: number) => void;
+  onConfirmOrder: () => void;
+}> = ({ cart, totalAmount, onUpdateCart, onConfirmOrder }) => {
+  const handleUpdateQuantity = (item: CartItem, change: number) => {
+    onUpdateCart(item.menuItemId, item.quantity + change);
+  };
 
   return (
-    <div className="screen order-screen-layout">
-      {/* メインコンテンツエリア (メニューとカートの横並び) */}
-      <div className="content-area-main">
-        {/* メニューペイン (左側) */}
-        <div className="menu-pane">
-          {/* カテゴリタブとサブフィルター */}
-          <div className="menu-navigation">
-            <div className="category-tabs">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  className={`category-tab ${
-                    cat === selectedCategory ? "active" : ""
-                  }`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-            <div className="sub-filters">
-              {/* サブフィルターの例（画像に合わせる） */}
-              <button className="sub-filter-button">新メニュー</button>
-              <button className="sub-filter-button">今月のおすすめ</button>
-            </div>
-          </div>
+    <div className="order-sidebar">
+      <h2 className="sidebar-title">🛒 現在の注文</h2>
 
-          {/* メニューアイテムのグリッド */}
+      {cart.length === 0 ? (
+        <p className="empty-cart-message">
+          メニューから商品を選択してください。
+        </p>
+      ) : (
+        <ul className="cart-list">
+          {cart.map((item) => (
+            <li key={item.menuItemId} className="cart-item">
+              <span className="item-name">{item.name}</span>
+              <div className="item-control">
+                <button
+                  className="cart-qty-btn"
+                  onClick={() => handleUpdateQuantity(item, -1)}
+                  disabled={item.quantity <= 1}
+                >
+                  −
+                </button>
+                <span className="item-quantity">{item.quantity}</span>
+                <button
+                  className="cart-qty-btn"
+                  onClick={() => handleUpdateQuantity(item, 1)}
+                >
+                  ＋
+                </button>
+              </div>
+              <span className="item-price">
+                ¥{(item.price * item.quantity).toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* 合計と注文確定ボタン */}
+      <div className="cart-summary">
+        <div className="summary-row">
+          <span>合計 (税込)</span>
+          <span className="summary-amount">
+            ¥{totalAmount.toLocaleString()}
+          </span>
+        </div>
+        <button
+          className="order-confirm-button"
+          onClick={onConfirmOrder}
+          disabled={cart.length === 0}
+        >
+          注文内容を確認する →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ======================================
+// 3. メインコンポーネント (OrderScreen)
+// ======================================
+
+const OrderScreen: React.FC<OrderScreenProps> = (props) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    CATEGORIES[0]
+  );
+
+  // メインコンテンツのレンダリングロジック（ORDER/HISTORYで切り替え）
+  const renderMainContent = () => {
+    if (props.activeTab === "ORDER" || props.activeTab === "TOP") {
+      // 注文メニュー（3カラムレイアウト）
+      return (
+        <>
+          <CategoryNav
+            categories={CATEGORIES}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
           <MenuContent
             menuItems={props.menuItems}
+            cart={props.cart}
             onUpdateCart={props.onUpdateCart}
             selectedCategory={selectedCategory}
           />
-        </div>
-
-        {/* カート/注文確認ペイン (右側) */}
-        <CartRightPane
-          cart={props.cart}
-          totalAmount={props.totalAmount}
-          onUpdateCart={props.onUpdateCart}
-          onConfirmOrder={props.onConfirmOrder}
+          <CartSidebar
+            cart={props.cart}
+            totalAmount={props.totalAmount}
+            onUpdateCart={props.onUpdateCart}
+            onConfirmOrder={props.onConfirmOrder}
+          />
+        </>
+      );
+    } else if (props.activeTab === "HISTORY") {
+      // 履歴・お会計（2カラムレイアウト）
+      // OrderHistoryPaneはApp.tsxからのプロパティをそのまま渡す
+      return (
+        <OrderHistoryPane
+          pendingOrders={props.pendingOrders}
+          orderHistoryTotalAmount={props.pendingOrderTotalAmount}
+          onGoToPaymentView={props.onGoToPayment}
+          onCallStaff={props.onCallStaff}
         />
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="order-screen-layout">
+      {/* 1. ヘッダー */}
+      <header className="order-header">
+        <span className="tablet-info">テーブル: {props.userId}</span>
+        <button
+          className="call-staff-button-header"
+          onClick={props.onCallStaff}
+        >
+          スタッフを呼ぶ 🙋‍♂️
+        </button>
+      </header>
+
+      {/* 2. メインエリア */}
+      <div
+        className={`order-main-area ${
+          props.activeTab === "HISTORY" ? "history-layout" : ""
+        }`}
+      >
+        {renderMainContent()}
       </div>
 
-      {/* 固定フッター (画像フッターナビゲーション) */}
+      {/* 3. 固定フッター (画像フッターナビゲーション) */}
       <div className="fixed-bottom-bar">
-        {/* ナビゲーションタブ */}
+        {/* TOPタブ */}
         <div
           className={`nav-tab ${props.activeTab === "TOP" ? "active" : ""}`}
           onClick={() => props.onNavigate("TOP")}
@@ -214,6 +279,7 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
           <span>トップ</span>
         </div>
 
+        {/* ORDERタブ */}
         <div
           className={`nav-tab ${props.activeTab === "ORDER" ? "active" : ""}`}
           onClick={() => props.onNavigate("ORDER")}
@@ -225,39 +291,22 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
           )}
         </div>
 
+        {/* HISTORYタブ */}
         <div
           className={`nav-tab ${props.activeTab === "HISTORY" ? "active" : ""}`}
-          onClick={() => {
-            props.onNavigate("HISTORY"); // タブ切り替え
-            // HISTORYタブを選択した際にお会計（SplitBillScreen）へ遷移するロジックをOrderScreen内に入れることも可能だが、
-            // App.tsx側で制御する場合、ここではタブ切り替えのみを行う。
-            // 実際のお会計ボタンはフッターの「お会計」ボタンが担う。
-          }}
+          onClick={() => props.onNavigate("HISTORY")}
         >
           <span className="nav-tab-icon">🧾</span>
           <span>履歴・お会計</span>
         </div>
 
-        {/* スタッフ呼び出しボタン（画像フッターに合わせたデザイン） */}
+        {/* お会計ボタン（フッター内で大きく表示） */}
         <button
-          className="staff-call-button-footer"
-          onClick={props.onCallStaff}
+          className="payment-button-footer"
+          onClick={props.onGoToPayment}
+          disabled={props.pendingOrderTotalAmount === 0}
         >
-          <span role="img" aria-label="hand">
-            ✋
-          </span>{" "}
-          スタッフ呼び出し
-        </button>
-
-        {/* 会計依頼ボタン (画像にはないが、SplitBillScreenへの遷移用として想定) */}
-        <button
-          className="staff-call-button-footer call-for-payment" // 別のCSSクラスでデザインを分ける
-          onClick={props.onGoToPayment} // SplitBillScreenへ遷移
-        >
-          <span role="img" aria-label="bill">
-            💰
-          </span>{" "}
-          お会計
+          お会計をする 💳
         </button>
       </div>
     </div>

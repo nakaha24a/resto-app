@@ -1,4 +1,4 @@
-// src/components/TitleScreen.tsx - すべてのインラインスタイルを排除し、CSSクラスを使用
+// src/components/TitleScreen.tsx (修正)
 
 import React, { useState } from "react";
 
@@ -10,47 +10,42 @@ interface TitleScreenProps {
 const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, tabletId }) => {
   const [isPressed, setIsPressed] = useState(false);
 
-  // マウス/タッチダウン時の処理
   const handleMouseDown = () => {
     setIsPressed(true);
   };
 
-  // マウス/タッチアップ時の処理（クリックイベントが発火するタイミング）
   const handleMouseUp = () => {
     setIsPressed(false);
-    onStart();
+    onStart(); // 次の画面へ遷移
   };
 
   return (
-    // CSSクラス 'title-screen' が背景色 (#1e272e) とレイアウトを担当
+    // クラス 'title-screen' でモダンな背景とレイアウトを適用
     <div className="screen title-screen">
-      <header className="title-screen-header">タブレットID: {tabletId}</header>
+      <header className="title-screen-header">
+        <span className="tablet-id-text">タブレットID: {tabletId}</span>
+      </header>
 
-      {/* スタイルを直接指定せず、CSSクラスに依存 */}
-      <div style={{ paddingBottom: "50px" }}>
-        <h1>Tabletia</h1>
-        <h2>スマートテーブルオーダーシステム</h2>
+      <div className="title-center-content">
+        <h1 className="main-title">🍽️ Tabletia</h1>
+        <h2 className="sub-title">スマートテーブルオーダーシステム</h2>
       </div>
 
-      <div
-        // CSSクラスでスタイルを適用し、isPressedでアクティブ状態を切り替え
-        className={`start-button-area ${
-          isPressed ? "start-button-active" : ""
-        }`}
-        onClick={handleMouseUp}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={handleMouseUp}
-        role="button"
-        aria-label="画面をタッチして注文開始"
-      >
-        画面をタッチして注文開始
+      <div className="start-button-area">
+        <p className="start-prompt">タッチして注文を開始</p>
+        <button
+          className={`start-button ${isPressed ? "pressed" : ""}`}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchEnd={handleMouseUp}
+          // onClickイベントはタッチイベントと重複するため削除または無効化
+          onClick={(e) => e.preventDefault()}
+        >
+          <span className="start-button-icon">👆</span>
+          <span className="start-button-text">START</span>
+        </button>
       </div>
-
-      <p className="title-message">
-        タップ操作で追加注文や会計依頼が可能です。
-      </p>
     </div>
   );
 };
