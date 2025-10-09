@@ -1,110 +1,117 @@
-// src/components/OrderScreen.tsx - UI/UX改善とエラー修正を適用した完全版
+// src/components/OrderScreen.tsx (最終修正・完成版)
 
 import React, { useMemo, useState } from "react";
-import { CartItem, MenuItem, Order, OrderItem } from "../types";
-// 履歴タブの内容は別ファイル（OrderHistoryPane.tsx）で実装されていると想定しインポート
+import { CartItem, MenuItem, Order, Option } from "../types";
 import OrderHistoryPane from "./OrderHistoryPane";
 
 // ======================================
 // 1. 型定義と定数
 // ======================================
 
-// フッタータブの種類
-export type NavTab = "TOP" | "ORDER" | "HISTORY"; // PAYMENTは全画面遷移になったため削除
+export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
 interface OrderScreenProps {
   userId: string;
   menuItems: MenuItem[];
   cart: CartItem[];
   totalAmount: number;
-  onUpdateCart: (menuItemId: string, quantity: number) => void;
-  onConfirmOrder: () => void; // CheckoutScreenへ遷移
+  onUpdateCart: (
+    menuItemId: string,
+    quantity: number,
+    selectedOptions?: Option[]
+  ) => void;
+  onPlaceOrder: () => void;
   onCallStaff: () => void;
-  onGoToPayment: () => void; // PaymentOptionsScreenへ遷移
-
-  // ナビゲーション
+  onGoToPayment: () => void;
   onNavigate: (tab: NavTab) => void;
   activeTab: NavTab;
-  pendingOrderCount: number; // 注文バッジ用
-
-  // HISTORYタブ表示用プロパティ (App.tsxから渡される)
+  pendingOrderCount: number;
   pendingOrders: Order[];
   pendingOrderTotalAmount: number;
 }
 
-// メニューカテゴリの抽出 (App.tsxのMOCK_MENUに合わせて適宜調整してください)
-const CATEGORIES = [
-  "Pick up",
-  "ピザ",
-  "サラダ",
-  "パスタ",
-  "デザート",
-  "ドリンク",
-];
+interface ModalState {
+  isOpen: boolean;
+  menuItem: MenuItem | null;
+}
 
 // ======================================
-// 2. 内部コンポーネント (注文メニュー表示用)
+// 2. ヘルパー関数
 // ======================================
 
-// 2.1. カテゴリナビゲーション (左側カラム)
+const getCategories = (menuItems: MenuItem[]): string[] => {
+  const categories = new Set(menuItems.map((item) => item.category));
+  return ["Pick up", ...Array.from(categories)];
+};
+
+// ======================================
+// 3. 内部コンポーネント
+// ======================================
+
 const CategoryNav: React.FC<{
   categories: string[];
   selectedCategory: string;
   onSelectCategory: (c: string) => void;
-}> = ({ categories, selectedCategory, onSelectCategory }) => {
-  return (
-    <div className="category-nav">
-      {categories.map((category) => (
-        <button
-          key={category}
-          className={`category-tab ${
-            selectedCategory === category ? "active" : ""
-          }`}
-          onClick={() => onSelectCategory(category)}
-        >
-          {category}
-        </button>
-      ))}
-    </div>
-  );
-};
+}> = ({ categories, selectedCategory, onSelectCategory }) => (
+  <div className="category-nav">
+    {categories.map((category) => (
+      <button
+        key={category}
+        className={`category-tab ${
+          selectedCategory === category ? "active" : ""
+        }`}
+        onClick={() => onSelectCategory(category)}
+      >
+        {category}
+      </button>
+    ))}
+  </div>
+);
 
-// 2.2. メニューコンテンツ (中央カラム)
 const MenuContent: React.FC<{
   menuItems: MenuItem[];
-  cart: CartItem[]; // 現在のカート情報を参照するために追加
-  onUpdateCart: (id: string, q: number) => void;
-  selectedCategory: string;
-}> = ({ menuItems, cart, onUpdateCart, selectedCategory }) => {
-  // カテゴリでフィルタリング
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === "Pick up") {
-      return menuItems;
-    }
-    return menuItems.filter((item) => item.category === selectedCategory);
-  }, [menuItems, selectedCategory]);
-
+  cart: CartItem[];
+  onUpdateCart: (id: string, q: number, options?: Option[]) => void;
+  onItemSelect: (item: MenuItem) => void;
+}> = ({ menuItems, cart, onUpdateCart, onItemSelect }) => {
   const getItemQuantity = (menuItemId: string) => {
-    return cart.find((item) => item.menuItemId === menuItemId)?.quantity || 0;
+    return cart
+      .filter(
+        (item) =>
+          item.menuItemId === menuItemId &&
+          (!item.selectedOptions || item.selectedOptions.length === 0)
+      )
+      .reduce((sum, item) => sum + item.quantity, 0);
   };
 
   return (
     <div className="menu-list-container">
-      <h2>{selectedCategory}</h2>
       <div className="menu-content">
-        {filteredItems.map((item) => {
+        {menuItems.map((item) => {
           const quantity = getItemQuantity(item.id);
           return (
             <div key={item.id} className="menu-item">
-              <img src={item.imageUrl} alt={item.name} className="menu-image" />
-              <div className="menu-info">
-                <p className="menu-name">{item.name}</p>
-                <p className="menu-description">{item.description}</p>
-                <p className="menu-price">¥{item.price.toLocaleString()}</p>
+              <div
+                className="menu-item-clickable"
+                onClick={() => onItemSelect(item)}
+              >
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="menu-image"
+                />
+                <div className="menu-info">
+                  <p className="menu-name">{item.name}</p>
+                  <p className="menu-description">{item.description}</p>
+                  {item.allergens && item.allergens.length > 0 && (
+                    <p className="menu-allergens">
+                      アレルギー: {item.allergens.join(", ")}
+                    </p>
+                  )}
+                  <p className="menu-price">¥{item.price.toLocaleString()}</p>
+                </div>
               </div>
-
               <div className="quantity-control">
-                {/* 数量マイナスボタン */}
                 <button
                   className="quantity-button minus"
                   onClick={() => onUpdateCart(item.id, quantity - 1)}
@@ -113,7 +120,6 @@ const MenuContent: React.FC<{
                   −
                 </button>
                 <span className="quantity-display">{quantity}</span>
-                {/* 数量プラスボタン */}
                 <button
                   className="quantity-button plus"
                   onClick={() => onUpdateCart(item.id, quantity + 1)}
@@ -129,35 +135,50 @@ const MenuContent: React.FC<{
   );
 };
 
-// 2.3. カートサイドバー (右側カラム)
 const CartSidebar: React.FC<{
   cart: CartItem[];
   totalAmount: number;
-  onUpdateCart: (menuItemId: string, quantity: number) => void;
-  onConfirmOrder: () => void;
-}> = ({ cart, totalAmount, onUpdateCart, onConfirmOrder }) => {
+  onUpdateCart: (
+    menuItemId: string,
+    quantity: number,
+    options?: Option[]
+  ) => void;
+  onPlaceOrder: () => void;
+  onGoToPayment: () => void;
+  pendingOrderTotalAmount: number;
+}> = ({
+  cart,
+  totalAmount,
+  onUpdateCart,
+  onPlaceOrder,
+  onGoToPayment,
+  pendingOrderTotalAmount,
+}) => {
   const handleUpdateQuantity = (item: CartItem, change: number) => {
-    onUpdateCart(item.menuItemId, item.quantity + change);
+    onUpdateCart(item.menuItemId, item.quantity + change, item.selectedOptions);
   };
 
   return (
     <div className="order-sidebar">
       <h2 className="sidebar-title">🛒 現在の注文</h2>
-
       {cart.length === 0 ? (
-        <p className="empty-cart-message">
-          メニューから商品を選択してください。
-        </p>
+        <p className="empty-cart-message">商品が選択されていません。</p>
       ) : (
         <ul className="cart-list">
           {cart.map((item) => (
-            <li key={item.menuItemId} className="cart-item">
-              <span className="item-name">{item.name}</span>
+            <li key={item.id} className="cart-item">
+              <div className="cart-item-info">
+                <span className="item-name">{item.name}</span>
+                {item.selectedOptions && item.selectedOptions.length > 0 && (
+                  <span className="item-options">
+                    {item.selectedOptions.map((o) => o.name).join(", ")}
+                  </span>
+                )}
+              </div>
               <div className="item-control">
                 <button
                   className="cart-qty-btn"
                   onClick={() => handleUpdateQuantity(item, -1)}
-                  disabled={item.quantity <= 1}
                 >
                   −
                 </button>
@@ -176,8 +197,6 @@ const CartSidebar: React.FC<{
           ))}
         </ul>
       )}
-
-      {/* 合計と注文確定ボタン */}
       <div className="cart-summary">
         <div className="summary-row">
           <span>合計 (税込)</span>
@@ -187,29 +206,145 @@ const CartSidebar: React.FC<{
         </div>
         <button
           className="order-confirm-button"
-          onClick={onConfirmOrder}
+          onClick={onPlaceOrder}
           disabled={cart.length === 0}
         >
-          注文内容を確認する →
+          この内容で注文を確定する
+        </button>
+        <button
+          className="goto-payment-btn"
+          onClick={onGoToPayment}
+          disabled={pendingOrderTotalAmount === 0 && cart.length === 0}
+        >
+          お会計に進む 💳
         </button>
       </div>
     </div>
   );
 };
 
-// ======================================
-// 3. メインコンポーネント (OrderScreen)
-// ======================================
+const OptionModal: React.FC<{
+  menuItem: MenuItem;
+  onClose: () => void;
+  onAddToCart: (options: Option[]) => void;
+}> = ({ menuItem, onClose, onAddToCart }) => {
+  const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
 
+  const handleToggleOption = (option: Option) => {
+    setSelectedOptions((prev) =>
+      prev.some((o) => o.name === option.name)
+        ? prev.filter((o) => o.name !== option.name)
+        : [...prev, option]
+    );
+  };
+
+  const handleSubmit = () => {
+    onAddToCart(selectedOptions);
+  };
+
+  if (!menuItem.options) return null;
+
+  const totalOptionPrice = selectedOptions.reduce(
+    (sum, opt) => sum + opt.price,
+    0
+  );
+  const totalPrice = menuItem.price + totalOptionPrice;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h2>{menuItem.name}</h2>
+        <h3>{menuItem.options.title}</h3>
+        <div className="options-list">
+          {menuItem.options.items.map((option) => (
+            <label key={option.name}>
+              <input
+                type="checkbox"
+                checked={selectedOptions.some((o) => o.name === option.name)}
+                onChange={() => handleToggleOption(option)}
+              />
+              {option.name} (+¥{option.price})
+            </label>
+          ))}
+        </div>
+        <div className="modal-footer">
+          <div className="modal-total-price">
+            合計: ¥{totalPrice.toLocaleString()}
+          </div>
+          <div className="modal-controls">
+            <button onClick={onClose} className="secondary-btn">
+              キャンセル
+            </button>
+            <button onClick={handleSubmit} className="primary-btn">
+              カートに追加
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ======================================
+// 4. メインコンポーネント
+// ======================================
 const OrderScreen: React.FC<OrderScreenProps> = (props) => {
+  const CATEGORIES = useMemo(
+    () => getCategories(props.menuItems),
+    [props.menuItems]
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>(
     CATEGORIES[0]
   );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [modalState, setModalState] = useState<ModalState>({
+    isOpen: false,
+    menuItem: null,
+  });
 
-  // メインコンテンツのレンダリングロジック（ORDER/HISTORYで切り替え）
+  const handleItemSelect = (item: MenuItem) => {
+    if (item.options) {
+      setModalState({ isOpen: true, menuItem: item });
+    } else {
+      const existingItem = props.cart.find(
+        (c) =>
+          c.menuItemId === item.id &&
+          (!c.selectedOptions || c.selectedOptions.length === 0)
+      );
+      const currentQuantity = existingItem ? existingItem.quantity : 0;
+      props.onUpdateCart(item.id, currentQuantity + 1, []);
+    }
+  };
+
+  const handleAddToCartFromModal = (options: Option[]) => {
+    if (modalState.menuItem) {
+      const optionsId = options
+        .map((opt) => opt.name)
+        .sort()
+        .join("-");
+      const cartItemId = `${modalState.menuItem.id}-${optionsId}`;
+      const existingItem = props.cart.find((c) => c.id === cartItemId);
+      const currentQuantity = existingItem ? existingItem.quantity : 0;
+      props.onUpdateCart(modalState.menuItem.id, currentQuantity + 1, options);
+      setModalState({ isOpen: false, menuItem: null });
+    }
+  };
+
+  const filteredMenuItems = useMemo(() => {
+    let items = props.menuItems;
+    if (selectedCategory !== "Pick up") {
+      items = items.filter((item) => item.category === selectedCategory);
+    }
+    if (searchQuery) {
+      items = items.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return items;
+  }, [props.menuItems, selectedCategory, searchQuery]);
+
   const renderMainContent = () => {
     if (props.activeTab === "ORDER" || props.activeTab === "TOP") {
-      // 注文メニュー（3カラムレイアウト）
       return (
         <>
           <CategoryNav
@@ -218,22 +353,22 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
             onSelectCategory={setSelectedCategory}
           />
           <MenuContent
-            menuItems={props.menuItems}
+            menuItems={filteredMenuItems}
             cart={props.cart}
             onUpdateCart={props.onUpdateCart}
-            selectedCategory={selectedCategory}
+            onItemSelect={handleItemSelect}
           />
           <CartSidebar
             cart={props.cart}
             totalAmount={props.totalAmount}
             onUpdateCart={props.onUpdateCart}
-            onConfirmOrder={props.onConfirmOrder}
+            onPlaceOrder={props.onPlaceOrder}
+            onGoToPayment={props.onGoToPayment}
+            pendingOrderTotalAmount={props.pendingOrderTotalAmount}
           />
         </>
       );
     } else if (props.activeTab === "HISTORY") {
-      // 履歴・お会計（2カラムレイアウト）
-      // OrderHistoryPaneはApp.tsxからのプロパティをそのまま渡す
       return (
         <OrderHistoryPane
           pendingOrders={props.pendingOrders}
@@ -248,9 +383,17 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
 
   return (
     <div className="order-screen-layout">
-      {/* 1. ヘッダー */}
       <header className="order-header">
         <span className="tablet-info">テーブル: {props.userId}</span>
+        <div className="search-bar-container">
+          <input
+            type="text"
+            placeholder="メニューを検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
         <button
           className="call-staff-button-header"
           onClick={props.onCallStaff}
@@ -259,7 +402,6 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
         </button>
       </header>
 
-      {/* 2. メインエリア */}
       <div
         className={`order-main-area ${
           props.activeTab === "HISTORY" ? "history-layout" : ""
@@ -268,9 +410,7 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
         {renderMainContent()}
       </div>
 
-      {/* 3. 固定フッター (画像フッターナビゲーション) */}
       <div className="fixed-bottom-bar">
-        {/* TOPタブ */}
         <div
           className={`nav-tab ${props.activeTab === "TOP" ? "active" : ""}`}
           onClick={() => props.onNavigate("TOP")}
@@ -278,20 +418,18 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
           <span className="nav-tab-icon">🏠</span>
           <span>トップ</span>
         </div>
-
-        {/* ORDERタブ */}
         <div
           className={`nav-tab ${props.activeTab === "ORDER" ? "active" : ""}`}
           onClick={() => props.onNavigate("ORDER")}
         >
           <span className="nav-tab-icon">📋</span>
           <span>注文</span>
-          {props.pendingOrderCount > 0 && (
-            <span className="badge">{props.pendingOrderCount}</span>
+          {props.cart.length > 0 && (
+            <span className="badge">
+              {props.cart.reduce((acc, item) => acc + item.quantity, 0)}
+            </span>
           )}
         </div>
-
-        {/* HISTORYタブ */}
         <div
           className={`nav-tab ${props.activeTab === "HISTORY" ? "active" : ""}`}
           onClick={() => props.onNavigate("HISTORY")}
@@ -299,16 +437,15 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
           <span className="nav-tab-icon">🧾</span>
           <span>履歴・お会計</span>
         </div>
-
-        {/* お会計ボタン（フッター内で大きく表示） */}
-        <button
-          className="payment-button-footer"
-          onClick={props.onGoToPayment}
-          disabled={props.pendingOrderTotalAmount === 0}
-        >
-          お会計をする 💳
-        </button>
       </div>
+
+      {modalState.isOpen && modalState.menuItem && (
+        <OptionModal
+          menuItem={modalState.menuItem}
+          onClose={() => setModalState({ isOpen: false, menuItem: null })}
+          onAddToCart={handleAddToCartFromModal}
+        />
+      )}
     </div>
   );
 };
