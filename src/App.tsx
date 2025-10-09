@@ -7,7 +7,6 @@ import { MOCK_MENU } from "./data/menu";
 // コンポーネントのインポート
 import TitleScreen from "./components/TitleScreen";
 import OrderScreen, { NavTab } from "./components/OrderScreen";
-import CompleteScreen from "./components/CompleteScreen";
 import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";

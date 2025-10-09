@@ -1,15 +1,18 @@
-// src/components/OrderScreen.tsx (最終修正・完成版)
+// src/components/OrderScreen.tsx (分割後の親コンポーネント)
 
 import React, { useMemo, useState } from "react";
 import { CartItem, MenuItem, Order, Option } from "../types";
 import OrderHistoryPane from "./OrderHistoryPane";
-
-// ======================================
-// 1. 型定義と定数
-// ======================================
+import OrderHeader from "./OrderHeader";
+import CategoryNav from "./CategoryNav";
+import MenuContent from "./MenuContent";
+import CartSidebar from "./CartSidebar";
+import OptionModal from "./OptionModal";
+import BottomNav from "./BottomNav";
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
+// Propsの型定義は変更なし
 interface OrderScreenProps {
   userId: string;
   menuItems: MenuItem[];
@@ -35,259 +38,11 @@ interface ModalState {
   menuItem: MenuItem | null;
 }
 
-// ======================================
-// 2. ヘルパー関数
-// ======================================
-
 const getCategories = (menuItems: MenuItem[]): string[] => {
   const categories = new Set(menuItems.map((item) => item.category));
   return ["Pick up", ...Array.from(categories)];
 };
 
-// ======================================
-// 3. 内部コンポーネント
-// ======================================
-
-const CategoryNav: React.FC<{
-  categories: string[];
-  selectedCategory: string;
-  onSelectCategory: (c: string) => void;
-}> = ({ categories, selectedCategory, onSelectCategory }) => (
-  <div className="category-nav">
-    {categories.map((category) => (
-      <button
-        key={category}
-        className={`category-tab ${
-          selectedCategory === category ? "active" : ""
-        }`}
-        onClick={() => onSelectCategory(category)}
-      >
-        {category}
-      </button>
-    ))}
-  </div>
-);
-
-const MenuContent: React.FC<{
-  menuItems: MenuItem[];
-  cart: CartItem[];
-  onUpdateCart: (id: string, q: number, options?: Option[]) => void;
-  onItemSelect: (item: MenuItem) => void;
-}> = ({ menuItems, cart, onUpdateCart, onItemSelect }) => {
-  const getItemQuantity = (menuItemId: string) => {
-    return cart
-      .filter(
-        (item) =>
-          item.menuItemId === menuItemId &&
-          (!item.selectedOptions || item.selectedOptions.length === 0)
-      )
-      .reduce((sum, item) => sum + item.quantity, 0);
-  };
-
-  return (
-    <div className="menu-list-container">
-      <div className="menu-content">
-        {menuItems.map((item) => {
-          const quantity = getItemQuantity(item.id);
-          return (
-            <div key={item.id} className="menu-item">
-              <div
-                className="menu-item-clickable"
-                onClick={() => onItemSelect(item)}
-              >
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="menu-image"
-                />
-                <div className="menu-info">
-                  <p className="menu-name">{item.name}</p>
-                  <p className="menu-description">{item.description}</p>
-                  {item.allergens && item.allergens.length > 0 && (
-                    <p className="menu-allergens">
-                      アレルギー: {item.allergens.join(", ")}
-                    </p>
-                  )}
-                  <p className="menu-price">¥{item.price.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="quantity-control">
-                <button
-                  className="quantity-button minus"
-                  onClick={() => onUpdateCart(item.id, quantity - 1)}
-                  disabled={quantity === 0}
-                >
-                  −
-                </button>
-                <span className="quantity-display">{quantity}</span>
-                <button
-                  className="quantity-button plus"
-                  onClick={() => onUpdateCart(item.id, quantity + 1)}
-                >
-                  ＋
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const CartSidebar: React.FC<{
-  cart: CartItem[];
-  totalAmount: number;
-  onUpdateCart: (
-    menuItemId: string,
-    quantity: number,
-    options?: Option[]
-  ) => void;
-  onPlaceOrder: () => void;
-  onGoToPayment: () => void;
-  pendingOrderTotalAmount: number;
-}> = ({
-  cart,
-  totalAmount,
-  onUpdateCart,
-  onPlaceOrder,
-  onGoToPayment,
-  pendingOrderTotalAmount,
-}) => {
-  const handleUpdateQuantity = (item: CartItem, change: number) => {
-    onUpdateCart(item.menuItemId, item.quantity + change, item.selectedOptions);
-  };
-
-  return (
-    <div className="order-sidebar">
-      <h2 className="sidebar-title">🛒 現在の注文</h2>
-      {cart.length === 0 ? (
-        <p className="empty-cart-message">商品が選択されていません。</p>
-      ) : (
-        <ul className="cart-list">
-          {cart.map((item) => (
-            <li key={item.id} className="cart-item">
-              <div className="cart-item-info">
-                <span className="item-name">{item.name}</span>
-                {item.selectedOptions && item.selectedOptions.length > 0 && (
-                  <span className="item-options">
-                    {item.selectedOptions.map((o) => o.name).join(", ")}
-                  </span>
-                )}
-              </div>
-              <div className="item-control">
-                <button
-                  className="cart-qty-btn"
-                  onClick={() => handleUpdateQuantity(item, -1)}
-                >
-                  −
-                </button>
-                <span className="item-quantity">{item.quantity}</span>
-                <button
-                  className="cart-qty-btn"
-                  onClick={() => handleUpdateQuantity(item, 1)}
-                >
-                  ＋
-                </button>
-              </div>
-              <span className="item-price">
-                ¥{(item.price * item.quantity).toLocaleString()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="cart-summary">
-        <div className="summary-row">
-          <span>合計 (税込)</span>
-          <span className="summary-amount">
-            ¥{totalAmount.toLocaleString()}
-          </span>
-        </div>
-        <button
-          className="order-confirm-button"
-          onClick={onPlaceOrder}
-          disabled={cart.length === 0}
-        >
-          この内容で注文を確定する
-        </button>
-        <button
-          className="goto-payment-btn"
-          onClick={onGoToPayment}
-          disabled={pendingOrderTotalAmount === 0 && cart.length === 0}
-        >
-          お会計に進む 💳
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const OptionModal: React.FC<{
-  menuItem: MenuItem;
-  onClose: () => void;
-  onAddToCart: (options: Option[]) => void;
-}> = ({ menuItem, onClose, onAddToCart }) => {
-  const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
-
-  const handleToggleOption = (option: Option) => {
-    setSelectedOptions((prev) =>
-      prev.some((o) => o.name === option.name)
-        ? prev.filter((o) => o.name !== option.name)
-        : [...prev, option]
-    );
-  };
-
-  const handleSubmit = () => {
-    onAddToCart(selectedOptions);
-  };
-
-  if (!menuItem.options) return null;
-
-  const totalOptionPrice = selectedOptions.reduce(
-    (sum, opt) => sum + opt.price,
-    0
-  );
-  const totalPrice = menuItem.price + totalOptionPrice;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>{menuItem.name}</h2>
-        <h3>{menuItem.options.title}</h3>
-        <div className="options-list">
-          {menuItem.options.items.map((option) => (
-            <label key={option.name}>
-              <input
-                type="checkbox"
-                checked={selectedOptions.some((o) => o.name === option.name)}
-                onChange={() => handleToggleOption(option)}
-              />
-              {option.name} (+¥{option.price})
-            </label>
-          ))}
-        </div>
-        <div className="modal-footer">
-          <div className="modal-total-price">
-            合計: ¥{totalPrice.toLocaleString()}
-          </div>
-          <div className="modal-controls">
-            <button onClick={onClose} className="secondary-btn">
-              キャンセル
-            </button>
-            <button onClick={handleSubmit} className="primary-btn">
-              カートに追加
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ======================================
-// 4. メインコンポーネント
-// ======================================
 const OrderScreen: React.FC<OrderScreenProps> = (props) => {
   const CATEGORIES = useMemo(
     () => getCategories(props.menuItems),
@@ -383,24 +138,12 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
 
   return (
     <div className="order-screen-layout">
-      <header className="order-header">
-        <span className="tablet-info">テーブル: {props.userId}</span>
-        <div className="search-bar-container">
-          <input
-            type="text"
-            placeholder="メニューを検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        <button
-          className="call-staff-button-header"
-          onClick={props.onCallStaff}
-        >
-          スタッフを呼ぶ 🙋‍♂️
-        </button>
-      </header>
+      <OrderHeader
+        userId={props.userId}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onCallStaff={props.onCallStaff}
+      />
 
       <div
         className={`order-main-area ${
@@ -410,34 +153,11 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
         {renderMainContent()}
       </div>
 
-      <div className="fixed-bottom-bar">
-        <div
-          className={`nav-tab ${props.activeTab === "TOP" ? "active" : ""}`}
-          onClick={() => props.onNavigate("TOP")}
-        >
-          <span className="nav-tab-icon">🏠</span>
-          <span>トップ</span>
-        </div>
-        <div
-          className={`nav-tab ${props.activeTab === "ORDER" ? "active" : ""}`}
-          onClick={() => props.onNavigate("ORDER")}
-        >
-          <span className="nav-tab-icon">📋</span>
-          <span>注文</span>
-          {props.cart.length > 0 && (
-            <span className="badge">
-              {props.cart.reduce((acc, item) => acc + item.quantity, 0)}
-            </span>
-          )}
-        </div>
-        <div
-          className={`nav-tab ${props.activeTab === "HISTORY" ? "active" : ""}`}
-          onClick={() => props.onNavigate("HISTORY")}
-        >
-          <span className="nav-tab-icon">🧾</span>
-          <span>履歴・お会計</span>
-        </div>
-      </div>
+      <BottomNav
+        activeTab={props.activeTab}
+        onNavigate={props.onNavigate}
+        cartItemCount={props.cart.reduce((acc, item) => acc + item.quantity, 0)}
+      />
 
       {modalState.isOpen && modalState.menuItem && (
         <OptionModal
