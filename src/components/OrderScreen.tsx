@@ -1,7 +1,10 @@
-// src/components/OrderScreen.tsx (分割後の親コンポーネント)
+// src/components/OrderScreen.tsx (最終修正・完成版)
 
 import React, { useMemo, useState } from "react";
-import { CartItem, MenuItem, Order, Option } from "../types";
+import useCartStore from "../store/cartStore";
+import { MenuItem, Option } from "../types";
+
+// 分割したコンポーネントをインポート
 import OrderHistoryPane from "./OrderHistoryPane";
 import OrderHeader from "./OrderHeader";
 import CategoryNav from "./CategoryNav";
@@ -12,25 +15,12 @@ import BottomNav from "./BottomNav";
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
-// Propsの型定義は変更なし
 interface OrderScreenProps {
   userId: string;
-  menuItems: MenuItem[];
-  cart: CartItem[];
-  totalAmount: number;
-  onUpdateCart: (
-    menuItemId: string,
-    quantity: number,
-    selectedOptions?: Option[]
-  ) => void;
-  onPlaceOrder: () => void;
-  onCallStaff: () => void;
-  onGoToPayment: () => void;
-  onNavigate: (tab: NavTab) => void;
   activeTab: NavTab;
-  pendingOrderCount: number;
-  pendingOrders: Order[];
-  pendingOrderTotalAmount: number;
+  onNavigate: (tab: NavTab) => void;
+  onGoToPayment: () => void;
+  setShowOrderComplete: (show: boolean) => void;
 }
 
 interface ModalState {
@@ -43,13 +33,26 @@ const getCategories = (menuItems: MenuItem[]): string[] => {
   return ["Pick up", ...Array.from(categories)];
 };
 
-const OrderScreen: React.FC<OrderScreenProps> = (props) => {
-  const CATEGORIES = useMemo(
-    () => getCategories(props.menuItems),
-    [props.menuItems]
-  );
+const OrderScreen: React.FC<OrderScreenProps> = ({
+  userId,
+  activeTab,
+  onNavigate,
+  onGoToPayment,
+  setShowOrderComplete,
+}) => {
+  const {
+    cart,
+    pendingOrders,
+    cartTotalAmount,
+    pendingOrderTotalAmount,
+    menuItems, // ストアからメニューリストを取得
+    updateCart,
+    placeOrder,
+  } = useCartStore();
+
+  const CATEGORIES = useMemo(() => getCategories(menuItems), [menuItems]);
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    CATEGORIES[0]
+    CATEGORIES.length > 0 ? CATEGORIES[0] : "Pick up"
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [modalState, setModalState] = useState<ModalState>({
@@ -61,13 +64,13 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
     if (item.options) {
       setModalState({ isOpen: true, menuItem: item });
     } else {
-      const existingItem = props.cart.find(
+      const existingItem = cart.find(
         (c) =>
           c.menuItemId === item.id &&
           (!c.selectedOptions || c.selectedOptions.length === 0)
       );
       const currentQuantity = existingItem ? existingItem.quantity : 0;
-      props.onUpdateCart(item.id, currentQuantity + 1, []);
+      updateCart(item.id, currentQuantity + 1, []);
     }
   };
 
@@ -78,15 +81,23 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
         .sort()
         .join("-");
       const cartItemId = `${modalState.menuItem.id}-${optionsId}`;
-      const existingItem = props.cart.find((c) => c.id === cartItemId);
+      const existingItem = cart.find((c) => c.id === cartItemId);
       const currentQuantity = existingItem ? existingItem.quantity : 0;
-      props.onUpdateCart(modalState.menuItem.id, currentQuantity + 1, options);
+      updateCart(modalState.menuItem.id, currentQuantity + 1, options);
       setModalState({ isOpen: false, menuItem: null });
     }
   };
 
+  const handlePlaceOrder = () => {
+    const newOrder = placeOrder(userId);
+    if (newOrder) {
+      setShowOrderComplete(true);
+      setTimeout(() => setShowOrderComplete(false), 2500);
+    }
+  };
+
   const filteredMenuItems = useMemo(() => {
-    let items = props.menuItems;
+    let items = menuItems;
     if (selectedCategory !== "Pick up") {
       items = items.filter((item) => item.category === selectedCategory);
     }
@@ -96,10 +107,10 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
       );
     }
     return items;
-  }, [props.menuItems, selectedCategory, searchQuery]);
+  }, [menuItems, selectedCategory, searchQuery]);
 
   const renderMainContent = () => {
-    if (props.activeTab === "ORDER" || props.activeTab === "TOP") {
+    if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
         <>
           <CategoryNav
@@ -109,27 +120,27 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
           />
           <MenuContent
             menuItems={filteredMenuItems}
-            cart={props.cart}
-            onUpdateCart={props.onUpdateCart}
+            cart={cart}
+            onUpdateCart={updateCart}
             onItemSelect={handleItemSelect}
           />
           <CartSidebar
-            cart={props.cart}
-            totalAmount={props.totalAmount}
-            onUpdateCart={props.onUpdateCart}
-            onPlaceOrder={props.onPlaceOrder}
-            onGoToPayment={props.onGoToPayment}
-            pendingOrderTotalAmount={props.pendingOrderTotalAmount}
+            cart={cart}
+            totalAmount={cartTotalAmount}
+            onUpdateCart={updateCart}
+            onPlaceOrder={handlePlaceOrder}
+            onGoToPayment={onGoToPayment}
+            pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
         </>
       );
-    } else if (props.activeTab === "HISTORY") {
+    } else if (activeTab === "HISTORY") {
       return (
         <OrderHistoryPane
-          pendingOrders={props.pendingOrders}
-          orderHistoryTotalAmount={props.pendingOrderTotalAmount}
-          onGoToPaymentView={props.onGoToPayment}
-          onCallStaff={props.onCallStaff}
+          pendingOrders={pendingOrders}
+          orderHistoryTotalAmount={pendingOrderTotalAmount}
+          onGoToPaymentView={onGoToPayment}
+          onCallStaff={() => alert("スタッフを呼び出しました。")}
         />
       );
     }
@@ -139,26 +150,23 @@ const OrderScreen: React.FC<OrderScreenProps> = (props) => {
   return (
     <div className="order-screen-layout">
       <OrderHeader
-        userId={props.userId}
+        userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onCallStaff={props.onCallStaff}
+        onCallStaff={() => alert("スタッフを呼び出しました。")}
       />
-
       <div
         className={`order-main-area ${
-          props.activeTab === "HISTORY" ? "history-layout" : ""
+          activeTab === "HISTORY" ? "history-layout" : ""
         }`}
       >
         {renderMainContent()}
       </div>
-
       <BottomNav
-        activeTab={props.activeTab}
-        onNavigate={props.onNavigate}
-        cartItemCount={props.cart.reduce((acc, item) => acc + item.quantity, 0)}
+        activeTab={activeTab}
+        onNavigate={onNavigate}
+        cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
       />
-
       {modalState.isOpen && modalState.menuItem && (
         <OptionModal
           menuItem={modalState.menuItem}

@@ -1,27 +1,33 @@
-// src/components/SplitBillScreen.tsx (修正)
+// src/components/SplitBillScreen.tsx (エラー修正・完成版)
 
 import React, { useState, useMemo } from "react";
+import useCartStore from "../store/cartStore"; // ★ ストアをインポート
 
+// Propsの型定義からtotalAmountを削除
 interface SplitBillScreenProps {
-  totalAmount: number;
   onCallStaff: (message: string) => void;
   onBack: () => void;
 }
 
+// 端数処理オプションの型を定義
 type RoundingOption = "CEIL" | "NONE";
 
 const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
-  totalAmount,
   onCallStaff,
   onBack,
 }) => {
+  // ★ ストアから合計金額を取得
+  const { pendingOrderTotalAmount } = useCartStore();
+
+  // ★ 未定義だったStateを追加
   const [personCount, setPersonCount] = useState<number>(2);
   const [roundingOption, setRoundingOption] = useState<RoundingOption>("CEIL");
 
   // 計算ロジック
   const { amountPerPerson, remainder, baseAmount, lastPersonAmount } =
     useMemo(() => {
-      if (totalAmount <= 0)
+      // ★ totalAmount を pendingOrderTotalAmount に修正
+      if (pendingOrderTotalAmount <= 0)
         return {
           amountPerPerson: 0,
           remainder: 0,
@@ -29,23 +35,19 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
           lastPersonAmount: 0,
         };
 
-      const rawAmount = totalAmount / personCount;
+      const rawAmount = pendingOrderTotalAmount / personCount;
       let finalAmount = 0;
       let remainderCalc = 0;
       let base = 0;
       let lastPerson = 0;
 
       if (roundingOption === "CEIL") {
-        // 全員切り上げ方式
-        finalAmount = Math.ceil(rawAmount / 10) * 10; // 10円単位で切り上げ
-        remainderCalc = finalAmount * personCount - totalAmount; // お釣りの合計
+        finalAmount = Math.ceil(rawAmount / 10) * 10;
+        remainderCalc = finalAmount * personCount - pendingOrderTotalAmount;
       } else {
-        // 代表者調整方式
-        base = Math.floor(rawAmount / 10) * 10; // 10円未満を切り捨てた額
-        // 代表者以外の金額
+        base = Math.floor(rawAmount / 10) * 10;
         const totalOther = base * (personCount - 1);
-        // 代表者の金額 (端数調整)
-        lastPerson = totalAmount - totalOther;
+        lastPerson = pendingOrderTotalAmount - totalOther;
       }
 
       return {
@@ -54,10 +56,11 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
         baseAmount: base,
         lastPersonAmount: lastPerson,
       };
-    }, [totalAmount, personCount, roundingOption]);
+    }, [pendingOrderTotalAmount, personCount, roundingOption]);
 
   const handleCallForPayment = () => {
-    const message = `会計依頼 (合計: ${totalAmount.toLocaleString()}円 / 割り勘人数: ${personCount}人)`;
+    // ★ totalAmount を pendingOrderTotalAmount に修正
+    const message = `会計依頼 (合計: ${pendingOrderTotalAmount.toLocaleString()}円 / 割り勘人数: ${personCount}人)`;
     onCallStaff(message);
   };
 
@@ -111,7 +114,9 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
 
       <div className="summary-section">
         <p className="total-display">
-          全体の合計金額: <strong>¥{totalAmount.toLocaleString()}</strong>
+          {/* ★ totalAmount を pendingOrderTotalAmount に修正 */}
+          全体の合計金額:{" "}
+          <strong>¥{pendingOrderTotalAmount.toLocaleString()}</strong>
         </p>
       </div>
 
@@ -143,9 +148,7 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
             </p>
             <p className="note-text adjusted-note">
               ※代表者が端数 (¥
-              {lastPersonAmount - baseAmount * (personCount - 1) > baseAmount
-                ? lastPersonAmount - baseAmount * (personCount - 1) - baseAmount
-                : 0}
+              {(lastPersonAmount - baseAmount).toLocaleString()}
               円) を調整します。
             </p>
           </>
