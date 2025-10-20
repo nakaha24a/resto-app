@@ -1,13 +1,18 @@
 {
   "files": {
     "main.css": "/resto-app/static/css/main.04e8bca8.css",
-    "main.js": "/resto-app/static/js/main.e4d2ebe0.js",
+    "main.js": "/resto-app/static/js/main.b675fa8e.js",
+    "static/media/maruge.jpeg": "/resto-app/static/media/maruge.821349b2492190bafe20.jpeg",
+    "static/media/orenjijyusu.jpeg": "/resto-app/static/media/orenjijyusu.704d3b8b6343f739fae3.jpeg",
+    "static/media/pepe.jpeg": "/resto-app/static/media/pepe.f97b1ed07fe6fe06fb25.jpeg",
+    "static/media/karubo.jpg": "/resto-app/static/media/karubo.82001a595ab6ed48f768.jpg",
+    "static/media/siza.jpg": "/resto-app/static/media/siza.bdba24566578d9a13521.jpg",
     "index.html": "/resto-app/index.html",
     "main.04e8bca8.css.map": "/resto-app/static/css/main.04e8bca8.css.map",
-    "main.e4d2ebe0.js.map": "/resto-app/static/js/main.e4d2ebe0.js.map"
+    "main.b675fa8e.js.map": "/resto-app/static/js/main.b675fa8e.js.map"
   },
   "entrypoints": [
     "static/css/main.04e8bca8.css",
-    "static/js/main.e4d2ebe0.js"
+    "static/js/main.b675fa8e.js"
   ]
 }
