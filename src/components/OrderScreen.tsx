@@ -1,4 +1,4 @@
-// src/components/OrderScreen.tsx (最終修正・完成版)
+// src/components/OrderScreen.tsx (修正・完成版)
 
 import React, { useMemo, useState } from "react";
 import useCartStore from "../store/cartStore";
@@ -28,9 +28,16 @@ interface ModalState {
   menuItem: MenuItem | null;
 }
 
+// ★★★ 修正点1: 「おすすめ」カテゴリを追加するロジック ★★★
 const getCategories = (menuItems: MenuItem[]): string[] => {
   const categories = new Set(menuItems.map((item) => item.category));
-  return ["Pick up", ...Array.from(categories)];
+  // おすすめ商品が1つでもあれば「おすすめ」カテゴリを追加する
+  const hasRecommended = menuItems.some((item) => item.isRecommended);
+  return [
+    "TOP",
+    ...(hasRecommended ? ["おすすめ"] : []),
+    ...Array.from(categories),
+  ];
 };
 
 const OrderScreen: React.FC<OrderScreenProps> = ({
@@ -52,7 +59,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   const CATEGORIES = useMemo(() => getCategories(menuItems), [menuItems]);
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    CATEGORIES.length > 0 ? CATEGORIES[0] : "Pick up"
+    CATEGORIES.length > 0 ? CATEGORIES[0] : "TOP"
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [modalState, setModalState] = useState<ModalState>({
@@ -96,11 +103,15 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     }
   };
 
+  // ★★★ 修正点2: 「おすすめ」が選択された際の絞り込みロジック ★★★
   const filteredMenuItems = useMemo(() => {
     let items = menuItems;
-    if (selectedCategory !== "Pick up") {
+    if (selectedCategory === "おすすめ") {
+      items = items.filter((item) => item.isRecommended);
+    } else if (selectedCategory !== "TOP") {
       items = items.filter((item) => item.category === selectedCategory);
     }
+
     if (searchQuery) {
       items = items.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())

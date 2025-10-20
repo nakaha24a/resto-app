@@ -2,6 +2,15 @@
 
 import { MenuItem } from "../types";
 
+import M001Image from "../assets/maruge.jpeg";
+import M002Image from "../assets/siza.jpg";
+import M003Image from "../assets/karubo.jpg";
+import M004Image from "../assets/maruge.jpeg";
+import M005Image from "../assets/siza.jpg";
+import M006Image from "../assets/karubo.jpg";
+import M007Image from "../assets/pepe.jpeg";
+import M008Image from "../assets/orenjijyusu.jpeg";
+
 export const MOCK_MENU: MenuItem[] = [
   {
     id: "M001",
@@ -9,7 +18,8 @@ export const MOCK_MENU: MenuItem[] = [
     price: 1280,
     description: "定番のイタリアンピザ",
     category: "ピザ",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PIZZA",
+    imageUrl: M001Image,
+    isRecommended: true,
   },
   {
     id: "M002",
@@ -17,7 +27,7 @@ export const MOCK_MENU: MenuItem[] = [
     price: 880,
     description: "新鮮野菜とベーコン",
     category: "サラダ",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=SALAD",
+    imageUrl: M002Image,
   },
   {
     id: "M003",
@@ -25,7 +35,8 @@ export const MOCK_MENU: MenuItem[] = [
     price: 1450,
     description: "濃厚なチーズと卵黄",
     category: "パスタ",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PASTA",
+    imageUrl: M003Image,
+    isRecommended: true,
   },
   {
     id: "M004",
@@ -33,7 +44,7 @@ export const MOCK_MENU: MenuItem[] = [
     price: 350,
     description: "さっぱりとしたアイス",
     category: "ドリンク",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=COFFEE",
+    imageUrl: M004Image,
   },
   {
     id: "M005",
@@ -41,7 +52,7 @@ export const MOCK_MENU: MenuItem[] = [
     price: 550,
     description: "ほろ苦い大人のデザート",
     category: "デザート",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=DESSERT",
+    imageUrl: M005Image,
   },
   {
     id: "M006",
@@ -49,7 +60,8 @@ export const MOCK_MENU: MenuItem[] = [
     price: 980,
     description: "女性に人気の組み合わせ",
     category: "サラダ",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=SHRIMP",
+    imageUrl: M006Image,
+    isRecommended: true,
   },
   {
     id: "M007",
@@ -57,7 +69,7 @@ export const MOCK_MENU: MenuItem[] = [
     price: 1100,
     description: "ニンニクと唐辛子のオイルベース",
     category: "パスタ",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=PEPERO",
+    imageUrl: M007Image,
   },
   {
     id: "M008",
@@ -65,6 +77,6 @@ export const MOCK_MENU: MenuItem[] = [
     price: 300,
     description: "果汁100%のフレッシュジュース",
     category: "ドリンク",
-    imageUrl: "https://placehold.co/100x100/ecf0f1/34495e?text=OJ",
+    imageUrl: M008Image,
   },
 ];

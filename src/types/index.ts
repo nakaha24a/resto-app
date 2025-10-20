@@ -1,4 +1,4 @@
-// src/types/index.ts (修正)
+// src/types/index.ts (修正後)
 
 // オプション用の型 (トッピング、サイズ変更など)
 export interface Option {
@@ -19,6 +19,7 @@ export interface MenuItem {
     title: string; // 例: "トッピング", "サイズ"
     items: Option[];
   };
+  isRecommended?: boolean; // おすすめ商品フラグ
 }
 
 // カート内のアイテム

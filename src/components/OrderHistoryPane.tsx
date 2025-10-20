@@ -1,7 +1,7 @@
-// src/components/OrderHistoryPane.tsx
+// src/components/OrderHistoryPane.tsx (修正後)
 
 import React from "react";
-import { Order } from "../types";
+import { Order, OrderItem } from "../types";
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[]; // 未会計の確定済み注文リスト
@@ -54,7 +54,7 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                   </span>
                 </div>
                 <ul className="item-list">
-                  {order.items.map((item) => (
+                  {order.items.map((item: OrderItem) => (
                     <li key={item.id} className="item-detail">
                       <span>{item.name}</span>
                       <span className="quantity-price">

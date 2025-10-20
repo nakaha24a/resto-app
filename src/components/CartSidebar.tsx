@@ -1,4 +1,4 @@
-// src/components/CartSidebar.tsx
+// src/components/CartSidebar.tsx (修正後)
 
 import React from "react";
 import { CartItem, Option } from "../types";
@@ -41,7 +41,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 <span className="item-name">{item.name}</span>
                 {item.selectedOptions && item.selectedOptions.length > 0 && (
                   <span className="item-options">
-                    {item.selectedOptions.map((o) => o.name).join(", ")}
+                    {item.selectedOptions.map((o: Option) => o.name).join(", ")}
                   </span>
                 )}
               </div>
