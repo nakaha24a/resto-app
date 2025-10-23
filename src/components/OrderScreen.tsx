@@ -1,8 +1,9 @@
-// src/components/OrderScreen.tsx (修正・完成版)
+// src/components/OrderScreen.tsx (エラー修正・完成版)
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import useCartStore from "../store/cartStore";
-import { MenuItem, Option } from "../types";
+// ★ CartItem をインポートします
+import { MenuItem, Option, CartItem } from "../types";
 
 // 分割したコンポーネントをインポート
 import OrderHistoryPane from "./OrderHistoryPane";
@@ -28,11 +29,9 @@ interface ModalState {
   menuItem: MenuItem | null;
 }
 
-// ★★★ 修正点1: 「おすすめ」カテゴリを追加するロジック ★★★
 const getCategories = (menuItems: MenuItem[]): string[] => {
-  const categories = new Set(menuItems.map((item) => item.category));
-  // おすすめ商品が1つでもあれば「おすすめ」カテゴリを追加する
-  const hasRecommended = menuItems.some((item) => item.isRecommended);
+  const categories = new Set(menuItems.map((item: MenuItem) => item.category)); // ★ 型指定
+  const hasRecommended = menuItems.some((item: MenuItem) => item.isRecommended); // ★ 型指定
   return [
     "TOP",
     ...(hasRecommended ? ["おすすめ"] : []),
@@ -52,9 +51,10 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     pendingOrders,
     cartTotalAmount,
     pendingOrderTotalAmount,
-    menuItems, // ストアからメニューリストを取得
+    menuItems,
     updateCart,
     placeOrder,
+    fetchMenuItems,
   } = useCartStore();
 
   const CATEGORIES = useMemo(() => getCategories(menuItems), [menuItems]);
@@ -67,12 +67,18 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     menuItem: null,
   });
 
+  // ★ テスト用の console.log は削除
+  useEffect(() => {
+    fetchMenuItems();
+  }, [fetchMenuItems]);
+
   const handleItemSelect = (item: MenuItem) => {
     if (item.options) {
       setModalState({ isOpen: true, menuItem: item });
     } else {
       const existingItem = cart.find(
-        (c) =>
+        // ★ 型指定 (c: CartItem)
+        (c: CartItem) =>
           c.menuItemId === item.id &&
           (!c.selectedOptions || c.selectedOptions.length === 0)
       );
@@ -84,36 +90,42 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const handleAddToCartFromModal = (options: Option[]) => {
     if (modalState.menuItem) {
       const optionsId = options
-        .map((opt) => opt.name)
+        .map((opt: Option) => opt.name) // ★ 型指定
         .sort()
         .join("-");
       const cartItemId = `${modalState.menuItem.id}-${optionsId}`;
-      const existingItem = cart.find((c) => c.id === cartItemId);
+      // ★ 型指定 (c: CartItem)
+      const existingItem = cart.find((c: CartItem) => c.id === cartItemId);
       const currentQuantity = existingItem ? existingItem.quantity : 0;
       updateCart(modalState.menuItem.id, currentQuantity + 1, options);
       setModalState({ isOpen: false, menuItem: null });
     }
   };
 
-  const handlePlaceOrder = () => {
-    const newOrder = placeOrder(userId);
+  // ★ async/await に修正
+  const handlePlaceOrder = async () => {
+    const newOrder = await placeOrder(userId);
     if (newOrder) {
       setShowOrderComplete(true);
       setTimeout(() => setShowOrderComplete(false), 2500);
     }
   };
 
-  // ★★★ 修正点2: 「おすすめ」が選択された際の絞り込みロジック ★★★
   const filteredMenuItems = useMemo(() => {
     let items = menuItems;
     if (selectedCategory === "おすすめ") {
-      items = items.filter((item) => item.isRecommended);
+      // ★ 型指定 (item: MenuItem)
+      items = items.filter((item: MenuItem) => item.isRecommended);
     } else if (selectedCategory !== "TOP") {
-      items = items.filter((item) => item.category === selectedCategory);
+      // ★ 型指定 (item: MenuItem)
+      items = items.filter(
+        (item: MenuItem) => item.category === selectedCategory
+      );
     }
 
     if (searchQuery) {
-      items = items.filter((item) =>
+      // ★ 型指定 (item: MenuItem)
+      items = items.filter((item: MenuItem) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -124,17 +136,20 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
         <>
+                   {" "}
           <CategoryNav
             categories={CATEGORIES}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
+                   {" "}
           <MenuContent
             menuItems={filteredMenuItems}
             cart={cart}
             onUpdateCart={updateCart}
             onItemSelect={handleItemSelect}
           />
+                   {" "}
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
@@ -143,6 +158,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
             onGoToPayment={onGoToPayment}
             pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
+                 {" "}
         </>
       );
     } else if (activeTab === "HISTORY") {
@@ -160,24 +176,33 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   return (
     <div className="order-screen-layout">
+      {/* ★ テスト用の <h1> は削除 */}
+           {" "}
       <OrderHeader
         userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => alert("スタッフを呼び出しました。")}
       />
+           {" "}
       <div
         className={`order-main-area ${
           activeTab === "HISTORY" ? "history-layout" : ""
         }`}
       >
-        {renderMainContent()}
+                {renderMainContent()}     {" "}
       </div>
+           {" "}
       <BottomNav
         activeTab={activeTab}
         onNavigate={onNavigate}
-        cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        // ★ 型指定 (sum: number, item: CartItem)
+        cartItemCount={cart.reduce(
+          (sum: number, item: CartItem) => sum + item.quantity,
+          0
+        )}
       />
+           {" "}
       {modalState.isOpen && modalState.menuItem && (
         <OptionModal
           menuItem={modalState.menuItem}
@@ -185,6 +210,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           onAddToCart={handleAddToCartFromModal}
         />
       )}
+         {" "}
     </div>
   );
 };

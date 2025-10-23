@@ -1,38 +1,41 @@
-// src/App.tsx (再修正・完成版)
+// src/App.tsx (TitleScreenを完全に削除した最終版)
 
 import React, { useState } from "react";
 import useCartStore from "./store/cartStore";
 
 // コンポーネントのインポート
-import TitleScreen from "./components/TitleScreen";
+// ★ TitleScreen の import を削除
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";
 
 import "./components/styles.css";
 
-// 画面遷移の種類に決済完了画面を再度追加
-type AppScreen = "TITLE" | "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT"; // ← 決済完了画面を復活
+// ★ "TITLE" を AppScreen から削除
+type AppScreen = "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
 
 const TABLE_ID = "T-05";
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>("TITLE");
+  // ★ 初期値を "ORDER" に設定 (これは完了していますね)
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>("ORDER");
   const [tableNumber] = useState<string>(TABLE_ID);
   const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER");
 
   const { cart, pendingOrderTotalAmount, clearCart, clearPendingOrders } =
     useCartStore();
-  const [showOrderComplete, setShowOrderComplete] = useState(false);
+  const [showOrderComplete, setShowOrderComplete] = useState(false); // ★ handleBackToTitle は不要になるか、
 
-  // 初画面に戻る処理
+  // 決済完了後に OrderScreen に戻るように変更（ここでは一旦残します）
   const handleBackToTitle = () => {
     clearCart();
     clearPendingOrders();
-    setCurrentScreen("TITLE");
-  };
+    // タイトルには戻れないので、ORDER に戻るか、アプリをリロードさせるなど
+    // ここでは便宜上 "ORDER" に戻るようにしておきます
+    setCurrentScreen("ORDER");
+    setActiveOrderTab("ORDER");
+  }; // 注文履歴画面に戻る処理
 
-  // 注文履歴画面に戻る処理
   const handleBackToOrderHistory = () => {
     setCurrentScreen("ORDER");
     setActiveOrderTab("HISTORY");
@@ -48,25 +51,17 @@ const App: React.FC = () => {
     setCurrentScreen("SPLIT_BILL");
   };
 
-  // ★★★ 修正点1: 会計依頼をしたら、決済完了画面に遷移させる ★★★
   const handleRequestPayment = (message: string) => {
     console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
-    // 注文とカート情報をクリア
     clearCart();
     clearPendingOrders();
-    // 決済完了画面へ遷移
     setCurrentScreen("COMPLETE_PAYMENT");
   };
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case "TITLE":
-        return (
-          <TitleScreen
-            onStart={() => setCurrentScreen("ORDER")}
-            tabletId={tableNumber}
-          />
-        );
+      // ★ case "TITLE": を完全に削除
+
       case "ORDER":
         return (
           <OrderScreen
@@ -84,14 +79,17 @@ const App: React.FC = () => {
             onBack={handleBackToOrderHistory}
           />
         );
-      // ★★★ 修正点2: 決済完了画面の表示ロジックを復活 ★★★
       case "COMPLETE_PAYMENT":
         return <ThanksScreen onBackToTitle={handleBackToTitle} />;
+      // ★ default: も "ORDER" に変更
       default:
         return (
-          <TitleScreen
-            onStart={() => setCurrentScreen("ORDER")}
-            tabletId={TABLE_ID}
+          <OrderScreen
+            userId={tableNumber}
+            activeTab={activeOrderTab}
+            onNavigate={handleNavigateOrderTab}
+            onGoToPayment={handleGoToSplitBill}
+            setShowOrderComplete={setShowOrderComplete}
           />
         );
     }
@@ -99,12 +97,14 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {renderScreen()}
+            {renderScreen()}     {" "}
       {showOrderComplete && (
         <div className="confirmation-overlay">
-          <div className="confirmation-box">✅ ご注文を承りました</div>
+                   {" "}
+          <div className="confirmation-box">✅ ご注文を承りました</div>       {" "}
         </div>
       )}
+         {" "}
     </div>
   );
 };
