@@ -1,33 +1,29 @@
-// src/components/SplitBillScreen.tsx (エラー修正・完成版)
+// src/components/SplitBillScreen.tsx
 
 import React, { useState, useMemo } from "react";
-import useCartStore from "../store/cartStore"; // ★ ストアをインポート
+// ★ usePendingOrderTotalAmount をインポート
+import useCartStore, { usePendingOrderTotalAmount } from "../store/cartStore";
 
-// Propsの型定義からtotalAmountを削除
 interface SplitBillScreenProps {
   onCallStaff: (message: string) => void;
   onBack: () => void;
 }
 
-// 端数処理オプションの型を定義
 type RoundingOption = "CEIL" | "NONE";
 
 const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
   onCallStaff,
   onBack,
 }) => {
-  // ★ ストアから合計金額を取得
-  const { pendingOrderTotalAmount } = useCartStore();
+  // ★ フックを使って合計金額を取得
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
-  // ★ 未定義だったStateを追加
   const [personCount, setPersonCount] = useState<number>(2);
   const [roundingOption, setRoundingOption] = useState<RoundingOption>("CEIL");
 
-  // 計算ロジック
   const { amountPerPerson, remainder, baseAmount, lastPersonAmount } =
     useMemo(() => {
-      // ★ totalAmount を pendingOrderTotalAmount に修正
-      if (pendingOrderTotalAmount <= 0)
+      if (pendingOrderTotalAmount <= 0 || personCount <= 0)
         return {
           amountPerPerson: 0,
           remainder: 0,
@@ -45,6 +41,7 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
         finalAmount = Math.ceil(rawAmount / 10) * 10;
         remainderCalc = finalAmount * personCount - pendingOrderTotalAmount;
       } else {
+        // "NONE" (代表者が調整)
         base = Math.floor(rawAmount / 10) * 10;
         const totalOther = base * (personCount - 1);
         lastPerson = pendingOrderTotalAmount - totalOther;
@@ -59,13 +56,17 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
     }, [pendingOrderTotalAmount, personCount, roundingOption]);
 
   const handleCallForPayment = () => {
-    // ★ totalAmount を pendingOrderTotalAmount に修正
-    const message = `会計依頼 (合計: ${pendingOrderTotalAmount.toLocaleString()}円 / 割り勘人数: ${personCount}人)`;
+    let message = `会計依頼 (合計: ${pendingOrderTotalAmount.toLocaleString()}円 / 割り勘人数: ${personCount}人)`;
+    if (roundingOption === "CEIL") {
+      message += ` / 一人あたり ${amountPerPerson.toLocaleString()}円)`;
+    } else {
+      message += ` / 代表者以外 ${baseAmount.toLocaleString()}円、代表者 ${lastPersonAmount.toLocaleString()}円)`;
+    }
     onCallStaff(message);
   };
 
   const handleCountChange = (change: number) => {
-    setPersonCount((prev) => Math.max(2, prev + change));
+    setPersonCount((prev) => Math.max(1, prev + change));
   };
 
   return (
@@ -73,13 +74,12 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
       <h2 className="screen-title">🧑‍🤝‍🧑 お会計 (割り勘計算)</h2>
 
       <div className="split-controls">
-        {/* 人数選択 */}
         <div className="control-group person-count-selector">
           <label>割り勘人数:</label>
           <div className="count-stepper">
             <button
               onClick={() => handleCountChange(-1)}
-              disabled={personCount <= 2}
+              disabled={personCount <= 1}
             >
               ー
             </button>
@@ -88,7 +88,6 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
           </div>
         </div>
 
-        {/* 端数処理選択 */}
         <div className="control-group rounding-options">
           <label>端数処理方法:</label>
           <div className="option-buttons">
@@ -114,7 +113,6 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
 
       <div className="summary-section">
         <p className="total-display">
-          {/* ★ totalAmount を pendingOrderTotalAmount に修正 */}
           全体の合計金額:{" "}
           <strong>¥{pendingOrderTotalAmount.toLocaleString()}</strong>
         </p>
@@ -123,18 +121,31 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
       <div className="calculation-result-box">
         <h3 className="result-title">計算結果</h3>
 
-        {roundingOption === "CEIL" ? (
+        {personCount === 1 && (
+          <>
+            <p className="amount-label">お支払い金額:</p>
+            <p className="amount-result main-amount">
+              <strong>¥{pendingOrderTotalAmount.toLocaleString()}</strong>
+            </p>
+          </>
+        )}
+        {personCount > 1 && roundingOption === "CEIL" && (
+          // ★↓ React Fragment で囲む ↓
           <>
             <p className="amount-label">1人あたりの支払額 (全員):</p>
             <p className="amount-result main-amount">
               <strong>¥{amountPerPerson.toLocaleString()}</strong>
             </p>
-            <p className="note-text">
-              ※10円単位で切り上げました。合計で¥{remainder.toLocaleString()}
-              のお釣りが出ます。
-            </p>
-          </>
-        ) : (
+            {remainder > 0 && (
+              <p className="note-text">
+                ※10円単位で切り上げました。合計で¥{remainder.toLocaleString()}{" "}
+                のお釣りが出ます。
+              </p>
+            )}
+          </> // ★↑ React Fragment で囲む ↑
+        )}
+        {personCount > 1 && roundingOption === "NONE" && (
+          // ★↓ React Fragment で囲む ↓
           <>
             <p className="amount-label">
               代表者以外の支払額 ({personCount - 1}人):
@@ -146,16 +157,17 @@ const SplitBillScreen: React.FC<SplitBillScreenProps> = ({
             <p className="amount-result main-amount adjusted-amount">
               <strong>¥{lastPersonAmount.toLocaleString()}</strong>
             </p>
-            <p className="note-text adjusted-note">
-              ※代表者が端数 (¥
-              {(lastPersonAmount - baseAmount).toLocaleString()}
-              円) を調整します。
-            </p>
-          </>
+            {lastPersonAmount - baseAmount !== 0 && (
+              <p className="note-text adjusted-note">
+                ※代表者が端数 (¥
+                {(lastPersonAmount - baseAmount).toLocaleString()} 円)
+                を調整します。
+              </p>
+            )}
+          </> // ★↑ React Fragment で囲む ↑
         )}
       </div>
 
-      {/* アクションボタン */}
       <div className="split-controls-footer">
         <button className="back-button" onClick={onBack}>
           <span role="img" aria-label="back">

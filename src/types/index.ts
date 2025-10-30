@@ -1,58 +1,60 @@
-// src/types/index.ts (修正後)
+// src/types/index.ts
 
-// オプション用の型 (トッピング、サイズ変更など)
 export interface Option {
   name: string;
-  price: number; // 追加料金
-}
-
-// メニュー表示用の型
-export interface MenuItem {
-  id: string;
-  name: string;
   price: number;
-  description: string;
-  category: string;
-  imageUrl: string;
-  allergens?: string[]; // アレルギー情報
-  options?: {
-    title: string; // 例: "トッピング", "サイズ"
-    items: Option[];
-  };
-  isRecommended?: boolean; // おすすめ商品フラグ
 }
 
-// カート内のアイテム
-export interface CartItem {
-  id: string; // カート内で一意のID
-  menuItemId: string;
+// ★ Category と MenuData を追加
+export interface Category {
   name: string;
-  price: number; // オプション料金込みの単価
+  items: MenuItem[];
+}
+
+export interface MenuData {
+  categories: Category[];
+}
+
+export interface MenuItem {
+  id: string; // 商品固有ID
+  name: string; // 商品名
+  description?: string; // 商品説明 (任意)
+  price: number; // 価格
+  image?: string; // ★ 画像パス (任意) を追加 (imageUrl ではなく image)
+  category: string; // カテゴリ名
+  options?: Option[]; // オプション (任意)
+  isRecommended?: boolean; // おすすめ商品フラグ (任意)
+  allergens?: string[]; // ★ アレルゲン情報 (任意) を追加
+}
+
+export interface CartItem {
+  id: string; // カート内でのユニークID (menuItemId + optionsId)
+  menuItemId: string; // 元のMenuItemのID
+  name: string;
+  price: number; // MenuItemの基本価格
   quantity: number;
   selectedOptions?: Option[]; // 選択されたオプション
+  // image?: string; // ★ MenuItem から image を取得するので、ここでは不要な場合が多い
 }
 
-// 注文済みのアイテム
-export interface OrderItem extends MenuItem {
+export interface OrderItem {
+  id: string; // MenuItemのID
+  name: string;
+  price: number; // 単価
   quantity: number;
   selectedOptions?: Option[];
 }
 
-// 注文オブジェクト全体の型
 export interface Order {
-  id: string;
-  tableNumber: string;
-  items: OrderItem[];
-  totalAmount: number;
-  timestamp: number;
+  id: number; // 注文ID
+  table_number: number; // ★ DBスキーマに合わせる (例)
+  items: string; // ★ JSON 文字列
+  total_price: number; // ★ DBスキーマに合わせる (例)
+  timestamp: string; // 注文日時
 }
 
-// 画面遷移の状態を管理するための型
-export type Screen =
-  | "TITLE"
-  | "ORDER"
-  | "CHECKOUT"
-  | "COMPLETE_ORDER"
-  | "PAYMENT_OPTIONS"
-  | "SPLIT_BILL"
-  | "COMPLETE_PAYMENT";
+// 支払い方法の型定義 (例)
+export type PaymentMethod = "cash" | "creditCard" | "eMoney";
+
+// 画面の状態を示す型 (App.tsx などで使用)
+export type AppScreen = "order" | "paymentOptions" | "splitBill" | "thanks";

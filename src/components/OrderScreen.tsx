@@ -1,17 +1,19 @@
-// src/components/OrderScreen.tsx (エラー修正・完成版)
+// src/components/OrderScreen.tsx
 
 import React, { useMemo, useState, useEffect } from "react";
-import useCartStore from "../store/cartStore";
-// ★ CartItem をインポートします
-import { MenuItem, Option, CartItem } from "../types";
+// ★ usePendingOrderTotalAmount のみインポート
+import useCartStore, {
+  useCartTotalAmount,
+  usePendingOrderTotalAmount,
+} from "../store/cartStore";
+// ★ Option, Order のインポートを削除
+import { MenuItem, CartItem, MenuData, Category } from "../types";
 
-// 分割したコンポーネントをインポート
 import OrderHistoryPane from "./OrderHistoryPane";
 import OrderHeader from "./OrderHeader";
 import CategoryNav from "./CategoryNav";
 import MenuContent from "./MenuContent";
 import CartSidebar from "./CartSidebar";
-import OptionModal from "./OptionModal";
 import BottomNav from "./BottomNav";
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
@@ -24,18 +26,20 @@ interface OrderScreenProps {
   setShowOrderComplete: (show: boolean) => void;
 }
 
-interface ModalState {
-  isOpen: boolean;
-  menuItem: MenuItem | null;
-}
-
-const getCategories = (menuItems: MenuItem[]): string[] => {
-  const categories = new Set(menuItems.map((item: MenuItem) => item.category)); // ★ 型指定
-  const hasRecommended = menuItems.some((item: MenuItem) => item.isRecommended); // ★ 型指定
+const getCategories = (menuData: MenuData | null): string[] => {
+  if (!menuData || !Array.isArray(menuData.categories)) {
+    return ["TOP"];
+  }
+  const categoryNames = new Set(
+    menuData.categories.flatMap((category: Category) => category.name)
+  );
+  const hasRecommended = menuData.categories.some((cat: Category) =>
+    cat.items.some((item: MenuItem) => item.isRecommended)
+  );
   return [
     "TOP",
     ...(hasRecommended ? ["おすすめ"] : []),
-    ...Array.from(categories),
+    ...Array.from(categoryNames),
   ];
 };
 
@@ -46,119 +50,103 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   onGoToPayment,
   setShowOrderComplete,
 }) => {
-  const {
-    cart,
-    pendingOrders,
-    cartTotalAmount,
-    pendingOrderTotalAmount,
-    menuItems,
-    updateCart,
-    placeOrder,
-    fetchMenuItems,
-  } = useCartStore();
+  // ★ updateCart の取得を削除
+  const { cart, pendingOrders, placeOrder, fetchOrders } = useCartStore();
+  const cartTotalAmount = useCartTotalAmount();
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
-  const CATEGORIES = useMemo(() => getCategories(menuItems), [menuItems]);
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    CATEGORIES.length > 0 ? CATEGORIES[0] : "TOP"
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [modalState, setModalState] = useState<ModalState>({
-    isOpen: false,
-    menuItem: null,
-  });
+  // ★ ストアのメニューデータを取得
+  const menuData = useCartStore((state) => state.menuData);
+  const fetchMenuData = useCartStore((state) => state.fetchMenuData);
+  const menuLoading = useCartStore((state) => state.loading);
+  const menuError = useCartStore((state) => state.error);
 
-  // ★ テスト用の console.log は削除
   useEffect(() => {
-    fetchMenuItems();
-  }, [fetchMenuItems]);
-
-  const handleItemSelect = (item: MenuItem) => {
-    if (item.options) {
-      setModalState({ isOpen: true, menuItem: item });
-    } else {
-      const existingItem = cart.find(
-        // ★ 型指定 (c: CartItem)
-        (c: CartItem) =>
-          c.menuItemId === item.id &&
-          (!c.selectedOptions || c.selectedOptions.length === 0)
-      );
-      const currentQuantity = existingItem ? existingItem.quantity : 0;
-      updateCart(item.id, currentQuantity + 1, []);
+    if (!menuData && !menuLoading) {
+      // データがなく、ローディング中でもない場合のみ取得
+      fetchMenuData();
     }
-  };
+  }, [fetchMenuData, menuData, menuLoading]); // ★ menuLoading も依存配列に追加
 
-  const handleAddToCartFromModal = (options: Option[]) => {
-    if (modalState.menuItem) {
-      const optionsId = options
-        .map((opt: Option) => opt.name) // ★ 型指定
-        .sort()
-        .join("-");
-      const cartItemId = `${modalState.menuItem.id}-${optionsId}`;
-      // ★ 型指定 (c: CartItem)
-      const existingItem = cart.find((c: CartItem) => c.id === cartItemId);
-      const currentQuantity = existingItem ? existingItem.quantity : 0;
-      updateCart(modalState.menuItem.id, currentQuantity + 1, options);
-      setModalState({ isOpen: false, menuItem: null });
+  // ★ fetchOrders 呼び出しを別 useEffect に分離 (menuData の変更で再実行しないように)
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const CATEGORIES = useMemo(() => getCategories(menuData), [menuData]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("TOP");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (
+      !menuLoading &&
+      menuData &&
+      CATEGORIES.length > 0 &&
+      !CATEGORIES.includes(selectedCategory)
+    ) {
+      setSelectedCategory("TOP");
+    } else if (!menuLoading && !menuData && !menuError) {
+      // データロード失敗(エラーなし)の場合
+      setSelectedCategory("TOP");
     }
-  };
+  }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]); // ★ menuError も依存配列に追加
 
-  // ★ async/await に修正
   const handlePlaceOrder = async () => {
-    const newOrder = await placeOrder(userId);
+    const tableNum = parseInt(userId, 10);
+    if (isNaN(tableNum)) {
+      alert("テーブル番号が無効です。");
+      return;
+    }
+    const newOrder = await placeOrder(tableNum);
     if (newOrder) {
       setShowOrderComplete(true);
       setTimeout(() => setShowOrderComplete(false), 2500);
+    } else {
+      const storeError = useCartStore.getState().error;
+      alert(`注文処理に失敗しました。\n${storeError || ""}`);
     }
   };
 
-  const filteredMenuItems = useMemo(() => {
-    let items = menuItems;
-    if (selectedCategory === "おすすめ") {
-      // ★ 型指定 (item: MenuItem)
-      items = items.filter((item: MenuItem) => item.isRecommended);
-    } else if (selectedCategory !== "TOP") {
-      // ★ 型指定 (item: MenuItem)
-      items = items.filter(
-        (item: MenuItem) => item.category === selectedCategory
-      );
-    }
-
-    if (searchQuery) {
-      // ★ 型指定 (item: MenuItem)
-      items = items.filter((item: MenuItem) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    return items;
-  }, [menuItems, selectedCategory, searchQuery]);
-
   const renderMainContent = () => {
+    if (menuLoading)
+      return <div className="loading-message">メニュー読み込み中...</div>;
+    // エラー時はメッセージのみ表示
+    if (menuError)
+      return (
+        <div
+          className="error-message"
+          style={{ color: "red", padding: "20px" }}
+        >
+          エラー: {menuError}
+        </div>
+      );
+    // データがない場合 (エラーではないが空)
+    if (!menuData)
+      return (
+        <div className="loading-message">メニューデータがありません。</div>
+      );
+
     if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
         <>
-                   {" "}
           <CategoryNav
             categories={CATEGORIES}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
-                   {" "}
           <MenuContent
-            menuItems={filteredMenuItems}
-            cart={cart}
-            onUpdateCart={updateCart}
-            onItemSelect={handleItemSelect}
+            selectedCategory={
+              selectedCategory === "TOP" ? null : selectedCategory
+            }
           />
-                   {" "}
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
-            onUpdateCart={updateCart}
+            // onUpdateCart は CartSidebar 内でストアを使うので不要
             onPlaceOrder={handlePlaceOrder}
             onGoToPayment={onGoToPayment}
             pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
-                 {" "}
         </>
       );
     } else if (activeTab === "HISTORY") {
@@ -176,41 +164,27 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   return (
     <div className="order-screen-layout">
-      {/* ★ テスト用の <h1> は削除 */}
-           {" "}
       <OrderHeader
         userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => alert("スタッフを呼び出しました。")}
       />
-           {" "}
       <div
         className={`order-main-area ${
           activeTab === "HISTORY" ? "history-layout" : ""
         }`}
       >
-                {renderMainContent()}     {" "}
+        {renderMainContent()}
       </div>
-           {" "}
       <BottomNav
         activeTab={activeTab}
         onNavigate={onNavigate}
-        // ★ 型指定 (sum: number, item: CartItem)
         cartItemCount={cart.reduce(
           (sum: number, item: CartItem) => sum + item.quantity,
           0
         )}
       />
-           {" "}
-      {modalState.isOpen && modalState.menuItem && (
-        <OptionModal
-          menuItem={modalState.menuItem}
-          onClose={() => setModalState({ isOpen: false, menuItem: null })}
-          onAddToCart={handleAddToCartFromModal}
-        />
-      )}
-         {" "}
     </div>
   );
 };

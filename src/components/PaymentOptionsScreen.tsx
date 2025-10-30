@@ -1,7 +1,8 @@
 // src/components/PaymentOptionsScreen.tsx
 
 import React from "react";
-import useCartStore from "../store/cartStore";
+// ★ usePendingOrderTotalAmount をインポート
+import useCartStore, { usePendingOrderTotalAmount } from "../store/cartStore";
 
 interface PaymentOptionsScreenProps {
   onGoToSplitBill: () => void;
@@ -14,7 +15,8 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
   onCallStaff,
   onBack,
 }) => {
-  const { pendingOrderTotalAmount } = useCartStore();
+  // ★ フックを使って合計金額を取得
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
   return (
     <div className="screen payment-options-screen">

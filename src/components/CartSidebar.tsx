@@ -1,31 +1,73 @@
-// src/components/CartSidebar.tsx (修正後)
+// src/components/CartSidebar.tsx
 
 import React from "react";
-import { CartItem, Option } from "../types";
+// ★ MenuItem, Option, CartItem をインポート
+import { MenuItem, Option, CartItem } from "../types";
+// ★ ストアのフックと updateCart アクションをインポート
+import useCartStore from "../store/cartStore";
 
 interface CartSidebarProps {
   cart: CartItem[];
   totalAmount: number;
-  onUpdateCart: (
-    menuItemId: string,
-    quantity: number,
-    options?: Option[]
-  ) => void;
+  // ★ onUpdateCart プロパティは削除 (ストアのアクションを直接使うため)
+  // onUpdateCart: (menuItem: MenuItem, quantity: number, selectedOptions?: Option[]) => void;
   onPlaceOrder: () => void;
   onGoToPayment: () => void;
   pendingOrderTotalAmount: number;
 }
 
+// ★ MenuItem を非同期で取得するヘルパー関数 (仮実装、実際にはAPIやストアから取得)
+//    cartStore に menuData があればそこから探すのが現実的
+async function findMenuItemById(id: string): Promise<MenuItem | null> {
+  const menuData = useCartStore.getState().menuData; // ストアから取得 (レンダリング外でのgetStateは注意)
+  if (!menuData) {
+    // メニューデータがなければ fetchMenuData を呼ぶ (これもレンダリング外なので注意)
+    await useCartStore.getState().fetchMenuData();
+    const updatedMenuData = useCartStore.getState().menuData;
+    if (!updatedMenuData) return null; // それでもなければ諦める
+
+    for (const category of updatedMenuData.categories) {
+      const found = category.items.find((item) => item.id === id);
+      if (found) return found;
+    }
+  } else {
+    for (const category of menuData.categories) {
+      const found = category.items.find((item) => item.id === id);
+      if (found) return found;
+    }
+  }
+  console.error(`MenuItem with id ${id} not found in store.`);
+  return null; // 見つからなかった場合
+}
+
 const CartSidebar: React.FC<CartSidebarProps> = ({
   cart,
   totalAmount,
-  onUpdateCart,
+  // onUpdateCart, // ← 削除
   onPlaceOrder,
   onGoToPayment,
   pendingOrderTotalAmount,
 }) => {
-  const handleUpdateQuantity = (item: CartItem, change: number) => {
-    onUpdateCart(item.menuItemId, item.quantity + change, item.selectedOptions);
+  // ★ ストアから updateCart アクションを取得
+  const updateCartAction = useCartStore((state) => state.updateCart);
+
+  const handleUpdateQuantity = async (cartItem: CartItem, change: number) => {
+    const newQuantity = cartItem.quantity + change;
+
+    // ★ CartItem の情報から MenuItem を検索 (非同期になる可能性)
+    const menuItem = await findMenuItemById(cartItem.menuItemId);
+
+    if (menuItem) {
+      // ★ ストアのアクションを直接呼び出す
+      updateCartAction(menuItem, newQuantity, cartItem.selectedOptions);
+    } else {
+      // MenuItem が見つからなかった場合のエラー処理
+      console.error(
+        "カート更新エラー: 元の商品情報が見つかりません。",
+        cartItem
+      );
+      alert("カートの更新中にエラーが発生しました。");
+    }
   };
 
   return (
@@ -61,7 +103,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 </button>
               </div>
               <span className="item-price">
-                ¥{(item.price * item.quantity).toLocaleString()}
+                ¥
+                {(
+                  (item.price +
+                    (item.selectedOptions?.reduce(
+                      (sum, opt) => sum + opt.price,
+                      0
+                    ) || 0)) *
+                  item.quantity
+                ).toLocaleString()}
               </span>
             </li>
           ))}

@@ -1,67 +1,73 @@
-// src/App.tsx (TitleScreenを完全に削除した最終版)
+// src/App.tsx
 
 import React, { useState } from "react";
-import useCartStore from "./store/cartStore";
+// ★ usePendingOrderTotalAmount をインポート
+import useCartStore, { usePendingOrderTotalAmount } from "./store/cartStore";
 
 // コンポーネントのインポート
-// ★ TitleScreen の import を削除
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";
+// ★ PaymentOptionsScreen は使われていないようなのでコメントアウト (必要なら戻す)
+// import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 
 import "./components/styles.css";
 
-// ★ "TITLE" を AppScreen から削除
+// AppScreen 型定義 (変更なし)
 type AppScreen = "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
 
-const TABLE_ID = "T-05";
+const TABLE_ID = "T-05"; // 仮のテーブルID
 
 const App: React.FC = () => {
-  // ★ 初期値を "ORDER" に設定 (これは完了していますね)
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("ORDER");
   const [tableNumber] = useState<string>(TABLE_ID);
-  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER");
+  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER"); // OrderScreen 内のタブ状態
 
-  const { cart, pendingOrderTotalAmount, clearCart, clearPendingOrders } =
-    useCartStore();
-  const [showOrderComplete, setShowOrderComplete] = useState(false); // ★ handleBackToTitle は不要になるか、
+  // ★ clearPendingOrders をストアから取得
+  const { cart, clearCart, clearPendingOrders } = useCartStore();
+  const [showOrderComplete, setShowOrderComplete] = useState(false);
+  // ★ pendingOrderTotalAmount をフックで取得
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
-  // 決済完了後に OrderScreen に戻るように変更（ここでは一旦残します）
+  // 決済完了後に OrderScreen に戻る処理
   const handleBackToTitle = () => {
     clearCart();
-    clearPendingOrders();
-    // タイトルには戻れないので、ORDER に戻るか、アプリをリロードさせるなど
-    // ここでは便宜上 "ORDER" に戻るようにしておきます
+    clearPendingOrders(); // ★ ストアのアクションを呼び出す
     setCurrentScreen("ORDER");
     setActiveOrderTab("ORDER");
-  }; // 注文履歴画面に戻る処理
+  };
 
+  // SplitBillScreen から OrderScreen (履歴タブ) に戻る処理
   const handleBackToOrderHistory = () => {
     setCurrentScreen("ORDER");
     setActiveOrderTab("HISTORY");
   };
 
+  // OrderScreen 内のタブ移動ハンドラ
   const handleNavigateOrderTab = (tab: NavTab) => setActiveOrderTab(tab);
 
+  // 割り勘画面へ遷移する処理
   const handleGoToSplitBill = () => {
+    // ★ カートが空でも未会計があれば進めるように修正
     if (pendingOrderTotalAmount === 0 && cart.length === 0) {
-      alert("ご注文履歴がないため、お会計に進めません。");
+      alert("ご注文履歴またはカートに商品がないため、お会計に進めません。");
       return;
     }
     setCurrentScreen("SPLIT_BILL");
   };
 
+  // 支払い依頼 (店員呼び出し) 処理
   const handleRequestPayment = (message: string) => {
     console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
+    // ★ 支払い完了後にカートと未会計注文をクリア
     clearCart();
     clearPendingOrders();
-    setCurrentScreen("COMPLETE_PAYMENT");
+    setCurrentScreen("COMPLETE_PAYMENT"); // 完了画面へ
   };
 
+  // 表示する画面を切り替える
   const renderScreen = () => {
     switch (currentScreen) {
-      // ★ case "TITLE": を完全に削除
-
       case "ORDER":
         return (
           <OrderScreen
@@ -76,13 +82,12 @@ const App: React.FC = () => {
         return (
           <SplitBillScreen
             onCallStaff={handleRequestPayment}
-            onBack={handleBackToOrderHistory}
+            onBack={handleBackToOrderHistory} // 戻るボタンの遷移先
           />
         );
       case "COMPLETE_PAYMENT":
-        return <ThanksScreen onBackToTitle={handleBackToTitle} />;
-      // ★ default: も "ORDER" に変更
-      default:
+        return <ThanksScreen onBackToTitle={handleBackToTitle} />; // 完了画面から最初の画面へ
+      default: // 想定外の Screen の場合は Order 画面に戻す
         return (
           <OrderScreen
             userId={tableNumber}
@@ -97,14 +102,13 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-            {renderScreen()}     {" "}
+      {renderScreen()}
+      {/* 注文完了時のオーバーレイ表示 */}
       {showOrderComplete && (
         <div className="confirmation-overlay">
-                   {" "}
-          <div className="confirmation-box">✅ ご注文を承りました</div>       {" "}
+          <div className="confirmation-box">✅ ご注文を承りました</div>
         </div>
       )}
-         {" "}
     </div>
   );
 };

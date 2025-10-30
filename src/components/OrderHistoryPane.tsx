@@ -1,7 +1,8 @@
-// src/components/OrderHistoryPane.tsx (修正後)
+// src/components/OrderHistoryPane.tsx
 
 import React from "react";
-import { Order, OrderItem } from "../types";
+// ★ Option をインポートに追加
+import { Order, OrderItem, Option } from "../types";
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[]; // 未会計の確定済み注文リスト
@@ -50,18 +51,70 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                     確定
                   </span>
                   <span className="order-total">
-                    **¥{order.totalAmount.toLocaleString()}**
+                    {/* ★ totalAmount から total_price に修正 */}
+                    **¥
+                    {order.total_price
+                      ? order.total_price.toLocaleString()
+                      : "計算中"}
+                    **
                   </span>
                 </div>
                 <ul className="item-list">
-                  {order.items.map((item: OrderItem) => (
-                    <li key={item.id} className="item-detail">
-                      <span>{item.name}</span>
-                      <span className="quantity-price">
-                        {item.quantity} 点 @ ¥{item.price.toLocaleString()}
-                      </span>
-                    </li>
-                  ))}
+                  {(() => {
+                    try {
+                      const itemsArray = JSON.parse(
+                        order.items as unknown as string
+                      );
+
+                      return itemsArray.map(
+                        (item: OrderItem, index: number) => (
+                          <li
+                            key={`${order.id}-${item.id || index}`}
+                            className="item-detail"
+                          >
+                            <span>{item.name}</span>
+                            {/* オプション表示 */}
+                            {item.selectedOptions &&
+                              item.selectedOptions.length > 0 && (
+                                <ul
+                                  style={{
+                                    fontSize: "0.8em",
+                                    color: "#555",
+                                    marginLeft: "10px",
+                                  }}
+                                >
+                                  {/* ★ Option 型を明示 */}
+                                  {item.selectedOptions.map((opt: Option) => (
+                                    <li key={opt.name}>
+                                      + {opt.name} (¥
+                                      {opt.price.toLocaleString()})
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            <span className="quantity-price">
+                              {item.quantity} 点 @ ¥
+                              {(
+                                item.price +
+                                (item.selectedOptions?.reduce(
+                                  (sum, opt) => sum + opt.price,
+                                  0
+                                ) || 0)
+                              ).toLocaleString()}
+                            </span>
+                          </li>
+                        )
+                      );
+                    } catch (e) {
+                      console.error(
+                        "注文項目のパースに失敗:",
+                        e,
+                        "データ:",
+                        order.items
+                      );
+                      return <li>注文項目の表示エラー</li>;
+                    }
+                  })()}
                 </ul>
               </div>
             ))}
@@ -69,14 +122,13 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
         )}
       </div>
 
-      {/* 右側: 合計額とアクションボタン (CSSクラス 'history-summary-sidebar' で固定幅サイドバーに) */}
+      {/* 右側: 合計額とアクションボタン */}
       <div className="history-summary-sidebar">
         <h3 className="text-2xl font-bold mb-4 text-gray-700">未会計 合計</h3>
         <h1 className="text-6xl font-extrabold text-red-600 mb-8">
           ¥{orderHistoryTotalAmount.toLocaleString()}
         </h1>
 
-        {/* お会計に進むボタン */}
         <button
           onClick={onGoToPaymentView}
           disabled={!isReadyToPay}
@@ -88,7 +140,6 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
           お会計に進む
         </button>
 
-        {/* スタッフ呼び出しボタン */}
         <button
           onClick={onCallStaff}
           className="py-4 px-6 bg-yellow-500 text-gray-800 rounded-xl text-xl font-bold hover:bg-yellow-600 transition shadow-lg w-full"
