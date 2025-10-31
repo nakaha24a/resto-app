@@ -1,4 +1,4 @@
-/* src/components/styles.css - レスポンシブ対応修正版 */
+/* src/components/styles.css - 2カラムレイアウト（中央+右）修正版 */
 
 /* ------------------------------------- */
 /* カラー変数 (ライトモード) */
@@ -19,7 +19,7 @@
   --header-background: #34495e; /* ヘッダー背景 */
   --header-text: #ffffff; /* ヘッダー文字色 */
   --sidebar-background: #ffffff; /* サイドバー白背景 */
-  --category-nav-background: #f4f6f8; /* カテゴリナビ背景 */
+  --category-nav-background: #ffffff; /* カテゴリナビ背景 (白) */
   --modal-overlay-background: rgba(0, 0, 0, 0.6); /* モーダル背景 */
   --button-primary-background: var(--secondary-color);
   --button-secondary-background: var(--warning-color);
@@ -40,15 +40,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   color: var(--text-color);
-  font-size: 16px; /* 基本フォントサイズ */
+  font-size: 16px;
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* 画面の高さいっぱいに広げる */
-  max-height: 100vh; /* スクロール防止 */
-  overflow: hidden; /* スクロール防止 */
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 .screen {
@@ -56,82 +56,9 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden; /* 各画面も基本はスクロールさせない */
+  overflow: hidden;
   width: 100%;
   background-color: var(--background-color);
-}
-
-/* ------------------------------------- */
-/* TITLE SCREEN STYLES */
-/* ------------------------------------- */
-.title-screen {
-  justify-content: space-around;
-  align-items: center;
-  background-color: #1e272e;
-  color: white;
-  text-align: center;
-}
-/* (TitleScreenの残りのスタイルは省略) */
-.title-screen-header {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-.tablet-id-text {
-  font-size: 0.9em;
-  color: #bdc3c7;
-}
-.title-center-content {
-  margin-top: -10vh;
-}
-.main-title {
-  font-size: 5rem;
-  font-weight: 800;
-  margin-bottom: 5px;
-  color: #f39c12;
-}
-.sub-title {
-  font-size: 1.5rem;
-  font-weight: 300;
-  color: #ecf0f1;
-}
-.start-button-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.start-prompt {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  color: #bdc3c7;
-}
-.start-button {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background-color: #2ecc71;
-  color: white;
-  font-size: 2.5rem;
-  font-weight: bold;
-  border: 10px solid #27ae60;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 20px rgba(46, 204, 113, 0.4);
-}
-.start-button:hover:not(.pressed) {
-  background-color: #27ae60;
-}
-.start-button.pressed {
-  transform: scale(0.95);
-  box-shadow: 0 5px 10px rgba(46, 204, 113, 0.4);
-}
-.start-button-icon {
-  font-size: 3rem;
-  margin-bottom: 5px;
 }
 
 /* ------------------------------------- */
@@ -140,11 +67,11 @@ body {
 .order-screen-layout {
   display: flex;
   flex-direction: column;
-  height: 100%; /* 親要素(app-container)の高さいっぱいに広がる */
+  height: 100%;
   overflow: hidden;
 }
 
-/* 1. ヘッダー */
+/* 1. ヘッダー (OrderHeader) */
 .order-header {
   height: 60px;
   display: flex;
@@ -158,7 +85,6 @@ body {
   z-index: 10;
   flex-shrink: 0; /* ヘッダーが縮まないように */
 }
-/* (OrderHeaderの残りのスタイルは省略) */
 .tablet-info {
   font-size: 1.2rem;
   font-weight: 600;
@@ -200,237 +126,256 @@ body {
     color-mix(in srgb, var(--secondary-color) 50%, transparent);
 }
 
-/* 2. メインエリア */
+/* 2. メインエリア (OrderScreen.tsx の .order-main-area) */
 .order-main-area {
-  flex-grow: 1; /* 残りの高さをすべて使用 */
-  display: flex;
-  overflow: hidden; /* エリア全体はスクロール禁止 */
+  flex-grow: 1; /* ★ 残りの高さをすべて使用 */
+  display: flex; /* ★ 横並びレイアウトを適用 (中央 + 右カート) */
+  flex-direction: row; /* 横並び */
+  overflow: hidden; /* ★ エリア全体はスクロール禁止 */
 }
 
-/* 2a. Category Navigation (左) */
+/* 履歴タブの時はレイアウト変更 (既存のスタイル) */
+.order-main-area.history-layout {
+  display: block; /* 横並びを解除 */
+}
+
+/* ★ 2a. 中央コンテンツラッパー (OrderScreen.tsx で追加したラッパー) */
+.main-content-wrapper {
+  flex: 1; /* ★ カート以外の残りのスペースをすべて占める */
+  display: flex;
+  flex-direction: column; /* カテゴリとメニューを縦に積む */
+  overflow: hidden; /* ★ 必須 */
+  background-color: var(--background-color); /* 中央エリアの背景色 */
+}
+
+/* カテゴリナビゲーション (CategoryNav.tsx のルート) */
 .category-nav {
-  flex: 0 0 180px; /* 少し幅を広げる */
-  background-color: var(--category-nav-background);
-  padding: 15px 0; /* 上下のパディングを少し増やす */
-  border-right: 1px solid var(--border-color);
-  overflow-y: auto; /* カテゴリが多くなった場合にスクロール */
-  height: 100%; /* 重要: 高さを100%に */
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--category-nav-background);
+  flex-shrink: 0; /* 縮まないように */
+  overflow-x: auto; /* スマホなどでカテゴリが多い場合横スクロール */
+  white-space: nowrap; /* 折り返さない */
 }
 .category-tab {
-  display: block;
-  width: 100%;
-  padding: 16px 15px; /* パディング調整 */
-  text-align: left;
+  display: inline-block; /* 横並びにする */
+  padding: 10px 18px;
+  margin-right: 10px;
+  text-align: center;
   background: none;
   border: none;
-  border-left: 5px solid transparent;
+  border-bottom: 3px solid transparent;
   cursor: pointer;
-  font-size: 1rem; /* 少し小さく */
+  font-size: 1rem;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text-color-light);
   transition: all 0.2s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* 長いカテゴリ名に対応 */
 }
 .category-tab:hover {
-  background-color: #e0e0e0;
+  color: var(--text-color);
 }
 .category-tab.active {
-  background-color: var(--card-background-color);
-  border-left-color: var(--primary-color);
-  font-weight: bold;
   color: var(--primary-color);
+  font-weight: 700;
+  border-bottom-color: var(--primary-color);
 }
 
-/* 2b. Menu List (中央) */
+/* ★ 2b. メニューリスト (MenuContent.tsx のルート) */
 .menu-list-container {
-  flex-grow: 1; /* 中央エリアが残りの幅を使用 */
-  background-color: var(--background-color);
-  padding: 20px;
-  overflow-y: auto; /* メニューリストはスクロール可能に */
-  height: 100%; /* 重要: 高さを100%に */
+  flex: 1; /* ★ main-content-wrapper の中で残りの高さを占める */
+  overflow-y: auto; /* ★ メニューが多すぎたらスクロール */
+  padding: 20px; /* メニューエリアの余白 */
 }
+
+/* ★ 2c. メニューグリッド (MenuContent.tsx の .menu-content) */
 .menu-content {
   display: grid;
-  /* ★★ 画面幅に合わせて列数を調整 ★★ */
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(240px, 1fr)
-  ); /* 基本（タブレット想定） */
-  gap: 20px;
+  /* PC幅で3〜4列になるように、アイテムの最小幅(280px)を確保しつつ、
+    余ったスペースを均等に分配 (1fr) します。
+    repeat(auto-fill, ...) で列数が自動調整されます。
+  */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px; /* アイテム間の隙間 */
+  max-width: 1600px; /* PCでの最大幅（任意） */
+  margin: 0 auto; /* 中央寄せ（任意） */
 }
+
+/* ★ メニューアイテム */
 .menu-item {
-  background: var(--card-background-color);
-  border-radius: 10px; /* 角丸を少し控えめに */
-  box-shadow: 0 3px 10px var(--shadow-color); /* 影を少し調整 */
-  overflow: hidden;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--shadow-color);
   display: flex;
   flex-direction: column;
-  position: relative;
-  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 .menu-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px var(--shadow-color);
+  box-shadow: 0 6px 12px
+    color-mix(in srgb, var(--shadow-color) 150%, transparent);
+  transform: translateY(-2px);
 }
 .menu-item-clickable {
   cursor: pointer;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 .menu-image {
   width: 100%;
-  height: 160px;
-  object-fit: cover;
-} /* 少し高く */
+  height: 180px; /* 高さを固定 */
+  object-fit: cover; /* 画像をトリミング */
+}
 .menu-info {
-  padding: 15px;
-  flex-grow: 1;
+  padding: 16px;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 .menu-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: var(--text-color);
-} /* 少し調整 */
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
 .menu-description {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-color-light);
   margin-bottom: 10px;
-  line-height: 1.4;
   flex-grow: 1;
-} /* flex-grow追加 */
-.menu-price {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--danger-color);
-  margin-top: auto;
-} /* margin-top: auto で価格を下揃え */
-.quantity-control {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 15px 15px;
-}
-.quantity-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-} /* flex追加 */
-.quantity-button:active {
-  transform: scale(0.95);
-}
-.quantity-button.minus {
-  background-color: var(--danger-color);
-}
-.quantity-button.plus {
-  background-color: var(--accent-color);
-}
-.quantity-button:disabled {
-  background-color: var(--button-disabled-background);
-  cursor: not-allowed;
-  transform: none;
-}
-.quantity-button:hover:not(:disabled) {
-  filter: brightness(110%);
-}
-.quantity-display {
-  font-size: 1.2rem;
-  font-weight: bold;
-  width: 35px;
-  text-align: center;
-  color: var(--text-color);
+  min-height: 2.7em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* ★ この行を追加 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .menu-allergens {
   font-size: 0.8rem;
   color: var(--danger-color);
-  margin-top: 8px;
+  margin-bottom: 10px;
   font-weight: 500;
 }
-
-/* 2c. Cart Sidebar (右) */
-.order-sidebar {
-  flex: 0 0 340px; /* 少し幅を広げる */
-  background-color: var(--sidebar-background);
-  padding: 20px;
-  border-left: 1px solid var(--border-color);
+.menu-price {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: var(--text-color);
+  margin-top: auto; /* 価格を一番下に配置 */
+  text-align: right;
+}
+.quantity-control {
   display: flex;
-  flex-direction: column;
-  height: 100%; /* 重要: 高さを100%に */
+  justify-content: flex-end; /* 右寄せ */
+  align-items: center;
+  padding: 0px 16px 16px; /* 下部に配置 */
+}
+.quantity-button {
+  background-color: var(--button-primary-background);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 30px; /* 中央揃え */
+  transition: background-color 0.2s;
+}
+.quantity-button:hover {
+  filter: brightness(110%);
+}
+.quantity-button.minus {
+  background-color: var(--warning-color);
+}
+.quantity-button:disabled {
+  background-color: var(--button-disabled-background);
+  cursor: not-allowed;
+}
+.quantity-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0 12px;
+  min-width: 40px; /* 幅を確保 */
+  text-align: center;
+}
+
+/* ★ 2d. カート (CartSidebar.tsx の .order-sidebar) */
+.order-sidebar {
+  width: 360px; /* ★ カートの幅を固定 (細くする) */
+  flex-shrink: 0; /* ★ 縮まないようにする */
+  border-left: 1px solid var(--border-color);
+  background-color: var(--sidebar-background);
+  display: flex;
+  flex-direction: column; /* カート内を縦に積む */
+  height: 100%; /* ★ order-main-area の高さに合わせる */
   overflow: hidden; /* サイドバー自体はスクロールさせない */
 }
 .sidebar-title {
-  font-size: 1.6rem;
-  font-weight: bold;
-  color: var(--text-color);
-  margin-bottom: 15px;
-  border-bottom: 2px solid var(--secondary-color);
-  padding-bottom: 8px;
-  flex-shrink: 0;
-}
-.empty-cart-message {
-  color: var(--text-color-light);
-  font-style: italic;
-  margin-top: 20px;
+  padding: 16px 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border-color);
   text-align: center;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0; /* 縮まない */
 }
 .cart-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  flex-grow: 1;
-  overflow-y: auto; /* カートリスト部分をスクロール可能に */
+  flex: 1; /* ★ カートリストが残りの高さを占める */
+  overflow-y: auto; /* カート内容が多ければスクロール */
+  padding: 8px 16px;
+}
+.empty-cart-message {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-color-light);
+  font-size: 1.1rem;
+  margin-top: 30px;
 }
 .cart-item {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  /* 項目名 | 数量 | 価格 */
+  grid-template-columns: 1fr auto 70px;
   gap: 10px;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px 4px;
   border-bottom: 1px dashed var(--border-color);
 }
 .cart-item-info {
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* 長い商品名対策 */
 }
 .item-name {
   font-size: 1rem;
   font-weight: 500;
   color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .item-options {
   font-size: 0.8rem;
   color: var(--text-color-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .item-control {
   display: flex;
   align-items: center;
 }
 .cart-qty-btn {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 1px solid var(--border-color);
   background: var(--card-background-color);
   color: var(--text-color);
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   transition: background-color 0.1s;
@@ -450,15 +395,17 @@ body {
 .item-price {
   font-weight: bold;
   color: var(--danger-color);
-  min-width: 75px;
   text-align: right;
   font-size: 0.95rem;
 }
+
 .cart-summary {
-  padding-top: 15px;
+  padding: 20px;
   border-top: 2px solid var(--header-background);
   margin-top: auto; /* 下部に固定 */
-  flex-shrink: 0;
+  flex-shrink: 0; /* 縮まない */
+  background-color: #fdfdfd;
+  box-shadow: 0 -2px 5px var(--shadow-color);
 }
 .summary-row {
   display: flex;
@@ -476,7 +423,7 @@ body {
 .order-confirm-button,
 .goto-payment-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px; /* ボタンを大きく */
   border: none;
   border-radius: 8px;
   font-size: 1.1rem;
@@ -501,6 +448,60 @@ body {
   background-color: var(--button-disabled-background);
   color: #777;
   cursor: not-allowed;
+}
+
+/* 3. フッター (BottomNav) */
+.fixed-bottom-bar {
+  height: 70px;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  background-color: var(--card-background-color);
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -2px 5px var(--shadow-color);
+  z-index: 10;
+  flex-shrink: 0; /* フッターが縮まないように */
+}
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-color-light);
+  cursor: pointer;
+  padding: 5px 0;
+  position: relative;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: color 0.2s, border-top 0.2s;
+  flex: 1;
+  border-top: 3px solid transparent;
+}
+.nav-tab.active {
+  color: var(--primary-color);
+  font-weight: 600;
+  border-top-color: var(--primary-color);
+}
+.nav-tab:hover {
+  color: var(--primary-color);
+}
+.nav-tab-icon {
+  font-size: 1.5rem;
+  margin-bottom: 2px;
+}
+.badge {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 25px); /* アイコンの近くに配置 */
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: 50%;
+  padding: 2px 5px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1;
 }
 
 /* --- HISTORYタブ (2カラムレイアウト) のスタイル --- */
@@ -528,7 +529,6 @@ body {
   height: 100%;
   overflow-y: auto;
 }
-/* (Historyの残りのスタイルは省略) */
 .history-summary-sidebar h3 {
   color: var(--text-color);
   margin-bottom: 10px;
@@ -558,11 +558,13 @@ body {
   color: #777;
   cursor: not-allowed;
 }
-.history-summary-sidebar button:first-of-type {
+/* 履歴画面の「お会計」ボタン */
+.history-summary-sidebar button.payment-button {
   background-color: var(--danger-color);
   color: white;
 }
-.history-summary-sidebar button:last-of-type {
+/* 履歴画面の「呼び出し」ボタン */
+.history-summary-sidebar button.call-button {
   background-color: var(--warning-color);
   color: var(--header-background);
 }
@@ -618,172 +620,13 @@ body {
   margin-bottom: 10px;
 }
 
-/* 3. 固定フッター */
-.fixed-bottom-bar {
-  height: 70px; /* 少し低く */
-  display: flex;
-  justify-content: space-around;
-  align-items: stretch; /* アイテムを縦に伸ばす */
-  background-color: var(--card-background-color);
-  border-top: 1px solid var(--border-color);
-  box-shadow: 0 -2px 5px var(--shadow-color);
-  z-index: 10;
-  flex-shrink: 0; /* フッターが縮まないように */
-}
-
-.nav-tab {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: var(--text-color-light);
-  cursor: pointer;
-  padding: 5px 0;
-  position: relative;
-  font-size: 0.8rem; /* 少し小さく */
-  font-weight: 500;
-  transition: color 0.2s, border-top 0.2s;
-  flex: 1;
-  border-top: 3px solid transparent; /* Reserve space for active border */
-}
-
-.nav-tab.active {
-  color: var(--primary-color);
-  font-weight: 600; /* 太すぎないように */
-  border-top-color: var(--primary-color);
-}
-.nav-tab:hover {
-  color: var(--primary-color);
-}
-.nav-tab-icon {
-  font-size: 1.5rem;
-  margin-bottom: 2px;
-}
-.badge {
-  position: absolute;
-  top: 5px;
-  right: calc(50% - 25px);
-  background-color: var(--danger-color);
-  color: white;
-  border-radius: 50%;
-  padding: 2px 5px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  min-width: 18px;
-  text-align: center;
-  line-height: 1;
-}
-
-/* (PaymentOptions, SplitBill, Thanks, Modal, Confirmation, Animations のスタイルは省略) */
-/* (上記で省略した他の画面スタイルも、必要に応じて微調整してください) */
-
 /* ------------------------------------- */
-/* RESPONSIVE STYLES (PC/Wider Screens) */
+/* 他の画面 (Payment, Split, Thanks) */
 /* ------------------------------------- */
-
-/* ★★ 画面幅が1024px以上の場合 ★★ */
-@media (min-width: 1024px) {
-  .order-main-area > .menu-list-container,
-  .order-main-area > .order-sidebar,
-  .history-content-main,
-  .history-summary-sidebar {
-    padding: 30px; /* 内側の余白を広げる */
-  }
-
-  .menu-content {
-    /* PCではより多くの列を表示 */
-    grid-template-columns: repeat(
-      auto-fill,
-      minmax(280px, 1fr)
-    ); /* アイテム幅を少し広げる */
-    gap: 30px; /* アイテム間の隙間を広げる */
-  }
-
-  .menu-image {
-    height: 180px; /* 画像を少し大きく */
-  }
-
-  .order-sidebar {
-    flex-basis: 380px; /* カートの幅を広げる */
-  }
-
-  .history-summary-sidebar {
-    flex-basis: 420px; /* 履歴サイドバーの幅を広げる */
-  }
-
-  /* 会計選択画面 */
-  .payment-options-grid {
-    max-width: 1000px;
-    gap: 40px;
-  }
-  .option-card {
-    padding: 40px;
-  }
-
-  /* 割り勘画面 */
-  .split-controls,
-  .summary-section,
-  .calculation-result-box,
-  .split-controls-footer {
-    max-width: 850px; /* 最大幅を広げる */
-  }
-
-  /* タイトル画面 */
-  .main-title {
-    font-size: 6rem;
-  }
-  .sub-title {
-    font-size: 1.8rem;
-  }
-  .start-prompt {
-    font-size: 1.5rem;
-  }
-
-  /* ヘッダー */
-  .order-header .search-input {
-    max-width: 500px;
-  }
-
-  /* フッター */
-  .fixed-bottom-bar {
-    height: 75px;
-  } /* 少し高く */
-  .nav-tab-icon {
-    font-size: 1.7rem;
-  }
-  .nav-tab {
-    font-size: 0.9rem;
-  }
-  .badge {
-    font-size: 0.75rem;
-    padding: 2px 6px;
-    min-width: 20px;
-  }
-}
-
-/* 画面幅が1280px以上の場合 (さらに大きな画面) */
-@media (min-width: 1280px) {
-  .menu-content {
-    grid-template-columns: repeat(
-      auto-fill,
-      minmax(300px, 1fr)
-    ); /* さらにアイテム幅を広げる */
-    gap: 35px;
-  }
-  .order-sidebar {
-    flex-basis: 400px;
-  }
-  .history-summary-sidebar {
-    flex-basis: 450px;
-  }
-}
-
-/* (中略: Payment, Split, Thanks, Modal, Confirmation スタイル...) */
-/* 必要であれば、これらのスタイルも @media クエリ内で調整してください */
 .payment-options-screen,
 .split-bill-screen,
 .thanks-screen {
-  padding: 30px; /* 基本パディング */
+  padding: 30px;
   align-items: center;
   justify-content: flex-start; /* 上寄せ */
   overflow-y: auto; /* コンテンツが多い場合にスクロール */
@@ -799,8 +642,7 @@ body {
   width: 100%;
   text-align: center;
 }
-/* (以下、Payment, Split, Thanks, Modal, Confirmation の詳細スタイルをペースト) */
-/* ... (前の回答から該当部分をコピーしてください) ... */
+
 /* PAYMENT OPTIONS SCREEN STYLES (会計選択) */
 .payment-summary {
   text-align: center;
@@ -1143,99 +985,136 @@ body {
 }
 .modal-content {
   background: var(--card-background-color);
-  padding: 30px;
+  padding: 24px;
   border-radius: 15px;
   box-shadow: 0 5px 25px var(--shadow-color);
   width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
+  max-width: 480px; /* 少し小さく */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   animation: zoomIn 0.2s ease-out;
+  position: relative; /* 閉じるボタンの位置基準 */
+}
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-color-light);
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+}
+.modal-close-button:hover {
+  color: var(--text-color);
+}
+.modal-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 15px;
 }
 .modal-content h2 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: var(--text-color);
-  margin: 0 0 10px;
-  border-bottom: 2px solid var(--secondary-color);
-  padding-bottom: 10px;
+  margin: 0 0 5px;
 }
-.modal-content h3 {
-  font-size: 1.3rem;
+.modal-content p {
+  /* Description */
+  font-size: 0.95rem;
+  color: var(--text-color-light);
+  margin-bottom: 15px;
+}
+
+.modal-options {
+  flex-grow: 1; /* オプションが多い場合に高さを取る */
+  overflow-y: auto; /* スクロール */
+  max-height: 20vh; /* 最大高さを制限 */
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 0;
+  margin-bottom: 15px;
+}
+.modal-options h4 {
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-color);
-  margin-top: 20px;
   margin-bottom: 10px;
+  padding: 0 5px;
 }
-.options-list {
-  overflow-y: auto;
-  padding: 5px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--background-color);
-  flex-grow: 1;
-}
-.options-list label {
+.option-item {
   display: flex;
   align-items: center;
-  font-size: 1.1rem;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: var(--text-color);
+  padding: 10px 5px;
 }
-.options-list label:last-child {
-  border-bottom: none;
-}
-.options-list label:hover {
-  background-color: #eee;
-}
-.options-list input[type="checkbox"] {
-  margin-right: 15px;
-  transform: scale(1.4);
+.option-item input[type="checkbox"] {
+  margin-right: 12px;
+  transform: scale(1.3);
   accent-color: var(--primary-color);
 }
-.modal-footer {
-  margin-top: 25px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.modal-total-price {
-  font-size: 1.4rem;
-  font-weight: bold;
+.option-item label {
+  font-size: 1rem;
   color: var(--text-color);
+  cursor: pointer;
 }
-.modal-total-price strong {
-  color: var(--danger-color);
+.option-item label span {
+  color: var(--text-color-light);
+  font-size: 0.9rem;
 }
-.modal-controls {
+
+.modal-quantity {
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 15px;
+  margin-bottom: 20px;
 }
-.modal-controls button {
-  padding: 12px 25px;
+.modal-quantity button {
+  width: 40px;
+  height: 40px;
+  font-size: 1.6rem;
+  /* (stepper button スタイルを流用) */
+  background-color: var(--category-nav-background);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+.modal-quantity button:hover:not(:disabled) {
+  background-color: #d5dbe0;
+}
+.modal-quantity button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.modal-quantity span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: center;
+}
+
+.add-to-cart-button {
+  /* (button スタイルを流用) */
+  width: 100%;
+  padding: 16px;
   border: none;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-}
-.modal-controls .primary-btn {
-  background-color: var(--button-success-background);
+  transition: filter 0.2s;
   color: white;
+  background-color: var(--button-success-background);
 }
-.modal-controls .primary-btn:hover {
+.add-to-cart-button:hover {
   filter: brightness(110%);
-}
-.modal-controls .secondary-btn {
-  background-color: var(--button-disabled-background);
-  color: var(--text-color);
-}
-.modal-controls .secondary-btn:hover {
-  filter: brightness(90%);
 }
 
 /* 注文完了 確認メッセージ */
@@ -1280,5 +1159,336 @@ body {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* ------------------------------------- */
+/* RESPONSIVE STYLES (PC/Wider Screens) */
+/* ------------------------------------- */
+
+/* ★★ 画面幅が1024px以上の場合 ★★ */
+@media (min-width: 1024px) {
+  /* ★ OrderScreen 2カラムレイアウト用のラッパー */
+  .main-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ★ カテゴリナビ (上部) */
+  .category-nav {
+    flex-shrink: 0; /* 縮まない */
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-background-color); /* 背景を白に */
+    padding: 0 24px; /* 横パディング */
+    overflow-x: auto; /* カテゴリが多い場合は横スクロール */
+    white-space: nowrap; /* 折り返さない */
+  }
+  .category-tab {
+    display: inline-block; /* 横並び */
+    padding: 16px 20px;
+    margin-right: 10px;
+    border-left: none; /* 左ボーダー削除 */
+    border-bottom: 4px solid transparent; /* 下ボーダーでアクティブ表現 */
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  .category-tab.active {
+    border-left-color: transparent; /* 左ボーダー削除 */
+    border-bottom-color: var(--primary-color); /* 下ボーダーでアクティブ表現 */
+    color: var(--primary-color);
+    font-weight: 700;
+  }
+
+  /* ★ メニューリスト (中央、スクロール) */
+  .menu-list-container {
+    flex: 1; /* ★ main-content-wrapper の中で残りの高さを占める */
+    overflow-y: auto; /* ★ メニューが多すぎたらスクロール */
+    padding: 30px; /* 内側の余白を広げる */
+    background-color: var(--background-color);
+  }
+
+  /* ★ メニューグリッド */
+  .menu-content {
+    display: grid;
+    /* PCではより多くの列を表示 */
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(280px, 1fr)
+    ); /* アイテム幅を少し広げる */
+    gap: 30px; /* アイテム間の隙間を広げる */
+  }
+
+  .menu-image {
+    height: 180px; /* 画像を少し大きく */
+  }
+
+  /* ★ カート (右側) */
+  .order-sidebar {
+    flex-basis: 380px; /* カートの幅を広げる */
+    flex-shrink: 0; /* 縮まない */
+    padding: 20px; /* パディング */
+    height: 100%; /* 高さいっぱい */
+    overflow: hidden; /* スクロールは .cart-list で */
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-title {
+    padding: 10px 0 15px;
+  }
+  .cart-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px; /* スクロールバー用の余白 */
+  }
+  .cart-summary {
+    padding-top: 20px;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+
+  /* 履歴画面 */
+  .history-content-main,
+  .history-summary-sidebar {
+    padding: 30px; /* 内側の余白を広げる */
+  }
+  .history-summary-sidebar {
+    flex-basis: 420px; /* 履歴サイドバーの幅を広げる */
+  }
+
+  /* 会計選択画面 */
+  .payment-options-grid {
+    max-width: 1000px;
+    gap: 40px;
+  }
+  .option-card {
+    padding: 40px;
+  }
+
+  /* 割り勘画面 */
+  .split-controls,
+  .summary-section,
+  .calculation-result-box,
+  .split-controls-footer {
+    max-width: 850px; /* 最大幅を広げる */
+  }
+
+  /* ヘッダー */
+  .order-header .search-input {
+    max-width: 500px;
+  }
+
+  /* フッター (PCでは非表示にする例) */
+  /*
+  .fixed-bottom-bar {
+     display: none; 
+  }
+  .order-screen-layout {
+      height: calc(100vh - 60px); // ヘッダー分のみ
+  }
+  */
+
+  /* フッターをPCでも表示する場合 */
+  .fixed-bottom-bar {
+    height: 75px;
+  }
+  .nav-tab-icon {
+    font-size: 1.7rem;
+  }
+  .nav-tab {
+    font-size: 0.9rem;
+  }
+  .badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    min-width: 20px;
+  }
+}
+
+/* 画面幅が1280px以上の場合 (さらに大きな画面) */
+@media (min-width: 1280px) {
+  .menu-content {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(300px, 1fr)
+    ); /* さらにアイテム幅を広げる */
+    gap: 35px;
+  }
+  .order-sidebar {
+    flex-basis: 400px;
+  }
+  .history-summary-sidebar {
+    flex-basis: 450px;
+  }
+}
+
+/* ------------------------------------- */
+/* スマホ・タブレット縦向き用 (～1023px) */
+/* ------------------------------------- */
+@media (max-width: 1023px) {
+  /* ★ OrderScreen のレイアウトを縦積みに変更 */
+  .order-main-area {
+    flex-direction: column; /* 縦積み */
+    overflow-y: auto; /* メインエリア全体でスクロール */
+  }
+
+  /* ★ main-content-wrapper はそのまま */
+  .main-content-wrapper {
+    flex: 1;
+    /* overflow: hidden; */ /* 縦積みなので解除 */
+  }
+
+  /* ★ メニューグリッド (スマホ用) */
+  .menu-list-container {
+    padding: 10px; /* スマホ用に余白を減らす */
+    overflow-y: visible; /* スクロールは .order-main-area に任せる */
+  }
+  .menu-content {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(150px, 1fr)
+    ); /* スマホ用に2列程度 */
+    gap: 10px;
+  }
+  .menu-image {
+    height: 110px; /* 画像を小さく */
+  }
+  .menu-info {
+    padding: 10px;
+  }
+  .menu-name {
+    font-size: 0.95rem;
+  }
+  .menu-description {
+    font-size: 0.8rem;
+    min-height: 2.4em; /* 2行分 */
+  }
+  .menu-price {
+    font-size: 0.9rem;
+  }
+  .quantity-control {
+    padding: 8px;
+  }
+  .quantity-button {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  .quantity-display {
+    font-size: 1rem;
+  }
+
+  /* ★ カート (スマホ/タブレット) */
+  .order-sidebar {
+    width: 100%; /* 幅を100%に */
+    height: auto; /* 高さを自動に */
+    flex-shrink: 0;
+    border-left: none; /* 左ボーダー削除 */
+    border-top: 2px solid var(--border-color); /* 上ボーダー追加 */
+    box-shadow: 0 -3px 6px var(--shadow-color);
+  }
+  .sidebar-title {
+    font-size: 1.3rem;
+    padding: 12px;
+  }
+  .cart-list {
+    flex-grow: 0; /* 高さを自動に */
+    max-height: 200px; /* 最大高さを指定してスクロール */
+    overflow-y: auto;
+  }
+  .cart-summary {
+    padding: 15px;
+  }
+  .summary-row {
+    font-size: 1.2rem;
+  }
+  .summary-amount {
+    font-size: 1.5rem;
+  }
+  .order-confirm-button,
+  .goto-payment-btn {
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  /* 履歴画面 (スマホ) */
+  .history-pane-layout {
+    flex-direction: column; /* 縦積み */
+    overflow-y: auto; /* 全体でスクロール */
+  }
+  .history-content-main {
+    overflow-y: visible; /* スクロールを親に任せる */
+    height: auto;
+    padding: 15px;
+  }
+  .history-summary-sidebar {
+    flex: 0 0 auto; /* 高さを自動に */
+    height: auto;
+    border-left: none;
+    border-top: 2px solid var(--border-color);
+    box-shadow: 0 -3px 6px var(--shadow-color);
+  }
+
+  /* 会計・割り勘画面 (スマホ) */
+  .payment-options-screen,
+  .split-bill-screen,
+  .thanks-screen {
+    padding: 15px;
+  }
+  .payment-options-grid {
+    grid-template-columns: 1fr; /* 1列にする */
+    gap: 15px;
+  }
+  .option-card {
+    padding: 20px;
+  }
+  .split-controls {
+    flex-direction: column; /* 縦積み */
+    gap: 15px;
+  }
+  .split-controls-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .split-controls-footer .back-button,
+  .split-controls-footer .call-staff-button-large {
+    padding: 16px;
+    font-size: 1.1rem;
+  }
+  .thanks-screen h1 {
+    font-size: 2.5rem;
+  }
+  .thanks-screen p {
+    font-size: 1.2rem;
+  }
+
+  /* ヘッダー (スマホ) */
+  .order-header {
+    padding: 0 10px;
+    gap: 10px;
+    height: 55px;
+  }
+  .tablet-info {
+    font-size: 0.9rem;
+  }
+  .call-staff-button-header {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  .order-header .search-input {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+
+  /* フッター (スマホ) */
+  .fixed-bottom-bar {
+    height: 60px;
+  }
+  .nav-tab-icon {
+    font-size: 1.3rem;
+  }
+  .nav-tab {
+    font-size: 0.7rem;
   }
 }

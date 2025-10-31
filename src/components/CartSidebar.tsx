@@ -5,6 +5,8 @@ import React from "react";
 import { MenuItem, Option, CartItem } from "../types";
 // ★ ストアのフックと updateCart アクションをインポート
 import useCartStore from "../store/cartStore";
+// ★ ストアから menuData を取得するためにインポート
+import { Category } from "../types"; // (または MenuData)
 
 interface CartSidebarProps {
   cart: CartItem[];
@@ -16,24 +18,23 @@ interface CartSidebarProps {
   pendingOrderTotalAmount: number;
 }
 
-// ★ MenuItem を非同期で取得するヘルパー関数 (仮実装、実際にはAPIやストアから取得)
-//    cartStore に menuData があればそこから探すのが現実的
+// ★ カートアイテムから MenuItem をストア内で検索するヘルパー関数
+// (ストアの menuData がロードされている前提)
 async function findMenuItemById(id: string): Promise<MenuItem | null> {
-  const menuData = useCartStore.getState().menuData; // ストアから取得 (レンダリング外でのgetStateは注意)
+  let menuData = useCartStore.getState().menuData;
+  // もしストアに menuData がなければ取得を試みる
   if (!menuData) {
-    // メニューデータがなければ fetchMenuData を呼ぶ (これもレンダリング外なので注意)
     await useCartStore.getState().fetchMenuData();
-    const updatedMenuData = useCartStore.getState().menuData;
-    if (!updatedMenuData) return null; // それでもなければ諦める
+    menuData = useCartStore.getState().menuData;
+  }
 
-    for (const category of updatedMenuData.categories) {
-      const found = category.items.find((item) => item.id === id);
-      if (found) return found;
-    }
-  } else {
+  if (menuData && Array.isArray(menuData.categories)) {
     for (const category of menuData.categories) {
-      const found = category.items.find((item) => item.id === id);
-      if (found) return found;
+      // ★ Category 型の items が配列であることを確認
+      if (category.items && Array.isArray(category.items)) {
+        const found = category.items.find((item) => item.id === id);
+        if (found) return found;
+      }
     }
   }
   console.error(`MenuItem with id ${id} not found in store.`);
@@ -54,7 +55,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const handleUpdateQuantity = async (cartItem: CartItem, change: number) => {
     const newQuantity = cartItem.quantity + change;
 
-    // ★ CartItem の情報から MenuItem を検索 (非同期になる可能性)
+    // ★ CartItem の情報から MenuItem を検索 (非同期)
     const menuItem = await findMenuItemById(cartItem.menuItemId);
 
     if (menuItem) {
@@ -66,11 +67,20 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         "カート更新エラー: 元の商品情報が見つかりません。",
         cartItem
       );
+      // ★ ユーザーにエラーを通知
       alert("カートの更新中にエラーが発生しました。");
     }
   };
 
+  // ★ オプション込みの価格を計算するヘルパー
+  const calculateItemTotal = (item: CartItem) => {
+    const optionsTotal =
+      item.selectedOptions?.reduce((sum, option) => sum + option.price, 0) || 0;
+    return (item.price + optionsTotal) * item.quantity;
+  };
+
   return (
+    // ★ クラス名を order-sidebar に変更 (CSSに合わせる)
     <div className="order-sidebar">
       <h2 className="sidebar-title">🛒 現在の注文</h2>
       {cart.length === 0 ? (
@@ -83,6 +93,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 <span className="item-name">{item.name}</span>
                 {item.selectedOptions && item.selectedOptions.length > 0 && (
                   <span className="item-options">
+                    {/* ★ Option 型を明示 */}
                     {item.selectedOptions.map((o: Option) => o.name).join(", ")}
                   </span>
                 )}
@@ -103,15 +114,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 </button>
               </div>
               <span className="item-price">
-                ¥
-                {(
-                  (item.price +
-                    (item.selectedOptions?.reduce(
-                      (sum, opt) => sum + opt.price,
-                      0
-                    ) || 0)) *
-                  item.quantity
-                ).toLocaleString()}
+                {/* ★ オプション込みの合計金額を表示 */}¥
+                {calculateItemTotal(item).toLocaleString()}
               </span>
             </li>
           ))}
@@ -134,6 +138,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         <button
           className="goto-payment-btn"
           onClick={onGoToPayment}
+          // ★ カートが空でも未会計があれば支払いに行けるように修正
           disabled={pendingOrderTotalAmount === 0 && cart.length === 0}
         >
           お会計に進む 💳

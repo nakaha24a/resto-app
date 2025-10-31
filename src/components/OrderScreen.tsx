@@ -1,12 +1,10 @@
 // src/components/OrderScreen.tsx
 
 import React, { useMemo, useState, useEffect } from "react";
-// ★ usePendingOrderTotalAmount のみインポート
 import useCartStore, {
   useCartTotalAmount,
   usePendingOrderTotalAmount,
 } from "../store/cartStore";
-// ★ Option, Order のインポートを削除
 import { MenuItem, CartItem, MenuData, Category } from "../types";
 
 import OrderHistoryPane from "./OrderHistoryPane";
@@ -14,6 +12,7 @@ import OrderHeader from "./OrderHeader";
 import CategoryNav from "./CategoryNav";
 import MenuContent from "./MenuContent";
 import CartSidebar from "./CartSidebar";
+// OptionModal は MenuContent で使うのでここでは不要
 import BottomNav from "./BottomNav";
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
@@ -50,12 +49,10 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   onGoToPayment,
   setShowOrderComplete,
 }) => {
-  // ★ updateCart の取得を削除
   const { cart, pendingOrders, placeOrder, fetchOrders } = useCartStore();
   const cartTotalAmount = useCartTotalAmount();
   const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
-  // ★ ストアのメニューデータを取得
   const menuData = useCartStore((state) => state.menuData);
   const fetchMenuData = useCartStore((state) => state.fetchMenuData);
   const menuLoading = useCartStore((state) => state.loading);
@@ -63,12 +60,10 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   useEffect(() => {
     if (!menuData && !menuLoading) {
-      // データがなく、ローディング中でもない場合のみ取得
       fetchMenuData();
     }
-  }, [fetchMenuData, menuData, menuLoading]); // ★ menuLoading も依存配列に追加
+  }, [fetchMenuData, menuData, menuLoading]);
 
-  // ★ fetchOrders 呼び出しを別 useEffect に分離 (menuData の変更で再実行しないように)
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -86,22 +81,29 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     ) {
       setSelectedCategory("TOP");
     } else if (!menuLoading && !menuData && !menuError) {
-      // データロード失敗(エラーなし)の場合
       setSelectedCategory("TOP");
     }
-  }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]); // ★ menuError も依存配列に追加
+  }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]);
 
+  // ★★★ ここを修正しました ★★★
   const handlePlaceOrder = async () => {
-    const tableNum = parseInt(userId, 10);
-    if (isNaN(tableNum)) {
-      alert("テーブル番号が無効です。");
+    // "T-05" のような形式から数値 "5" を抽出
+    const tableNum = parseInt(userId.replace(/[^0-9]/g, ""), 10);
+
+    // 抽出した数値が有効か (NaN でないか、0より大きいか) をチェック
+    if (isNaN(tableNum) || tableNum <= 0) {
+      alert(`テーブル番号が無効です。(ID: ${userId})`); // エラーアラート
       return;
     }
+
+    // 正常な数値 (tableNum) を placeOrder に渡す
     const newOrder = await placeOrder(tableNum);
+
     if (newOrder) {
       setShowOrderComplete(true);
       setTimeout(() => setShowOrderComplete(false), 2500);
     } else {
+      // ストアからエラーメッセージを取得して表示
       const storeError = useCartStore.getState().error;
       alert(`注文処理に失敗しました。\n${storeError || ""}`);
     }
@@ -110,7 +112,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const renderMainContent = () => {
     if (menuLoading)
       return <div className="loading-message">メニュー読み込み中...</div>;
-    // エラー時はメッセージのみ表示
     if (menuError)
       return (
         <div
@@ -120,7 +121,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           エラー: {menuError}
         </div>
       );
-    // データがない場合 (エラーではないが空)
     if (!menuData)
       return (
         <div className="loading-message">メニューデータがありません。</div>
@@ -128,28 +128,35 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
     if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
+        // ★★★ この <React.Fragment> (または <>) が重要 ★★★
         <>
-          <CategoryNav
-            categories={CATEGORIES}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
-          <MenuContent
-            selectedCategory={
-              selectedCategory === "TOP" ? null : selectedCategory
-            }
-          />
+          {/* ★ メインコンテンツ(カテゴリ+メニュー)を div でラップ */}
+          <div className="main-content-wrapper">
+            <CategoryNav
+              categories={CATEGORIES}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+            <MenuContent
+              selectedCategory={
+                selectedCategory === "TOP" ? null : selectedCategory
+              }
+            />
+          </div>
+
+          {/* ★ CartSidebar は .main-content-wrapper の *外* (兄弟要素) に出す */}
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
-            // onUpdateCart は CartSidebar 内でストアを使うので不要
             onPlaceOrder={handlePlaceOrder}
             onGoToPayment={onGoToPayment}
             pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
         </>
+        // ★★★ ここまでが変更点 ★★★
       );
     } else if (activeTab === "HISTORY") {
+      // (ここは変更なし)
       return (
         <OrderHistoryPane
           pendingOrders={pendingOrders}
