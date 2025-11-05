@@ -101,7 +101,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
     if (newOrder) {
       setShowOrderComplete(true);
-      setTimeout(() => setShowOrderComplete(false), 2500);
+      setTimeout(() => setShowOrderComplete(false), 1500);
     } else {
       // ストアからエラーメッセージを取得して表示
       const storeError = useCartStore.getState().error;
