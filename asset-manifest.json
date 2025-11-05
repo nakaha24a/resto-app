@@ -1,18 +1,13 @@
 {
   "files": {
-    "main.css": "/resto-app/static/css/main.90a7e98a.css",
-    "main.js": "/resto-app/static/js/main.b675fa8e.js",
-    "static/media/maruge.jpeg": "/resto-app/static/media/maruge.821349b2492190bafe20.jpeg",
-    "static/media/orenjijyusu.jpeg": "/resto-app/static/media/orenjijyusu.704d3b8b6343f739fae3.jpeg",
-    "static/media/pepe.jpeg": "/resto-app/static/media/pepe.f97b1ed07fe6fe06fb25.jpeg",
-    "static/media/karubo.jpg": "/resto-app/static/media/karubo.82001a595ab6ed48f768.jpg",
-    "static/media/siza.jpg": "/resto-app/static/media/siza.bdba24566578d9a13521.jpg",
+    "main.css": "/resto-app/static/css/main.5f153ef7.css",
+    "main.js": "/resto-app/static/js/main.b5022200.js",
     "index.html": "/resto-app/index.html",
-    "main.90a7e98a.css.map": "/resto-app/static/css/main.90a7e98a.css.map",
-    "main.b675fa8e.js.map": "/resto-app/static/js/main.b675fa8e.js.map"
+    "main.5f153ef7.css.map": "/resto-app/static/css/main.5f153ef7.css.map",
+    "main.b5022200.js.map": "/resto-app/static/js/main.b5022200.js.map"
   },
   "entrypoints": [
-    "static/css/main.90a7e98a.css",
-    "static/js/main.b675fa8e.js"
+    "static/css/main.5f153ef7.css",
+    "static/js/main.b5022200.js"
   ]
 }
