@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/resto-app/static/css/main.5f153ef7.css",
-    "main.js": "/resto-app/static/js/main.b5022200.js",
+    "main.js": "/resto-app/static/js/main.3fa9f298.js",
     "index.html": "/resto-app/index.html",
     "main.5f153ef7.css.map": "/resto-app/static/css/main.5f153ef7.css.map",
-    "main.b5022200.js.map": "/resto-app/static/js/main.b5022200.js.map"
+    "main.3fa9f298.js.map": "/resto-app/static/js/main.3fa9f298.js.map"
   },
   "entrypoints": [
     "static/css/main.5f153ef7.css",
-    "static/js/main.b5022200.js"
+    "static/js/main.3fa9f298.js"
   ]
 }
