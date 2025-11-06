@@ -2,57 +2,47 @@
 
 import React, { useEffect, useState } from "react";
 import useCartStore from "../store/cartStore";
-// ★ OptionModal で使うため Option をインポート
 import { CartItem, MenuItem, Option, MenuData, Category } from "../types";
 import OptionModal from "./OptionModal";
 
 interface MenuContentProps {
   selectedCategory: string | null;
+  searchQuery: string; // ★ 検索キーワードを受け取る
 }
 
 const API_BASE_URL = "http://localhost:3000";
 
-const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
-  const { cart, updateCart } = useCartStore();
-
-  const [menuData, setMenuData] = useState<MenuData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const MenuContent: React.FC<MenuContentProps> = ({
+  selectedCategory,
+  searchQuery,
+}) => {
+  // ★ searchQuery を受け取る
+  const {
+    cart,
+    updateCart,
+    menuData,
+    fetchMenuData,
+    loading: menuLoading,
+    error: menuError,
+  } = useCartStore();
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch(`${API_BASE_URL}/api/menu`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: MenuData = await response.json();
-        setMenuData(data);
-      } catch (e: any) {
-        console.error("メニューデータの取得に失敗しました:", e);
-        setError(`メニューデータの読み込みに失敗しました: ${e.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMenu();
-  }, []);
+    if (!menuData && !menuLoading) {
+      fetchMenuData();
+    }
+  }, [fetchMenuData, menuData, menuLoading]);
 
   const getItemQuantity = (menuItemId: string) => {
     return cart
       .filter(
-        (
-          item: CartItem // ★ CartItem 型を明示
-        ) =>
+        (item: CartItem) =>
           item.menuItemId === menuItemId &&
           (!item.selectedOptions || item.selectedOptions.length === 0)
       )
-      .reduce((sum, item: CartItem) => sum + item.quantity, 0); // ★ CartItem 型を明示
+      .reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
   };
 
   const handleItemClick = (item: MenuItem) => {
@@ -81,49 +71,69 @@ const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
     handleCloseModal();
   };
 
-  if (loading) {
+  if (menuLoading && !menuData) {
     return (
-      <div className="menu-content">
-        <p>メニューを読み込み中...</p>
+      <div className="menu-list-container">
+        <p style={{ textAlign: "center", padding: "20px" }}>
+          メニュー読み込み中...
+        </p>
       </div>
     );
   }
-  if (error) {
+  if (menuError) {
     return (
-      <div className="menu-content">
-        <p style={{ color: "red" }}>エラー: {error}</p>
+      <div className="menu-list-container">
+        <p style={{ color: "red", textAlign: "center", padding: "20px" }}>
+          {menuError}
+        </p>
       </div>
     );
   }
   if (!menuData || !menuData.categories || menuData.categories.length === 0) {
     return (
-      <div className="menu-content">
-        <p>表示できるメニューがありません。</p>
+      <div className="menu-list-container">
+        <p style={{ textAlign: "center", padding: "20px" }}>
+          表示できるメニューがありません。
+        </p>
       </div>
     );
   }
 
+  // --- 表示するメニュー項目をフィルタリング ---
   let itemsToShow: MenuItem[] = [];
+
   if (!selectedCategory || selectedCategory === "TOP") {
-    // ★ Category 型を明示
     itemsToShow = menuData.categories.flatMap((cat: Category) => cat.items);
   } else if (selectedCategory === "おすすめ") {
-    // ★ Category, MenuItem 型を明示
     itemsToShow = menuData.categories.flatMap((cat: Category) =>
       cat.items.filter((item: MenuItem) => item.isRecommended)
     );
   } else {
-    // ★ Category 型を明示
     const category = menuData.categories.find(
       (cat: Category) => cat.name === selectedCategory
     );
     itemsToShow = category ? category.items : [];
   }
 
+  // ★↓↓↓ 検索キーワードでの絞り込み処理を追加 ↓↓↓
+  if (searchQuery) {
+    itemsToShow = itemsToShow.filter(
+      (item) => item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      // (説明文でも検索する場合は以下を追加)
+      // || (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }
+  // ★↑↑↑ 絞り込み処理ここまで ↑↑↑
+
   return (
     <div className="menu-list-container">
       <div className="menu-content">
-        {itemsToShow.length === 0 && <p>該当する商品がありません。</p>}
+        {itemsToShow.length === 0 && (
+          <p style={{ textAlign: "center", gridColumn: "1 / -1" }}>
+            該当する商品がありません。
+          </p>
+        )}
+
         {itemsToShow.map((item) => {
           const quantity = getItemQuantity(item.id);
           return (
@@ -133,7 +143,6 @@ const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
                 onClick={() => handleItemClick(item)}
               >
                 <img
-                  // ★ imageUrl を image に修正
                   src={`${API_BASE_URL}${
                     item.image || "/assets/placeholder.png"
                   }`}
@@ -146,7 +155,6 @@ const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
                 <div className="menu-info">
                   <p className="menu-name">{item.name}</p>
                   <p className="menu-description">{item.description}</p>
-                  {/* ★ allergens を表示 (types/index.ts で定義されている前提) */}
                   {item.allergens && item.allergens.length > 0 && (
                     <p className="menu-allergens">
                       アレルギー: {item.allergens.join(", ")}
@@ -155,6 +163,7 @@ const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
                   <p className="menu-price">¥{item.price.toLocaleString()}</p>
                 </div>
               </div>
+
               {(!item.options || item.options.length === 0) && (
                 <div className="quantity-control">
                   <button
@@ -177,6 +186,7 @@ const MenuContent: React.FC<MenuContentProps> = ({ selectedCategory }) => {
           );
         })}
       </div>
+
       {selectedItem && isModalOpen && (
         <OptionModal
           menuItem={selectedItem}

@@ -1203,27 +1203,144 @@ body {
 
   /* ★ メニューリスト (中央、スクロール) */
   .menu-list-container {
-    flex: 1; /* ★ main-content-wrapper の中で残りの高さを占める */
-    overflow-y: auto; /* ★ メニューが多すぎたらスクロール */
-    padding: 30px; /* 内側の余白を広げる */
-    background-color: var(--background-color);
+    flex: 1; /* OrderScreenのメインエリアで伸縮するように */
+    overflow-y: auto; /* メニューが多い場合にスクロール */
+    padding: 20px; /* ★ 余白を調整 */
+    background-color: var(--background-color); /* ★ 背景色を設定 */
   }
 
-  /* ★ メニューグリッド */
+  /* ★ 2c. メニューグリッド (MenuContent.tsx の .menu-content) */
   .menu-content {
     display: grid;
-    /* PCではより多くの列を表示 */
-    grid-template-columns: repeat(
-      auto-fill,
-      minmax(280px, 1fr)
-    ); /* アイテム幅を少し広げる */
-    gap: 30px; /* アイテム間の隙間を広げる */
+    /* アイテムの最小幅(280px)を確保しつつ、
+     自動で列数を調整 (auto-fill) します。
+     PC幅なら自動的に3〜4列になります。
+  */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px; /* ★ アイテム間の隙間を少し広げる */
+    max-width: 1600px; /* PCでの最大幅（任意） */
+    margin: 0 auto; /* 中央寄せ（任意） */
+  }
+
+  /* ★ メニューアイテム */
+  .menu-item {
+    background-color: var(--card-background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* ★ 角丸を少し控えめに */
+    /* ★ 影をより柔らかく */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  }
+  .menu-item:hover {
+    /* ★ ホバー時の影も調整 */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px); /* ★ 少し浮き上がる動き */
+  }
+
+  .menu-item-clickable {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
   .menu-image {
-    height: 180px; /* 画像を少し大きく */
+    width: 100%;
+    /* height: 180px; */ /* ← 高さを固定するのをやめる */
+    aspect-ratio: 16 / 10; /* ★ 16:10 のアスペクト比を指定 */
+    object-fit: cover; /* 比率を保ったままトリミング */
+    background-color: #f0f0f0; /* 画像読み込み中の背景 */
   }
 
+  .menu-info {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-name {
+    font-size: 1.2rem; /* ★ サイズを調整 */
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-color); /* ★ メインのテキストカラーに */
+  }
+
+  .menu-description {
+    font-size: 0.9rem;
+    color: var(--text-color-light);
+    margin-bottom: 12px; /* ★ 価格との余白を少し確保 */
+    flex-grow: 1; /* 説明文で高さを調整 */
+    min-height: 2.7em; /* 2行分の高さを確保 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2; /* ★ 標準プロパティも追加 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .menu-allergens {
+    font-size: 0.8rem;
+    color: var(--danger-color);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .menu-price {
+    font-size: 1.25rem; /* ★ 価格を少し大きく */
+    font-weight: 800; /* ★ 太くする */
+    color: var(--danger-color); /* ★ 価格を目立たせる色に (赤系) */
+    margin-top: auto; /* ★ 価格を一番下に配置 */
+    text-align: right;
+  }
+
+  /* --- 数量コントロール --- */
+  .quantity-control {
+    display: flex;
+    justify-content: flex-end; /* 右寄せ */
+    align-items: center;
+    padding: 0px 16px 16px;
+  }
+  .quantity-button {
+    background-color: var(--primary-color); /* ★ テーマカラー (オレンジ) に */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 34px; /* ★ 少し大きく */
+    height: 34px; /* ★ 少し大きく */
+    font-size: 1.5rem; /* ★ フォントサイズ調整 */
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 34px; /* アイコン中央揃え */
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  .quantity-button:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 85%, black);
+  }
+  .quantity-button:active {
+    transform: scale(0.95); /* ★ クリック感を出す */
+  }
+  .quantity-button.minus {
+    background-color: var(--text-color-light); /* ★ マイナスボタンの色を変更 */
+  }
+  .quantity-button.minus:hover {
+    background-color: var(--text-color);
+  }
+  .quantity-button:disabled {
+    background-color: var(--button-disabled-background);
+    cursor: not-allowed;
+  }
+  .quantity-display {
+    font-size: 1.3rem; /* ★ 数字を大きく */
+    font-weight: 700; /* ★ 太く */
+    padding: 0 14px;
+    min-width: 40px;
+    text-align: center;
+  }
   /* ★ カート (右側) */
   .order-sidebar {
     flex-basis: 380px; /* カートの幅を広げる */

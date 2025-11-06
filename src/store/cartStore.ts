@@ -35,7 +35,7 @@ interface CartActions {
   removeFromCart: (cartItemId: string) => void; // カートから商品を削除
   clearCart: () => void; // カートを空にする
   placeOrder: (tableNumber: number) => Promise<Order | null>; // 注文を確定する
-  fetchOrders: () => Promise<void>; // 注文履歴を取得する
+  fetchOrders: (tableNumber: number) => Promise<void>;
   fetchMenuData: () => Promise<void>; // ★ 追加: メニューデータ全体を取得する (オプション)
   calculateCartTotal: () => number; // カート合計金額を計算
   calculatePendingOrderTotal: () => number; // 未会計注文合計金額を計算
@@ -164,24 +164,39 @@ const useCartStore = create<CartState & CartActions>()(
         }
       },
 
-      fetchOrders: async () => {
+      fetchOrders: async (tableNumber: number) => {
+        // ★ 引数を追加
+        // ★ テーブル番号が不正な場合はエラー
+        if (!tableNumber) {
+          console.warn("fetchOrders: tableNumber がありません。");
+          set({
+            error: "注文履歴取得エラー: テーブル番号がありません。",
+            loading: false,
+          });
+          return;
+        }
+
         try {
           set({ loading: true, error: null });
-          const response = await fetch(`${API_BASE_URL}/api/orders`);
+          // ★ URL にクエリパラメータ ?tableNumber=... を追加
+          const response = await fetch(
+            `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`
+          );
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const orders: Order[] = await response.json();
           set({ pendingOrders: orders, loading: false });
-        } catch (error) {
+        } catch (
+          error: any // ★ any 型に変更
+        ) {
           console.error("注文履歴の取得に失敗:", error);
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           set({ error: `注文履歴取得エラー: ${errorMessage}`, loading: false });
         }
       },
-
       fetchMenuData: async () => {
         // ★ 既にデータがあるか、ローディング中なら取得しない
         if (get().menuData || get().loading) {

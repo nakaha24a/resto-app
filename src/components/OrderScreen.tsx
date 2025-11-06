@@ -1,10 +1,12 @@
 // src/components/OrderScreen.tsx
 
 import React, { useMemo, useState, useEffect } from "react";
+// ★ usePendingOrderTotalAmount のみインポート
 import useCartStore, {
   useCartTotalAmount,
   usePendingOrderTotalAmount,
 } from "../store/cartStore";
+// ★ Option, Order のインポートを削除 (ESLint警告対応)
 import { MenuItem, CartItem, MenuData, Category } from "../types";
 
 import OrderHistoryPane from "./OrderHistoryPane";
@@ -12,7 +14,6 @@ import OrderHeader from "./OrderHeader";
 import CategoryNav from "./CategoryNav";
 import MenuContent from "./MenuContent";
 import CartSidebar from "./CartSidebar";
-// OptionModal は MenuContent で使うのでここでは不要
 import BottomNav from "./BottomNav";
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
@@ -25,6 +26,7 @@ interface OrderScreenProps {
   setShowOrderComplete: (show: boolean) => void;
 }
 
+// カテゴリリストを取得するヘルパー関数
 const getCategories = (menuData: MenuData | null): string[] => {
   if (!menuData || !Array.isArray(menuData.categories)) {
     return ["TOP"];
@@ -49,14 +51,23 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   onGoToPayment,
   setShowOrderComplete,
 }) => {
+  // ★ updateCart の取得を削除 (ESLint警告対応)
   const { cart, pendingOrders, placeOrder, fetchOrders } = useCartStore();
   const cartTotalAmount = useCartTotalAmount();
   const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
+  // ★ ストアのメニューデータを取得
   const menuData = useCartStore((state) => state.menuData);
   const fetchMenuData = useCartStore((state) => state.fetchMenuData);
   const menuLoading = useCartStore((state) => state.loading);
   const menuError = useCartStore((state) => state.error);
+
+  // ★★★ tableNum の定義をここに移動 ★★★
+  // useMemo を使って、userId が変わった時だけ再計算するようにすると効率的
+  const tableNum = useMemo(() => {
+    return parseInt(userId.replace(/[^0-9]/g, ""), 10);
+  }, [userId]);
+  // ★★★ 修正ここまで ★★★
 
   useEffect(() => {
     if (!menuData && !menuLoading) {
@@ -64,9 +75,13 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     }
   }, [fetchMenuData, menuData, menuLoading]);
 
+  // ★ fetchOrders を呼び出す useEffect
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    // ★ tableNum が有効な数値の場合のみ fetchOrders を呼び出す
+    if (tableNum && !isNaN(tableNum)) {
+      fetchOrders(tableNum);
+    }
+  }, [fetchOrders, tableNum]); // ★ 依存配列に tableNum を追加
 
   const CATEGORIES = useMemo(() => getCategories(menuData), [menuData]);
   const [selectedCategory, setSelectedCategory] = useState<string>("TOP");
@@ -85,52 +100,56 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     }
   }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]);
 
-  // ★★★ ここを修正しました ★★★
   const handlePlaceOrder = async () => {
-    // "T-05" のような形式から数値 "5" を抽出
-    const tableNum = parseInt(userId.replace(/[^0-9]/g, ""), 10);
-
-    // 抽出した数値が有効か (NaN でないか、0より大きいか) をチェック
+    // ★ tableNum が有効か再度チェック (handlePlaceOrder でも tableNum を使う)
     if (isNaN(tableNum) || tableNum <= 0) {
-      alert(`テーブル番号が無効です。(ID: ${userId})`); // エラーアラート
+      alert(`テーブル番号が無効です。(ID: ${userId})`);
       return;
     }
 
-    // 正常な数値 (tableNum) を placeOrder に渡す
-    const newOrder = await placeOrder(tableNum);
+    const newOrder = await placeOrder(tableNum); // ★ ここでも tableNum を使用
 
     if (newOrder) {
       setShowOrderComplete(true);
-      setTimeout(() => setShowOrderComplete(false), 1000);
+      setTimeout(() => setShowOrderComplete(false), 1500); // 表示時間を1.5秒に変更
     } else {
-      // ストアからエラーメッセージを取得して表示
       const storeError = useCartStore.getState().error;
       alert(`注文処理に失敗しました。\n${storeError || ""}`);
     }
   };
 
   const renderMainContent = () => {
-    if (menuLoading)
-      return <div className="loading-message">メニュー読み込み中...</div>;
+    if (menuLoading && !menuData)
+      return (
+        <div
+          className="loading-message"
+          style={{ padding: "20px", flex: 1, textAlign: "center" }}
+        >
+          メニュー読み込み中...
+        </div>
+      );
     if (menuError)
       return (
         <div
           className="error-message"
-          style={{ color: "red", padding: "20px" }}
+          style={{ color: "red", padding: "20px", flex: 1 }}
         >
           エラー: {menuError}
         </div>
       );
     if (!menuData)
       return (
-        <div className="loading-message">メニューデータがありません。</div>
+        <div
+          className="loading-message"
+          style={{ padding: "20px", flex: 1, textAlign: "center" }}
+        >
+          メニューデータがありません。
+        </div>
       );
 
     if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
-        // ★★★ この <React.Fragment> (または <>) が重要 ★★★
         <>
-          {/* ★ メインコンテンツ(カテゴリ+メニュー)を div でラップ */}
           <div className="main-content-wrapper">
             <CategoryNav
               categories={CATEGORIES}
@@ -141,10 +160,10 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
               selectedCategory={
                 selectedCategory === "TOP" ? null : selectedCategory
               }
+              searchQuery={searchQuery} // 検索キーワードを MenuContent に渡す
             />
           </div>
 
-          {/* ★ CartSidebar は .main-content-wrapper の *外* (兄弟要素) に出す */}
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
@@ -153,10 +172,8 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
             pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
         </>
-        // ★★★ ここまでが変更点 ★★★
       );
     } else if (activeTab === "HISTORY") {
-      // (ここは変更なし)
       return (
         <OrderHistoryPane
           pendingOrders={pendingOrders}
@@ -174,7 +191,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       <OrderHeader
         userId={userId}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={setSearchQuery} // ヘッダーの入力で searchQuery が更新される
         onCallStaff={() => alert("スタッフを呼び出しました。")}
       />
       <div
