@@ -3,28 +3,49 @@
 /* ------------------------------------- */
 /* カラー変数 (ライトモード) */
 /* ------------------------------------- */
-:root {
-  --primary-color: #e67e22; /* オレンジ系 */
-  --secondary-color: #3498db; /* ブルー系 */
-  --accent-color: #2ecc71; /* 緑系 */
-  --danger-color: #e74c3c; /* 赤系 */
-  --warning-color: #f39c12; /* 黄色系 */
+/* src/components/styles.css の冒頭 */
 
-  --background-color: #f8f9fa; /* 明るいグレー */
-  --text-color: #34495e; /* 暗いブルーグレー */
-  --text-color-light: #7f8c8d; /* 明るいグレー */
-  --card-background-color: #ffffff; /* 白 */
-  --border-color: #e0e0e0; /* より明るいボーダー色 */
-  --shadow-color: rgba(0, 0, 0, 0.08); /* 影の色 */
-  --header-background: #34495e; /* ヘッダー背景 */
-  --header-text: #ffffff; /* ヘッダー文字色 */
-  --sidebar-background: #ffffff; /* サイドバー白背景 */
-  --category-nav-background: #ffffff; /* カテゴリナビ背景 (白) */
-  --modal-overlay-background: rgba(0, 0, 0, 0.6); /* モーダル背景 */
-  --button-primary-background: var(--secondary-color);
-  --button-secondary-background: var(--warning-color);
+/* ------------------------------------- */
+/* ★ 1. カラー変数 (全面的に変更) */
+/* ------------------------------------- */
+:root {
+  /* ★ メインカラー: 深い赤 (ワインレッド) */
+  --primary-color: #c0392b;
+  /* ★ セカンダリ: 落ち着いたダークブルー (アクセントで使用) */
+  --secondary-color: #2c3e50;
+  /* ★ アクセント: 信頼感のある緑 (注文完了など) */
+  --accent-color: #27ae60;
+  /* ★ 危険・警告: 既存の赤と黄 */
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  /* ★ (新規) ゴールド: 「おすすめ」などに使用 */
+  --gold-color: #d4af37;
+
+  /* ★ 全体の背景: 少し温かみのあるリネン色 */
+  --background-color: #faf7f5;
+  /* ★ テキスト: 濃いグレー (真っ黒より柔らかい) */
+  --text-color: #333333;
+  /* ★ 薄いテキスト: グレー */
+  --text-color-light: #888888;
+  /* ★ カード背景: 真っ白 */
+  --card-background-color: #ffffff;
+  /* ★ ボーダー: 非常に薄いグレー */
+  --border-color: #ebebeb;
+  /* ★ 影: より柔らかく薄く */
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  /* ★ ヘッダー背景: メインのダークブルー */
+  --header-background: var(--secondary-color);
+  --header-text: #ffffff;
+  /* ★ サイドバー/カート背景: 白 */
+  --sidebar-background: #ffffff;
+  --category-nav-background: #ffffff;
+  --modal-overlay-background: rgba(0, 0, 0, 0.6);
+
+  /* ★ ボタン色を新しいパレットに合わせる */
+  --button-primary-background: var(--primary-color); /* メインの赤 */
+  --button-secondary-background: var(--warning-color); /* 呼び出しなど */
   --button-danger-background: var(--danger-color);
-  --button-success-background: var(--accent-color);
+  --button-success-background: var(--accent-color); /* 注文確定など */
   --button-disabled-background: #bdc3c7;
 }
 
@@ -38,9 +59,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background-color: var(--background-color); /* ★ 変数から適用 */
+  color: var(--text-color); /* ★ 変数から適用 */
   font-size: 16px;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
 }
 
 .app-container {
@@ -203,18 +229,18 @@ body {
 /* ★ メニューアイテム */
 .menu-item {
   background-color: var(--card-background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px var(--shadow-color);
+  border: 1px solid var(--border-color); /* ★ ボーダーを薄く */
+  border-radius: 8px; /* ★ 角丸を少しシャープに (12px -> 8px) */
+  box-shadow: 0 4px 12px var(--shadow-color); /* ★ 影を柔らかく */
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 .menu-item:hover {
-  box-shadow: 0 6px 12px
-    color-mix(in srgb, var(--shadow-color) 150%, transparent);
-  transform: translateY(-2px);
+  /* ★ ホバー時の影を少し濃く */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px); /* ★ 少し大きく動かす ( -2px -> -4px) */
 }
 .menu-item-clickable {
   cursor: pointer;
@@ -226,6 +252,7 @@ body {
   width: 100%;
   height: 180px; /* 高さを固定 */
   object-fit: cover; /* 画像をトリミング */
+  border-bottom: 1px solid var(--border-color); /* ★ 画像下に細い線を追加 */
 }
 .menu-info {
   padding: 16px;
@@ -235,8 +262,9 @@ body {
 }
 .menu-name {
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 600; /* ★ 少し細く (700 -> 600) */
   margin-bottom: 8px;
+  color: var(--text-color); /* ★ 追加（変数適用） */
 }
 .menu-description {
   font-size: 0.9rem;
@@ -258,9 +286,11 @@ body {
   font-weight: 500;
 }
 .menu-price {
-  font-size: 1.15rem;
-  font-weight: bold;
-  color: var(--text-color);
+  font-size: 1.2rem; /* ★ 価格を少し大きく (1.15rem -> 1.2rem) */
+  font-weight: 700; /* ★ 価格を太く (bold -> 700) */
+  color: var(
+    --primary-color
+  ); /* ★ 価格をメインカラーに (text-color -> primary-color) */
   margin-top: auto; /* 価格を一番下に配置 */
   text-align: right;
 }
@@ -271,7 +301,7 @@ body {
   padding: 0px 16px 16px; /* 下部に配置 */
 }
 .quantity-button {
-  background-color: var(--button-primary-background);
+  background-color: var(--button-primary-background); /* ★ メインの赤に変更 */
   color: white;
   border: none;
   border-radius: 50%;
@@ -281,13 +311,18 @@ body {
   font-weight: bold;
   cursor: pointer;
   line-height: 30px; /* 中央揃え */
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.1s; /* ★ transform追加 */
+}
+
+.quantity-button:active {
+  /* ★ active状態を追加 */
+  transform: scale(0.95);
 }
 .quantity-button:hover {
   filter: brightness(110%);
 }
 .quantity-button.minus {
-  background-color: var(--warning-color);
+  background-color: var(--text-color-light); /* ★ マイナスはグレーに変更 */
 }
 .quantity-button:disabled {
   background-color: var(--button-disabled-background);
@@ -303,22 +338,23 @@ body {
 
 /* ★ 2d. カート (CartSidebar.tsx の .order-sidebar) */
 .order-sidebar {
-  width: 360px; /* ★ カートの幅を固定 (細くする) */
-  flex-shrink: 0; /* ★ 縮まないようにする */
-  border-left: 1px solid var(--border-color);
+  width: 360px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-color); /* ★ ボーダーを薄く */
   background-color: var(--sidebar-background);
   display: flex;
-  flex-direction: column; /* カート内を縦に積む */
-  height: 100%; /* ★ order-main-area の高さに合わせる */
-  overflow: hidden; /* サイドバー自体はスクロールさせない */
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 .sidebar-title {
   padding: 16px 20px;
   font-size: 1.5rem;
   font-weight: 700;
-  border-bottom: 2px solid var(--border-color);
+  color: var(--secondary-color); /* ★ カートのタイトル色を変更 */
+  border-bottom: 2px solid var(--border-color); /* ★ ボーダーを薄く */
   text-align: center;
-  flex-shrink: 0; /* 縮まない */
+  flex-shrink: 0;
 }
 .cart-list {
   list-style: none;
@@ -394,16 +430,18 @@ body {
 }
 .item-price {
   font-weight: bold;
-  color: var(--danger-color);
+  color: var(
+    --text-color
+  ); /* ★ カート内の価格は黒に (danger-color -> text-color) */
   text-align: right;
   font-size: 0.95rem;
 }
 
 .cart-summary {
   padding: 20px;
-  border-top: 2px solid var(--header-background);
-  margin-top: auto; /* 下部に固定 */
-  flex-shrink: 0; /* 縮まない */
+  border-top: 2px solid var(--primary-color); /* ★ ボーダーをメインカラーに変更 */
+  margin-top: auto;
+  flex-shrink: 0;
   background-color: #fdfdfd;
   box-shadow: 0 -2px 5px var(--shadow-color);
 }
@@ -423,7 +461,7 @@ body {
 .order-confirm-button,
 .goto-payment-btn {
   width: 100%;
-  padding: 16px; /* ボタンを大きく */
+  padding: 16px;
   border: none;
   border-radius: 8px;
   font-size: 1.1rem;
@@ -431,13 +469,15 @@ body {
   cursor: pointer;
   transition: filter 0.2s;
   color: white;
+  text-transform: uppercase; /* ★ 文字を大文字にして目立たせる */
+  letter-spacing: 0.5px; /* ★ 文字間を少し開ける */
 }
 .order-confirm-button {
-  background-color: var(--primary-color);
+  background-color: var(--button-success-background); /* ★ 緑に変更 */
   margin-bottom: 10px;
 }
 .goto-payment-btn {
-  background-color: var(--button-success-background);
+  background-color: var(--button-primary-background); /* ★ 赤に変更 */
 }
 .order-confirm-button:hover:not(:disabled),
 .goto-payment-btn:hover:not(:disabled) {
@@ -1205,7 +1245,7 @@ body {
   .menu-list-container {
     flex: 1; /* OrderScreenのメインエリアで伸縮するように */
     overflow-y: auto; /* メニューが多い場合にスクロール */
-    padding: 20px; /* ★ 余白を調整 */
+    padding: 24px; /* ★ 余白を調整 */
     background-color: var(--background-color); /* ★ 背景色を設定 */
   }
 
@@ -1293,7 +1333,7 @@ body {
   .menu-price {
     font-size: 1.25rem; /* ★ 価格を少し大きく */
     font-weight: 800; /* ★ 太くする */
-    color: var(--danger-color); /* ★ 価格を目立たせる色に (赤系) */
+    color: var(--primary-color);
     margin-top: auto; /* ★ 価格を一番下に配置 */
     text-align: right;
   }
@@ -1306,7 +1346,7 @@ body {
     padding: 0px 16px 16px;
   }
   .quantity-button {
-    background-color: var(--primary-color); /* ★ テーマカラー (オレンジ) に */
+    background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 50%;
@@ -1345,14 +1385,14 @@ body {
   .order-sidebar {
     flex-basis: 380px; /* カートの幅を広げる */
     flex-shrink: 0; /* 縮まない */
-    padding: 20px; /* パディング */
+    padding: 0 20px 20px 20px;
     height: 100%; /* 高さいっぱい */
     overflow: hidden; /* スクロールは .cart-list で */
     display: flex;
     flex-direction: column;
   }
   .sidebar-title {
-    padding: 10px 0 15px;
+    padding: 20px 0 15px;
   }
   .cart-list {
     flex-grow: 1;
