@@ -9,43 +9,38 @@
 /* ★ 1. カラー変数 (全面的に変更) */
 /* ------------------------------------- */
 :root {
-  /* ★ メインカラー: 深い赤 (ワインレッド) */
-  --primary-color: #c0392b;
-  /* ★ セカンダリ: 落ち着いたダークブルー (アクセントで使用) */
-  --secondary-color: #2c3e50;
-  /* ★ アクセント: 信頼感のある緑 (注文完了など) */
-  --accent-color: #27ae60;
-  /* ★ 危険・警告: 既存の赤と黄 */
-  --danger-color: #e74c3c;
-  --warning-color: #f39c12;
-  /* ★ (新規) ゴールド: 「おすすめ」などに使用 */
-  --gold-color: #d4af37;
+  /* ★ メイン: 落ち着いた深緑 (ヘッダーなど) */
+  --primary-color: #3b5b4f; /* (Dark Olive Green) */
+  /* ★ セカンダリ: テラコッタ (注文ボタンなど) */
+  --secondary-color: #e07a5f; /* (Terra Cotta) */
+  /* ★ アクセント: ゴールド (おすすめ、価格など) */
+  --accent-color: #b8860b; /* (DarkGoldenRod) */
+  --danger-color: #d90429; /* (トマトレッド) */
+  --warning-color: #f4a261; /* (Sandy Brown) */
 
-  /* ★ 全体の背景: 少し温かみのあるリネン色 */
-  --background-color: #faf7f5;
-  /* ★ テキスト: 濃いグレー (真っ黒より柔らかい) */
-  --text-color: #333333;
-  /* ★ 薄いテキスト: グレー */
-  --text-color-light: #888888;
-  /* ★ カード背景: 真っ白 */
+  /* ★ 背景: 非常に薄いクリーム色 */
+  --background-color: #fcfbf8;
+  /* ★ テキスト: 濃いチャコールグレー */
+  --text-color: #3d405b;
+  /* ★ 薄いテキスト: ライトグレー */
+  --text-color-light: #7d7d7d;
+  /* ★ カード背景: 白 */
   --card-background-color: #ffffff;
-  /* ★ ボーダー: 非常に薄いグレー */
-  --border-color: #ebebeb;
-  /* ★ 影: より柔らかく薄く */
-  --shadow-color: rgba(0, 0, 0, 0.05);
-  /* ★ ヘッダー背景: メインのダークブルー */
-  --header-background: var(--secondary-color);
+  /* ★ ボーダー: ごく薄いグレー */
+  --border-color: #eaeaea;
+  /* ★ 影: さらに繊細に */
+  --shadow-color: rgba(0, 0, 0, 0.06);
+
+  /* ★ 要素ごとの色定義 */
+  --header-background: var(--primary-color);
   --header-text: #ffffff;
-  /* ★ サイドバー/カート背景: 白 */
   --sidebar-background: #ffffff;
   --category-nav-background: #ffffff;
   --modal-overlay-background: rgba(0, 0, 0, 0.6);
-
-  /* ★ ボタン色を新しいパレットに合わせる */
-  --button-primary-background: var(--primary-color); /* メインの赤 */
-  --button-secondary-background: var(--warning-color); /* 呼び出しなど */
+  --button-primary-background: var(--secondary-color); /* テラコッタ */
+  --button-secondary-background: var(--warning-color);
   --button-danger-background: var(--danger-color);
-  --button-success-background: var(--accent-color); /* 注文確定など */
+  --button-success-background: var(--primary-color); /* 深緑 */
   --button-disabled-background: #bdc3c7;
 }
 
@@ -54,16 +49,16 @@
 /* ------------------------------------- */
 body {
   margin: 0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  /* ★ フォントを index.css から継承 */
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background-color); /* ★ 変数から適用 */
-  color: var(--text-color); /* ★ 変数から適用 */
+  /* ★ 背景色とテキスト色を適用 */
+  background-color: var(--background-color);
+  color: var(--text-color);
   font-size: 16px;
+  line-height: 1.5; /* ★ 行間を少し確保 */
 }
-
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
@@ -109,23 +104,27 @@ code {
   color: var(--header-text);
   box-shadow: 0 2px 4px var(--shadow-color);
   z-index: 10;
-  flex-shrink: 0; /* ヘッダーが縮まないように */
+  flex-shrink: 0;
 }
 .tablet-info {
   font-size: 1.2rem;
   font-weight: 600;
   white-space: nowrap;
+  /* ★ 見出しフォントを適用 */
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
 }
 .call-staff-button-header {
   background-color: var(--warning-color);
   color: white;
   border: none;
   padding: 8px 15px;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.2s;
+  letter-spacing: 0.5px; /* ★ 文字間隔 */
 }
 .call-staff-button-header:hover {
   filter: brightness(110%);
@@ -154,10 +153,10 @@ code {
 
 /* 2. メインエリア (OrderScreen.tsx の .order-main-area) */
 .order-main-area {
-  flex-grow: 1; /* ★ 残りの高さをすべて使用 */
-  display: flex; /* ★ 横並びレイアウトを適用 (中央 + 右カート) */
-  flex-direction: row; /* 横並び */
-  overflow: hidden; /* ★ エリア全体はスクロール禁止 */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
 }
 
 /* 履歴タブの時はレイアウト変更 (既存のスタイル) */
@@ -167,11 +166,11 @@ code {
 
 /* ★ 2a. 中央コンテンツラッパー (OrderScreen.tsx で追加したラッパー) */
 .main-content-wrapper {
-  flex: 1; /* ★ カート以外の残りのスペースをすべて占める */
+  flex: 1;
   display: flex;
-  flex-direction: column; /* カテゴリとメニューを縦に積む */
-  overflow: hidden; /* ★ 必須 */
-  background-color: var(--background-color); /* 中央エリアの背景色 */
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--background-color);
 }
 
 /* カテゴリナビゲーション (CategoryNav.tsx のルート) */
@@ -179,12 +178,12 @@ code {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   background: var(--category-nav-background);
-  flex-shrink: 0; /* 縮まないように */
-  overflow-x: auto; /* スマホなどでカテゴリが多い場合横スクロール */
-  white-space: nowrap; /* 折り返さない */
+  flex-shrink: 0;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 .category-tab {
-  display: inline-block; /* 横並びにする */
+  display: inline-block;
   padding: 10px 18px;
   margin-right: 10px;
   text-align: center;
@@ -201,9 +200,9 @@ code {
   color: var(--text-color);
 }
 .category-tab.active {
-  color: var(--primary-color);
+  color: var(--secondary-color); /* ★ テラコッタ */
   font-weight: 700;
-  border-bottom-color: var(--primary-color);
+  border-bottom-color: var(--secondary-color); /* ★ テラコッタ */
 }
 
 /* ★ 2b. メニューリスト (MenuContent.tsx のルート) */
@@ -225,22 +224,19 @@ code {
   max-width: 1600px; /* PCでの最大幅（任意） */
   margin: 0 auto; /* 中央寄せ（任意） */
 }
-
-/* ★ メニューアイテム */
 .menu-item {
   background-color: var(--card-background-color);
-  border: 1px solid var(--border-color); /* ★ ボーダーを薄く */
-  border-radius: 8px; /* ★ 角丸を少しシャープに (12px -> 8px) */
-  box-shadow: 0 4px 12px var(--shadow-color); /* ★ 影を柔らかく */
+  border: 1px solid var(--border-color);
+  border-radius: 4px; /* ★ 角丸を小さく (12px -> 4px) */
+  box-shadow: 0 3px 10px var(--shadow-color); /* ★ 影を調整 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 .menu-item:hover {
-  /* ★ ホバー時の影を少し濃く */
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  transform: translateY(-4px); /* ★ 少し大きく動かす ( -2px -> -4px) */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
 }
 .menu-item-clickable {
   cursor: pointer;
@@ -250,9 +246,9 @@ code {
 }
 .menu-image {
   width: 100%;
-  height: 180px; /* 高さを固定 */
-  object-fit: cover; /* 画像をトリミング */
-  border-bottom: 1px solid var(--border-color); /* ★ 画像下に細い線を追加 */
+  height: 180px;
+  object-fit: cover;
+  /* ★ 画像下の線を削除 */
 }
 .menu-info {
   padding: 16px;
@@ -261,20 +257,23 @@ code {
   flex-direction: column;
 }
 .menu-name {
-  font-size: 1.25rem;
-  font-weight: 600; /* ★ 少し細く (700 -> 600) */
+  /* ★★★ 見出しフォントを適用 ★★★ */
+  font-family: "Playfair Display", serif;
+  font-size: 1.3rem; /* ★ サイズ調整 */
+  font-weight: 700; /* ★ 太く */
   margin-bottom: 8px;
-  color: var(--text-color); /* ★ 追加（変数適用） */
+  color: var(--text-color);
+  line-height: 1.3; /* ★ 行間 */
 }
 .menu-description {
   font-size: 0.9rem;
   color: var(--text-color-light);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   flex-grow: 1;
   min-height: 2.7em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2; /* ★ この行を追加 */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -286,43 +285,38 @@ code {
   font-weight: 500;
 }
 .menu-price {
-  font-size: 1.2rem; /* ★ 価格を少し大きく (1.15rem -> 1.2rem) */
-  font-weight: 700; /* ★ 価格を太く (bold -> 700) */
-  color: var(
-    --primary-color
-  ); /* ★ 価格をメインカラーに (text-color -> primary-color) */
-  margin-top: auto; /* 価格を一番下に配置 */
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-color); /* ★ 価格の色を黒系に戻す (アクセントはボタンで) */
+  margin-top: auto;
   text-align: right;
 }
+
+/* ★ 数量コントロール (デザイン修正) */
 .quantity-control {
   display: flex;
-  justify-content: flex-end; /* 右寄せ */
+  justify-content: flex-end;
   align-items: center;
-  padding: 0px 16px 16px; /* 下部に配置 */
+  padding: 0px 16px 16px;
 }
 .quantity-button {
-  background-color: var(--button-primary-background); /* ★ メインの赤に変更 */
+  background-color: var(--primary-color); /* ★ 深緑 */
   color: white;
   border: none;
-  border-radius: 50%;
+  border-radius: 4px; /* ★ 角丸を小さく */
   width: 32px;
   height: 32px;
   font-size: 1.3rem;
   font-weight: bold;
   cursor: pointer;
-  line-height: 30px; /* 中央揃え */
-  transition: background-color 0.2s, transform 0.1s; /* ★ transform追加 */
-}
-
-.quantity-button:active {
-  /* ★ active状態を追加 */
-  transform: scale(0.95);
+  line-height: 30px;
+  transition: background-color 0.2s;
 }
 .quantity-button:hover {
   filter: brightness(110%);
 }
 .quantity-button.minus {
-  background-color: var(--text-color-light); /* ★ マイナスはグレーに変更 */
+  background-color: var(--text-color-light); /* ★ グレー */
 }
 .quantity-button:disabled {
   background-color: var(--button-disabled-background);
@@ -332,7 +326,7 @@ code {
   font-size: 1.2rem;
   font-weight: bold;
   padding: 0 12px;
-  min-width: 40px; /* 幅を確保 */
+  min-width: 40px;
   text-align: center;
 }
 
@@ -340,7 +334,7 @@ code {
 .order-sidebar {
   width: 360px;
   flex-shrink: 0;
-  border-left: 1px solid var(--border-color); /* ★ ボーダーを薄く */
+  border-left: 1px solid var(--border-color);
   background-color: var(--sidebar-background);
   display: flex;
   flex-direction: column;
@@ -351,17 +345,19 @@ code {
   padding: 16px 20px;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--secondary-color); /* ★ カートのタイトル色を変更 */
-  border-bottom: 2px solid var(--border-color); /* ★ ボーダーを薄く */
+  border-bottom: 2px solid var(--border-color);
   text-align: center;
   flex-shrink: 0;
+  /* ★ 見出しフォントを適用 */
+  font-family: "Playfair Display", serif;
+  color: var(--primary-color);
 }
 .cart-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  flex: 1; /* ★ カートリストが残りの高さを占める */
-  overflow-y: auto; /* カート内容が多ければスクロール */
+  flex: 1;
+  overflow-y: auto;
   padding: 8px 16px;
 }
 .empty-cart-message {
@@ -373,7 +369,6 @@ code {
 }
 .cart-item {
   display: grid;
-  /* 項目名 | 数量 | 価格 */
   grid-template-columns: 1fr auto 70px;
   gap: 10px;
   align-items: center;
@@ -407,7 +402,7 @@ code {
 .cart-qty-btn {
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: 4px; /* ★ 角丸を小さく */
   border: 1px solid var(--border-color);
   background: var(--card-background-color);
   color: var(--text-color);
@@ -430,19 +425,17 @@ code {
 }
 .item-price {
   font-weight: bold;
-  color: var(
-    --text-color
-  ); /* ★ カート内の価格は黒に (danger-color -> text-color) */
+  color: var(--text-color); /* ★ 黒に変更 */
   text-align: right;
   font-size: 0.95rem;
 }
 
 .cart-summary {
   padding: 20px;
-  border-top: 2px solid var(--primary-color); /* ★ ボーダーをメインカラーに変更 */
+  border-top: 2px solid var(--primary-color); /* ★ 深緑の線 */
   margin-top: auto;
   flex-shrink: 0;
-  background-color: #fdfdfd;
+  background-color: var(--background-color); /* ★ 背景色と合わせる */
   box-shadow: 0 -2px 5px var(--shadow-color);
 }
 .summary-row {
@@ -463,21 +456,21 @@ code {
   width: 100%;
   padding: 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
   transition: filter 0.2s;
   color: white;
-  text-transform: uppercase; /* ★ 文字を大文字にして目立たせる */
-  letter-spacing: 0.5px; /* ★ 文字間を少し開ける */
+  letter-spacing: 1px; /* ★ 文字間隔 */
+  text-transform: uppercase; /* ★ 大文字 */
 }
 .order-confirm-button {
-  background-color: var(--button-success-background); /* ★ 緑に変更 */
+  background-color: var(--button-primary-background); /* ★ テラコッタ */
   margin-bottom: 10px;
 }
 .goto-payment-btn {
-  background-color: var(--button-primary-background); /* ★ 赤に変更 */
+  background-color: var(--button-success-background); /* ★ 深緑 */
 }
 .order-confirm-button:hover:not(:disabled),
 .goto-payment-btn:hover:not(:disabled) {
@@ -500,7 +493,7 @@ code {
   border-top: 1px solid var(--border-color);
   box-shadow: 0 -2px 5px var(--shadow-color);
   z-index: 10;
-  flex-shrink: 0; /* フッターが縮まないように */
+  flex-shrink: 0;
 }
 .nav-tab {
   display: flex;
@@ -518,9 +511,9 @@ code {
   border-top: 3px solid transparent;
 }
 .nav-tab.active {
-  color: var(--primary-color);
+  color: var(--secondary-color); /* ★ テラコッタ */
   font-weight: 600;
-  border-top-color: var(--primary-color);
+  border-top-color: var(--secondary-color); /* ★ テラコッタ */
 }
 .nav-tab:hover {
   color: var(--primary-color);
@@ -573,6 +566,7 @@ code {
   color: var(--text-color);
   margin-bottom: 10px;
   font-size: 1.5rem;
+  font-family: "Playfair Display", serif; /* ★ 見出しフォント */
 }
 .history-summary-sidebar h1 {
   color: var(--danger-color);
@@ -583,7 +577,7 @@ code {
   margin-top: 15px;
   padding: 15px;
   font-size: 1.2rem;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-weight: bold;
   cursor: pointer;
   transition: filter 0.2s;
@@ -603,14 +597,13 @@ code {
   background-color: var(--danger-color);
   color: white;
 }
-/* 履歴画面の「呼び出し」ボタン */
 .history-summary-sidebar button.call-button {
   background-color: var(--warning-color);
   color: var(--header-background);
 }
 .order-history-card {
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   padding: 15px;
   margin-bottom: 15px;
   background-color: var(--card-background-color);
@@ -627,7 +620,7 @@ code {
   font-size: 0.9rem;
 }
 .order-header-info .order-id {
-  color: var(--secondary-color);
+  color: var(--secondary-color); /* ★ テラコッタ */
   font-weight: 600;
 }
 .order-total {
@@ -668,8 +661,8 @@ code {
 .thanks-screen {
   padding: 30px;
   align-items: center;
-  justify-content: flex-start; /* 上寄せ */
-  overflow-y: auto; /* コンテンツが多い場合にスクロール */
+  justify-content: flex-start;
+  overflow-y: auto;
   height: 100%;
 }
 .payment-options-screen .screen-title,
@@ -681,6 +674,7 @@ code {
   margin-bottom: 30px;
   width: 100%;
   text-align: center;
+  font-family: "Playfair Display", serif; /* ★ 見出しフォント */
 }
 
 /* PAYMENT OPTIONS SCREEN STYLES (会計選択) */
@@ -715,7 +709,7 @@ code {
 }
 .option-card {
   background: var(--card-background-color);
-  border-radius: 15px;
+  border-radius: 8px; /* ★ 角丸を調整 */
   padding: 30px;
   text-align: center;
   box-shadow: 0 5px 15px var(--shadow-color);
@@ -739,6 +733,7 @@ code {
   font-weight: 700;
   margin-bottom: 10px;
   color: var(--text-color);
+  font-family: "Playfair Display", serif; /* ★ 見出しフォント */
 }
 .card-description {
   color: var(--text-color-light);
@@ -746,31 +741,32 @@ code {
   flex-grow: 1;
 }
 .option-card.full-payment .card-title {
-  color: var(--secondary-color);
+  color: var(--primary-color); /* ★ 深緑 */
 }
 .option-card.split-payment .card-title {
-  color: var(--primary-color);
+  color: var(--secondary-color); /* ★ テラコッタ */
 }
 .option-button {
   width: 100%;
   padding: 15px;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.3rem;
   font-weight: bold;
   cursor: pointer;
   margin-top: auto;
   transition: filter 0.2s;
+  letter-spacing: 0.5px; /* ★ 文字間隔 */
 }
 .option-button:hover {
   filter: brightness(110%);
 }
 .option-button.primary {
-  background-color: var(--button-primary-background);
+  background-color: var(--primary-color); /* ★ 深緑 */
   color: white;
 }
 .option-button.secondary {
-  background-color: var(--button-secondary-background);
+  background-color: var(--secondary-color); /* ★ テラコッタ */
   color: white;
 }
 .back-button-bottom {
@@ -778,7 +774,7 @@ code {
   padding: 12px 25px;
   background: none;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--text-color);
@@ -804,7 +800,7 @@ code {
 .control-group {
   background: var(--card-background-color);
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 8px; /* ★ 角丸を調整 */
   box-shadow: 0 2px 10px var(--shadow-color);
   flex: 1;
   min-width: 250px;
@@ -827,7 +823,7 @@ code {
   font-size: 1.8rem;
   background-color: var(--category-nav-background);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   color: var(--text-color);
   cursor: pointer;
   transition: background-color 0.1s;
@@ -856,7 +852,7 @@ code {
   padding: 12px 18px;
   border: 2px solid var(--border-color);
   background: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
@@ -864,11 +860,12 @@ code {
   color: var(--text-color);
 }
 .option-buttons .option-btn.active {
-  background-color: var(--primary-color);
+  background-color: var(--secondary-color); /* ★ テラコッタ */
   color: white;
-  border-color: var(--primary-color);
+  border-color: var(--secondary-color); /* ★ テラコッタ */
   font-weight: bold;
 }
+
 .option-buttons .option-btn:hover:not(.active) {
   background-color: #eee;
 }
@@ -891,7 +888,7 @@ code {
 .calculation-result-box {
   background: var(--card-background-color);
   padding: 30px;
-  border-radius: 10px;
+  border-radius: 8px; /* ★ 角丸を調整 */
   box-shadow: 0 5px 15px var(--shadow-color);
   width: 100%;
   max-width: 800px;
@@ -899,10 +896,11 @@ code {
 .result-title {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--secondary-color);
+  color: var(--primary-color); /* ★ 深緑 */
   margin-bottom: 20px;
-  border-bottom: 2px solid var(--secondary-color);
+  border-bottom: 2px solid var(--primary-color); /* ★ 深緑 */
   padding-bottom: 5px;
+  font-family: "Playfair Display", serif; /* ★ 見出しフォント */
 }
 .amount-label {
   font-size: 1.1rem;
@@ -940,7 +938,7 @@ code {
   background-color: var(--button-disabled-background);
   color: var(--text-color);
   border: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
@@ -954,7 +952,7 @@ code {
   background-color: var(--button-danger-background);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.4rem;
   font-weight: bold;
   transition: filter 0.2s;
@@ -984,7 +982,7 @@ code {
 .thanks-screen h1 {
   font-size: 4rem;
   font-weight: 800;
-  color: var(--accent-color);
+  color: var(--accent-color); /* ★ 緑 */
   margin-bottom: 20px;
 }
 .thanks-screen p {
@@ -996,7 +994,7 @@ code {
   padding: 18px 40px;
   background-color: var(--button-danger-background);
   color: white;
-  border-radius: 10px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.5rem;
   font-weight: bold;
   transition: filter 0.2s;
@@ -1026,15 +1024,15 @@ code {
 .modal-content {
   background: var(--card-background-color);
   padding: 24px;
-  border-radius: 15px;
+  border-radius: 12px; /* ★ 角丸 */
   box-shadow: 0 5px 25px var(--shadow-color);
   width: 90%;
-  max-width: 480px; /* 少し小さく */
+  max-width: 480px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   animation: zoomIn 0.2s ease-out;
-  position: relative; /* 閉じるボタンの位置基準 */
+  position: relative;
 }
 .modal-close-button {
   position: absolute;
@@ -1055,7 +1053,7 @@ code {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 8px; /* ★ 角丸 */
   margin-bottom: 15px;
 }
 .modal-content h2 {
@@ -1063,6 +1061,7 @@ code {
   font-weight: 700;
   color: var(--text-color);
   margin: 0 0 5px;
+  font-family: "Playfair Display", serif; /* ★ 見出しフォント */
 }
 .modal-content p {
   /* Description */
@@ -1095,7 +1094,7 @@ code {
 .option-item input[type="checkbox"] {
   margin-right: 12px;
   transform: scale(1.3);
-  accent-color: var(--primary-color);
+  accent-color: var(--secondary-color); /* ★ テラコッタ */
 }
 .option-item label {
   font-size: 1rem;
@@ -1118,10 +1117,9 @@ code {
   width: 40px;
   height: 40px;
   font-size: 1.6rem;
-  /* (stepper button スタイルを流用) */
   background-color: var(--category-nav-background);
   border: 1px solid var(--border-color);
-  border-radius: 50%;
+  border-radius: 50%; /* ★ ここは丸のまま */
   color: var(--text-color);
   cursor: pointer;
   transition: background-color 0.1s;
@@ -1141,17 +1139,17 @@ code {
 }
 
 .add-to-cart-button {
-  /* (button スタイルを流用) */
   width: 100%;
   padding: 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px; /* ★ 角丸を小さく */
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
   transition: filter 0.2s;
   color: white;
-  background-color: var(--button-success-background);
+  background-color: var(--button-primary-background); /* ★ テラコッタ */
+  letter-spacing: 0.5px; /* ★ 文字間隔 */
 }
 .add-to-cart-button:hover {
   filter: brightness(110%);
@@ -1218,66 +1216,55 @@ code {
 
   /* ★ カテゴリナビ (上部) */
   .category-nav {
-    flex-shrink: 0; /* 縮まない */
+    flex-shrink: 0;
     border-bottom: 1px solid var(--border-color);
-    background: var(--card-background-color); /* 背景を白に */
-    padding: 0 24px; /* 横パディング */
-    overflow-x: auto; /* カテゴリが多い場合は横スクロール */
-    white-space: nowrap; /* 折り返さない */
+    background: var(--card-background-color);
+    padding: 0 24px;
+    overflow-x: auto;
+    white-space: nowrap;
   }
   .category-tab {
-    display: inline-block; /* 横並び */
+    display: inline-block;
     padding: 16px 20px;
     margin-right: 10px;
-    border-left: none; /* 左ボーダー削除 */
-    border-bottom: 4px solid transparent; /* 下ボーダーでアクティブ表現 */
+    border-left: none;
+    border-bottom: 4px solid transparent;
     font-size: 1.1rem;
     font-weight: 500;
   }
   .category-tab.active {
-    border-left-color: transparent; /* 左ボーダー削除 */
-    border-bottom-color: var(--primary-color); /* 下ボーダーでアクティブ表現 */
-    color: var(--primary-color);
+    border-left-color: transparent;
+    border-bottom-color: var(--secondary-color); /* ★ テラコッタ */
+    color: var(--secondary-color); /* ★ テラコッタ */
     font-weight: 700;
   }
 
   /* ★ メニューリスト (中央、スクロール) */
   .menu-list-container {
-    flex: 1; /* OrderScreenのメインエリアで伸縮するように */
-    overflow-y: auto; /* メニューが多い場合にスクロール */
+    flex: 1;
+    overflow-y: auto;
     padding: 24px; /* ★ 余白を調整 */
-    background-color: var(--background-color); /* ★ 背景色を設定 */
+    background-color: var(--background-color);
   }
 
   /* ★ 2c. メニューグリッド (MenuContent.tsx の .menu-content) */
   .menu-content {
     display: grid;
-    /* アイテムの最小幅(280px)を確保しつつ、
-     自動で列数を調整 (auto-fill) します。
-     PC幅なら自動的に3〜4列になります。
-  */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px; /* ★ アイテム間の隙間を少し広げる */
-    max-width: 1600px; /* PCでの最大幅（任意） */
-    margin: 0 auto; /* 中央寄せ（任意） */
+    gap: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
   }
 
   /* ★ メニューアイテム */
   .menu-item {
-    background-color: var(--card-background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px; /* ★ 角丸を少し控えめに */
-    /* ★ 影をより柔らかく */
+    border-radius: 4px; /* ★ 角丸を小さく */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    /* (中略: ... 他のプロパティは変更なし) */
   }
   .menu-item:hover {
-    /* ★ ホバー時の影も調整 */
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    transform: translateY(-3px); /* ★ 少し浮き上がる動き */
+    transform: translateY(-3px);
   }
 
   .menu-item-clickable {
@@ -1289,26 +1276,23 @@ code {
 
   .menu-image {
     width: 100%;
-    /* height: 180px; */ /* ← 高さを固定するのをやめる */
-    aspect-ratio: 16 / 10; /* ★ 16:10 のアスペクト比を指定 */
-    object-fit: cover; /* 比率を保ったままトリミング */
-    background-color: #f0f0f0; /* 画像読み込み中の背景 */
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    background-color: #f0f0f0;
   }
-
   .menu-info {
     padding: 16px;
     flex: 1;
     display: flex;
     flex-direction: column;
   }
-
   .menu-name {
-    font-size: 1.2rem; /* ★ サイズを調整 */
+    font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 8px;
-    color: var(--text-color); /* ★ メインのテキストカラーに */
+    color: var(--text-color);
+    font-family: "Playfair Display", serif; /* ★ 見出しフォント */
   }
-
   .menu-description {
     font-size: 0.9rem;
     color: var(--text-color-light);
@@ -1331,10 +1315,10 @@ code {
   }
 
   .menu-price {
-    font-size: 1.25rem; /* ★ 価格を少し大きく */
-    font-weight: 800; /* ★ 太くする */
-    color: var(--primary-color);
-    margin-top: auto; /* ★ 価格を一番下に配置 */
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-color); /* ★ 黒系に戻す */
+    margin-top: auto;
     text-align: right;
   }
 
@@ -1346,16 +1330,16 @@ code {
     padding: 0px 16px 16px;
   }
   .quantity-button {
-    background-color: var(--primary-color);
+    background-color: var(--primary-color); /* ★ 深緑 */
     color: white;
     border: none;
-    border-radius: 50%;
-    width: 34px; /* ★ 少し大きく */
-    height: 34px; /* ★ 少し大きく */
-    font-size: 1.5rem; /* ★ フォントサイズ調整 */
+    border-radius: 4px; /* ★ 角丸を小さく */
+    width: 34px;
+    height: 34px;
+    font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
-    line-height: 34px; /* アイコン中央揃え */
+    line-height: 34px;
     transition: background-color 0.2s, transform 0.1s;
   }
   .quantity-button:hover {
@@ -1365,7 +1349,7 @@ code {
     transform: scale(0.95); /* ★ クリック感を出す */
   }
   .quantity-button.minus {
-    background-color: var(--text-color-light); /* ★ マイナスボタンの色を変更 */
+    background-color: var(--text-color-light); /* ★ グレー */
   }
   .quantity-button.minus:hover {
     background-color: var(--text-color);
@@ -1383,16 +1367,16 @@ code {
   }
   /* ★ カート (右側) */
   .order-sidebar {
-    flex-basis: 380px; /* カートの幅を広げる */
-    flex-shrink: 0; /* 縮まない */
-    padding: 0 20px 20px 20px;
-    height: 100%; /* 高さいっぱい */
-    overflow: hidden; /* スクロールは .cart-list で */
+    flex-basis: 380px;
+    flex-shrink: 0;
+    padding: 0 20px 20px 20px; /* ★ パディング */
+    height: 100%;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
   .sidebar-title {
-    padding: 20px 0 15px;
+    padding: 20px 0 15px; /* ★ パディング */
   }
   .cart-list {
     flex-grow: 1;
@@ -1516,13 +1500,15 @@ code {
   }
   .menu-name {
     font-size: 0.95rem;
+    font-family: "Playfair Display", serif;
   }
   .menu-description {
     font-size: 0.8rem;
     min-height: 2.4em; /* 2行分 */
   }
   .menu-price {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    color: var(--text-color);
   }
   .quantity-control {
     padding: 8px;
@@ -1531,6 +1517,7 @@ code {
     width: 28px;
     height: 28px;
     font-size: 1rem;
+    border-radius: 4px;
   }
   .quantity-display {
     font-size: 1rem;
@@ -1627,11 +1614,13 @@ code {
     height: 55px;
   }
   .tablet-info {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-family: "Playfair Display", serif;
   }
   .call-staff-button-header {
     padding: 6px 10px;
     font-size: 0.8rem;
+    border-radius: 4px; /* ★ 角丸を小さく */
   }
   .order-header .search-input {
     padding: 6px 12px;

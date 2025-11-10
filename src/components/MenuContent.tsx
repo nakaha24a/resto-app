@@ -1,4 +1,5 @@
 // src/components/MenuContent.tsx
+// ★ 修正版: すべての商品でモーダルを開くように統一
 
 import React, { useEffect, useState } from "react";
 import useCartStore from "../store/cartStore";
@@ -7,18 +8,20 @@ import OptionModal from "./OptionModal";
 
 interface MenuContentProps {
   selectedCategory: string | null;
-  searchQuery: string; // ★ 検索キーワードを受け取る
+  searchQuery: string;
 }
 
+// ★ 修正: API_BASE_URL の定義を OptionModal と共有するため、
+// store/cartStore.ts または types/index.ts など共通の場所に移動し、
+// ここではインポートする形が望ましいですが、一旦そのままにします。
 const API_BASE_URL = "http://localhost:3000";
 
 const MenuContent: React.FC<MenuContentProps> = ({
   selectedCategory,
   searchQuery,
 }) => {
-  // ★ searchQuery を受け取る
   const {
-    cart,
+    cart, // ★ updateCart は使わなくなるので削除
     updateCart,
     menuData,
     fetchMenuData,
@@ -35,17 +38,19 @@ const MenuContent: React.FC<MenuContentProps> = ({
     }
   }, [fetchMenuData, menuData, menuLoading]);
 
+  // ★ 修正: getItemQuantity は不要になるため削除
+  /*
   const getItemQuantity = (menuItemId: string) => {
-    return cart
-      .filter(
-        (item: CartItem) =>
-          item.menuItemId === menuItemId &&
-          (!item.selectedOptions || item.selectedOptions.length === 0)
-      )
-      .reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+    // ... (削除) ...
   };
+  */
 
+  // ★★★ 修正 (最重要) ★★★
+  // オプションの有無にかかわらず、必ずモーダルを開くようにする
   const handleItemClick = (item: MenuItem) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+    /* ★ 修正: 元の else 節 (直接カートに追加するロジック) を削除
     if (
       item.options &&
       Array.isArray(item.options) &&
@@ -57,6 +62,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
       const quantity = getItemQuantity(item.id);
       updateCart(item, quantity + 1, []);
     }
+    */
   };
 
   const handleCloseModal = () => {
@@ -64,13 +70,19 @@ const MenuContent: React.FC<MenuContentProps> = ({
     setSelectedItem(null);
   };
 
+  // ★ 修正: この関数名は OptionModal に渡すものなので変更なし
   const handleAddToCartWithOptions = (options: Option[], quantity: number) => {
     if (selectedItem) {
+      // ★ 修正: オプションがない商品の場合、quantity=0 (削除) が来ると
+      // カートから探すのが大変になるため、updateCart 側で
+      // 「IDとオプションが一致するものを更新」するようにストアのロジックを見直す必要があります。
+      // (ここでは一旦、元のロジックのままにしておきます)
       updateCart(selectedItem, quantity, options);
     }
     handleCloseModal();
   };
 
+  // (中略: ... menuLoading, menuError, !menuData の表示は変更なし ...)
   if (menuLoading && !menuData) {
     return (
       <div className="menu-list-container">
@@ -99,9 +111,8 @@ const MenuContent: React.FC<MenuContentProps> = ({
     );
   }
 
-  // --- 表示するメニュー項目をフィルタリング ---
+  // (中略: ... フィルタリングロジックは変更なし ...)
   let itemsToShow: MenuItem[] = [];
-
   if (!selectedCategory || selectedCategory === "TOP") {
     itemsToShow = menuData.categories.flatMap((cat: Category) => cat.items);
   } else if (selectedCategory === "おすすめ") {
@@ -114,16 +125,11 @@ const MenuContent: React.FC<MenuContentProps> = ({
     );
     itemsToShow = category ? category.items : [];
   }
-
-  // ★↓↓↓ 検索キーワードでの絞り込み処理を追加 ↓↓↓
   if (searchQuery) {
-    itemsToShow = itemsToShow.filter(
-      (item) => item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      // (説明文でも検索する場合は以下を追加)
-      // || (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    itemsToShow = itemsToShow.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }
-  // ★↑↑↑ 絞り込み処理ここまで ↑↑↑
 
   return (
     <div className="menu-list-container">
@@ -135,12 +141,14 @@ const MenuContent: React.FC<MenuContentProps> = ({
         )}
 
         {itemsToShow.map((item) => {
-          const quantity = getItemQuantity(item.id);
+          // ★ 修正: getItemQuantity は使わないので削除
+          // const quantity = getItemQuantity(item.id);
+
           return (
             <div key={item.id} className="menu-item">
               <div
                 className="menu-item-clickable"
-                onClick={() => handleItemClick(item)}
+                onClick={() => handleItemClick(item)} // ★ 動作は handleItemClick に統一
               >
                 <img
                   src={`${API_BASE_URL}${
@@ -164,29 +172,21 @@ const MenuContent: React.FC<MenuContentProps> = ({
                 </div>
               </div>
 
+              {/* ★★★ 修正 (最重要) ★★★ */}
+              {/* 数量コントロール(.quantity-control)のブロック全体を削除 */}
+              {/*
               {(!item.options || item.options.length === 0) && (
                 <div className="quantity-control">
-                  <button
-                    className="quantity-button minus"
-                    onClick={() => updateCart(item, quantity - 1, [])}
-                    disabled={quantity === 0}
-                  >
-                    −
-                  </button>
-                  <span className="quantity-display">{quantity}</span>
-                  <button
-                    className="quantity-button plus"
-                    onClick={() => updateCart(item, quantity + 1, [])}
-                  >
-                    ＋
-                  </button>
+                  ... (このブロック全体を削除) ...
                 </div>
               )}
+              */}
             </div>
           );
         })}
       </div>
 
+      {/* モーダル表示ロジックは変更なし */}
       {selectedItem && isModalOpen && (
         <OptionModal
           menuItem={selectedItem}
