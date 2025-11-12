@@ -27,7 +27,10 @@ const MenuContent: React.FC<MenuContentProps> = ({
   } = useCartStore();
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); /* // ★ App.tsx が menuData を読み込むため、この useEffect は不要
+  const [isModalOpen, setIsModalOpen] =
+    useState(
+      false
+    ); /* // ★ App.tsx が menuData を読み込むため、この useEffect は不要
   useEffect(() => {
     if (!menuData && !menuLoading) {
       fetchMenuData();
