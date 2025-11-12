@@ -1,13 +1,28 @@
 // src/components/OrderHistoryPane.tsx
+// ★ デザイン修正版
 
 import React from "react";
-// ★ Option をインポートに追加
-import { Order, OrderItem, Option } from "../types";
+// ★ Order, Option の型をインポート
+import { Order, Option, CartItem } from "../types";
+
+// ★ Order 型が items を JSON 文字列ではなく CartItem[] として持つことを期待
+// (もし items が JSON 文字列のままなら、ここでパースする必要がある)
+const parseOrderItems = (items: string | CartItem[]): CartItem[] => {
+  if (typeof items === "string") {
+    try {
+      return JSON.parse(items);
+    } catch (e) {
+      console.error("Failed to parse order items:", e);
+      return [];
+    }
+  }
+  return items;
+};
 
 interface OrderHistoryPaneProps {
-  pendingOrders: Order[]; // 未会計の確定済み注文リスト
-  orderHistoryTotalAmount: number; // 確定済み注文の合計額
-  onGoToPaymentView: () => void; // お会計選択画面へ遷移するハンドラ
+  pendingOrders: Order[];
+  orderHistoryTotalAmount: number;
+  onGoToPaymentView: () => void;
   onCallStaff: () => void;
 }
 
@@ -17,137 +32,101 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   onGoToPaymentView,
   onCallStaff,
 }) => {
-  const isReadyToPay = pendingOrders.length > 0;
-
   return (
-    // CSSクラス 'history-pane-layout' により左右分割される
     <div className="history-pane-layout">
-      {/* 左側: 履歴リスト (CSSクラス 'history-content-main' でスクロール可能に) */}
+      {/* 1. 注文履歴メイン (左側) */}
       <div className="history-content-main">
-        <h2 className="text-3xl font-extrabold mb-6 text-gray-800 border-b-4 border-teal-500 pb-2">
-          🧾 確定済み注文履歴 (未会計)
-        </h2>
-
         {pendingOrders.length === 0 ? (
           <div className="empty-history-message">
-            <p className="text-2xl text-gray-500 italic mt-10">
-              まだ確定したご注文はありません。
-            </p>
-            <p className="text-lg text-gray-400 mt-2">
-              注文タブから商品を選び、「注文を確定する」を押してください。
-            </p>
+            <p>注文履歴はありません</p>
+            <p>メニューから商品をご注文ください。</p>
           </div>
         ) : (
-          <div className="order-list-scroll">
-            {pendingOrders.map((order) => (
-              <div key={order.id} className="order-history-card">
-                <div className="order-header-info">
-                  <span className="order-id">注文 **#{order.id}**</span>
-                  <span className="order-timestamp">
+          pendingOrders.map((order) => (
+            <div key={order.id} className="order-history-card">
+              {/* ★ カードヘッダー (ID, ステータス, 合計金額) */}
+              <div className="order-header-info">
+                <span className="order-id">
+                  注文 #{order.id}
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#888",
+                      marginLeft: "10px",
+                    }}
+                  >
+                    (
                     {new Date(order.timestamp).toLocaleTimeString("ja-JP", {
                       hour: "2-digit",
                       minute: "2-digit",
-                    })}{" "}
-                    確定
+                    })}
+                    )
                   </span>
-                  <span className="order-total">
-                    {/* ★ totalAmount から total_price に修正 */}
-                    **¥
-                    {order.total_price
-                      ? order.total_price.toLocaleString()
-                      : "計算中"}
-                    **
-                  </span>
-                </div>
-                <ul className="item-list">
-                  {(() => {
-                    try {
-                      const itemsArray = JSON.parse(
-                        order.items as unknown as string
-                      );
+                </span>
 
-                      return itemsArray.map(
-                        (item: OrderItem, index: number) => (
-                          <li
-                            key={`${order.id}-${item.id || index}`}
-                            className="item-detail"
-                          >
-                            <span>{item.name}</span>
-                            {/* オプション表示 */}
-                            {item.selectedOptions &&
-                              item.selectedOptions.length > 0 && (
-                                <ul
-                                  style={{
-                                    fontSize: "0.8em",
-                                    color: "#555",
-                                    marginLeft: "10px",
-                                  }}
-                                >
-                                  {/* ★ Option 型を明示 */}
-                                  {item.selectedOptions.map((opt: Option) => (
-                                    <li key={opt.name}>
-                                      + {opt.name} (¥
-                                      {opt.price.toLocaleString()})
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            <span className="quantity-price">
-                              {item.quantity} 点 @ ¥
-                              {(
-                                item.price +
-                                (item.selectedOptions?.reduce(
-                                  (sum, opt) => sum + opt.price,
-                                  0
-                                ) || 0)
-                              ).toLocaleString()}
-                            </span>
-                          </li>
-                        )
-                      );
-                    } catch (e) {
-                      console.error(
-                        "注文項目のパースに失敗:",
-                        e,
-                        "データ:",
-                        order.items
-                      );
-                      return <li>注文項目の表示エラー</li>;
-                    }
-                  })()}
-                </ul>
+                {/* ★ ステータス表示 (CSSに合わせてクラス名を変更) */}
+                <span
+                  className={`order-status ${
+                    order.status === "調理中" ? "cooking" : "delivered"
+                  }`}
+                >
+                  {order.status}
+                </span>
+
+                <span className="order-total">
+                  ¥{order.total_price.toLocaleString()}
+                </span>
               </div>
-            ))}
-          </div>
+
+              {/* ★ 注文内容リスト */}
+              <ul className="item-list">
+                {parseOrderItems(order.items).map(
+                  (item: CartItem, index: number) => (
+                    <li key={`${item.id}-${index}`}>
+                      <div className="item-detail">
+                        <span>
+                          {item.name} (x{item.quantity})
+                        </span>
+                        <span>
+                          ¥{(item.price * item.quantity).toLocaleString()}
+                        </span>
+                      </div>
+                      {/* オプション表示 */}
+                      {item.selectedOptions &&
+                        item.selectedOptions.length > 0 && (
+                          <div className="item-options-list">
+                            {item.selectedOptions
+                              .map((opt: Option) => opt.name)
+                              .join(", ")}
+                          </div>
+                        )}
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+          ))
         )}
       </div>
 
-      {/* 右側: 合計額とアクションボタン */}
+      {/* 2. 会計サイドバー (右側) */}
       <div className="history-summary-sidebar">
-        <h3 className="text-2xl font-bold mb-4 text-gray-700">未会計 合計</h3>
-        <h1 className="text-6xl font-extrabold text-red-600 mb-8">
-          ¥{orderHistoryTotalAmount.toLocaleString()}
-        </h1>
+        <h3>お会計</h3>
+        <h1>¥{orderHistoryTotalAmount.toLocaleString()}</h1>
 
         <button
+          className="payment-button" // ★ CSSの .payment-button に合わせる
           onClick={onGoToPaymentView}
-          disabled={!isReadyToPay}
-          className="py-4 px-6 bg-red-600 text-white rounded-xl text-xl font-bold hover:bg-red-700 transition shadow-lg w-full mb-4"
+          disabled={orderHistoryTotalAmount === 0}
         >
-          <span role="img" aria-label="money">
-            💳
-          </span>{" "}
           お会計に進む
         </button>
 
         <button
+          className="call-button" // ★ CSSの .call-button に合わせる
           onClick={onCallStaff}
-          className="py-4 px-6 bg-yellow-500 text-gray-800 rounded-xl text-xl font-bold hover:bg-yellow-600 transition shadow-lg w-full"
         >
-          <span role="img" aria-label="bell">
-            🛎️
-          </span>{" "}
-          スタッフ呼び出し
+          スタッフを呼び出す
         </button>
       </div>
     </div>

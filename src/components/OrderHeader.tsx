@@ -16,21 +16,29 @@ const OrderHeader: React.FC<OrderHeaderProps> = ({
   onCallStaff,
 }) => {
   return (
-    <header className="order-header">
-      <span className="tablet-info">テーブル: {userId}</span>
+    <div className="order-header">
+      <div className="tablet-info">テーブル: {userId}</div>
       <div className="search-bar-container">
+        {/* ★ 修正: 隠しラベルを追加 (アクセシビリティ警告の修正) */}
+        <label htmlFor="menu-search" className="visually-hidden">
+          メニューを検索
+        </label>
+
         <input
           type="text"
           placeholder="メニューを検索..."
+          className="search-input"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="search-input"
+          // ★ 修正: id と name を追加 (アクセシビリティ警告の修正)
+          id="menu-search"
+          name="menu-search"
         />
       </div>
-      <button className="call-staff-button-header" onClick={onCallStaff}>
-        スタッフを呼ぶ 🙋‍♂️
+      <button onClick={onCallStaff} className="call-staff-button-header">
+        スタッフ呼び出し
       </button>
-    </header>
+    </div>
   );
 };
 

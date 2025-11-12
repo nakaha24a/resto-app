@@ -1,71 +1,74 @@
-// src/App.tsx
-
-import React, { useState } from "react";
-// ★ usePendingOrderTotalAmount をインポート
+import React, { useState, useEffect } from "react";
+// ★ fetchMenuData をストアから直接インポート
 import useCartStore, { usePendingOrderTotalAmount } from "./store/cartStore";
 
 // コンポーネントのインポート
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";
-// ★ PaymentOptionsScreen は使われていないようなのでコメントアウト (必要なら戻す)
-// import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 
 import "./components/styles.css";
 
-// AppScreen 型定義 (変更なし)
 type AppScreen = "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
-
-const TABLE_ID = "T-05"; // 仮のテーブルID
+const TABLE_ID = "T-05";
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("ORDER");
   const [tableNumber] = useState<string>(TABLE_ID);
-  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER"); // OrderScreen 内のタブ状態
+  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER"); // ★ fetchMenuData をストアから取得
 
-  // ★ clearPendingOrders をストアから取得
-  const { cart, clearCart, clearPendingOrders } = useCartStore();
-  const [showOrderComplete, setShowOrderComplete] = useState(false);
-  // ★ pendingOrderTotalAmount をフックで取得
-  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
+  const { cart, clearCart, clearPendingOrders, fetchMenuData } = useCartStore();
 
-  // 決済完了後に OrderScreen に戻る処理
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(
+    null
+  );
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount(); // ★★★ 修正点 ★★★ // アプリ起動時に1回だけメニューデータを取得する
+
+  useEffect(() => {
+    fetchMenuData();
+  }, [fetchMenuData]); // 依存配列に fetchMenuData を指定 // (中略: メッセージ自動消去の useEffect は変更なし)
+
+  useEffect(() => {
+    if (confirmationMessage) {
+      const timer = setTimeout(() => {
+        setConfirmationMessage(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [confirmationMessage]); // (中略ここまで) // (中略: handleBackToTitle, handleBackToOrderHistory, handleNavigateOrderTab, handleGoToSplitBill, handleRequestPayment, handleCallStaff のロジックは変更なし)
   const handleBackToTitle = () => {
     clearCart();
-    clearPendingOrders(); // ★ ストアのアクションを呼び出す
+    clearPendingOrders();
     setCurrentScreen("ORDER");
     setActiveOrderTab("ORDER");
   };
 
-  // SplitBillScreen から OrderScreen (履歴タブ) に戻る処理
   const handleBackToOrderHistory = () => {
     setCurrentScreen("ORDER");
     setActiveOrderTab("HISTORY");
   };
 
-  // OrderScreen 内のタブ移動ハンドラ
   const handleNavigateOrderTab = (tab: NavTab) => setActiveOrderTab(tab);
 
-  // 割り勘画面へ遷移する処理
   const handleGoToSplitBill = () => {
-    // ★ カートが空でも未会計があれば進めるように修正
     if (pendingOrderTotalAmount === 0 && cart.length === 0) {
-      alert("ご注文履歴またはカートに商品がないため、お会計に進めません。");
+      setConfirmationMessage("商品がないため、お会計に進めません。");
       return;
     }
     setCurrentScreen("SPLIT_BILL");
   };
 
-  // 支払い依頼 (店員呼び出し) 処理
   const handleRequestPayment = (message: string) => {
     console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
-    // ★ 支払い完了後にカートと未会計注文をクリア
     clearCart();
     clearPendingOrders();
-    setCurrentScreen("COMPLETE_PAYMENT"); // 完了画面へ
+    setCurrentScreen("COMPLETE_PAYMENT");
   };
 
-  // 表示する画面を切り替える
+  const handleCallStaff = (message: string) => {
+    console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
+    setConfirmationMessage(message);
+  }; // (中略ここまで)
   const renderScreen = () => {
     switch (currentScreen) {
       case "ORDER":
@@ -75,26 +78,28 @@ const App: React.FC = () => {
             activeTab={activeOrderTab}
             onNavigate={handleNavigateOrderTab}
             onGoToPayment={handleGoToSplitBill}
-            setShowOrderComplete={setShowOrderComplete}
+            setConfirmationMessage={setConfirmationMessage}
+            onCallStaff={handleCallStaff}
           />
         );
       case "SPLIT_BILL":
         return (
           <SplitBillScreen
             onCallStaff={handleRequestPayment}
-            onBack={handleBackToOrderHistory} // 戻るボタンの遷移先
+            onBack={handleBackToOrderHistory}
           />
         );
       case "COMPLETE_PAYMENT":
-        return <ThanksScreen onBackToTitle={handleBackToTitle} />; // 完了画面から最初の画面へ
-      default: // 想定外の Screen の場合は Order 画面に戻す
+        return <ThanksScreen onBackToTitle={handleBackToTitle} />;
+      default:
         return (
           <OrderScreen
             userId={tableNumber}
             activeTab={activeOrderTab}
             onNavigate={handleNavigateOrderTab}
             onGoToPayment={handleGoToSplitBill}
-            setShowOrderComplete={setShowOrderComplete}
+            setConfirmationMessage={setConfirmationMessage}
+            onCallStaff={handleCallStaff}
           />
         );
     }
@@ -102,13 +107,19 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {renderScreen()}
-      {/* 注文完了時のオーバーレイ表示 */}
-      {showOrderComplete && (
+            {renderScreen()}     {" "}
+      {/* (中略: confirmation-overlay の JSX は変更なし) */}     {" "}
+      {confirmationMessage && (
         <div className="confirmation-overlay">
-          <div className="confirmation-box">✅ ご注文を承りました</div>
+                   {" "}
+          <div className="confirmation-box">
+                        {confirmationMessage.includes("承り") ? "✅" : "✋"}    
+                    {confirmationMessage}         {" "}
+          </div>
+                 {" "}
         </div>
       )}
+         {" "}
     </div>
   );
 };
