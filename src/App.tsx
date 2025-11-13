@@ -7,7 +7,8 @@ import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";
 
-import "./components/styles.css";
+// ★ index.tsx でインポート済みのため、ここでは削除
+// import "./components/styles.css";
 
 type AppScreen = "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
 const TABLE_ID = "T-05";
@@ -107,19 +108,16 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-            {renderScreen()}     {" "}
-      {/* (中略: confirmation-overlay の JSX は変更なし) */}     {" "}
+      {renderScreen()}
+
       {confirmationMessage && (
         <div className="confirmation-overlay">
-                   {" "}
           <div className="confirmation-box">
-                        {confirmationMessage.includes("承り") ? "✅" : "✋"}    
-                    {confirmationMessage}         {" "}
+            {confirmationMessage.includes("承り") ? "✅" : "✋"}{" "}
+            {confirmationMessage}
           </div>
-                 {" "}
         </div>
       )}
-         {" "}
     </div>
   );
 };

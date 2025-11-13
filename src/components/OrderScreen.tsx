@@ -59,7 +59,9 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   const tableNum = useMemo(() => {
     return parseInt(userId.replace(/[^0-9]/g, ""), 10);
-  }, [userId]); /* // ★ App.tsx で menuData を読み込むため、この useEffect は削除
+  }, [
+    userId,
+  ]); /* // ★ App.tsx で menuData を読み込むため、この useEffect は削除
   useEffect(() => {
     if (!menuData && !menuLoading) {
       fetchMenuData();
@@ -102,16 +104,15 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       const storeError = useCartStore.getState().error;
       setConfirmationMessage(`注文処理に失敗しました。\n${storeError || ""}`);
     }
-  }; // (中略ここまで)
+  };
   const renderMainContent = () => {
-    // ★ 修正: loading -> menuLoading
     if (menuLoading && !menuData)
       return (
         <div
           className="loading-message"
           style={{ padding: "20px", flex: 1, textAlign: "center" }}
         >
-                    メニュー読み込み中...        {" "}
+          メニュー読み込み中...
         </div>
       );
     if (menuError)
@@ -120,7 +121,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           className="error-message"
           style={{ color: "red", padding: "20px", flex: 1 }}
         >
-                    エラー: {menuError}       {" "}
+          エラー: {menuError}
         </div>
       );
     if (!menuData)
@@ -129,31 +130,28 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           className="loading-message"
           style={{ padding: "20px", flex: 1, textAlign: "center" }}
         >
-                    メニューデータがありません。        {" "}
+          メニューデータがありません。
         </div>
-      ); // (中略: renderMainContent の残りは変更なし)
+      );
 
     if (activeTab === "ORDER" || activeTab === "TOP") {
       return (
         <>
-                   {" "}
           <div className="main-content-wrapper">
-                       {" "}
             <CategoryNav
               categories={CATEGORIES}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
             />
-                       {" "}
+
             <MenuContent
               selectedCategory={
                 selectedCategory === "TOP" ? null : selectedCategory
               }
               searchQuery={searchQuery}
             />
-                     {" "}
           </div>
-                   {" "}
+
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
@@ -161,7 +159,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
             onGoToPayment={onGoToPayment}
             pendingOrderTotalAmount={pendingOrderTotalAmount}
           />
-                 {" "}
         </>
       );
     } else if (activeTab === "HISTORY") {
@@ -175,25 +172,24 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       );
     }
     return null;
-  }; // (中略ここまで) // (中略: return (...) の JSX は変更なし)
+  };
   return (
     <div className="order-screen-layout">
-           {" "}
       <OrderHeader
         userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => onCallStaff("スタッフを呼び出しました")}
       />
-           {" "}
+
       <div
         className={`order-main-area ${
           activeTab === "HISTORY" ? "history-layout" : ""
         }`}
       >
-                {renderMainContent()}     {" "}
+        {renderMainContent()}
       </div>
-           {" "}
+
       <BottomNav
         activeTab={activeTab}
         onNavigate={onNavigate}
@@ -202,7 +198,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           0
         )}
       />
-         {" "}
     </div>
   );
 };
