@@ -66,10 +66,15 @@ const MenuContent: React.FC<MenuContentProps> = ({
   }
   if (menuError) {
     return (
-      <div className="menu-list-container">
-        <p style={{ color: "red", textAlign: "center", padding: "20px" }}>
-          {menuError}
-        </p>
+      <div className="error-container">
+        <p>メニューの読み込みに失敗しました。</p>
+        <p style={{ fontSize: "0.8rem", color: "gray" }}>{menuError}</p>
+        <button
+          className="call-staff-button-header" // 既存のボタンスタイルを流用
+          onClick={() => fetchMenuData()} // ストアのアクションを直接呼ぶ
+        >
+          再読み込み
+        </button>
       </div>
     );
   }
