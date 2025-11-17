@@ -3,7 +3,7 @@ import useCartStore, {
   useCartTotalAmount,
   usePendingOrderTotalAmount,
 } from "../store/cartStore";
-import { CartItem, MenuItem, Option } from "../types"; // ★ 修正: Option をインポート
+import { CartItem, MenuItem, Option } from "../types"; // ★ Option をインポート
 
 interface CartSidebarProps {
   cart: CartItem[];
@@ -20,10 +20,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   onGoToPayment,
   pendingOrderTotalAmount,
 }) => {
-  const { updateCart, menuData } = useCartStore();
+  const { updateCart } = useCartStore(); // ★ menuData は不要
 
   // ★ 修正:
-  // CartItem は MenuItem を継承しているため、item 自体を updateCart に渡せます。
+  // CartItem は MenuItem を継承しており、findMenuItemById は不要。
+  // cartItem 自体を updateCart に渡す。
   // (TS2339: 'menuItemId' エラーの解消)
   const handleUpdateQuantity = (cartItem: CartItem, newQuantity: number) => {
     // 差分の数量を計算してストアを更新

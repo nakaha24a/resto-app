@@ -1,5 +1,5 @@
 import React from "react";
-import { Order, OrderItem } from "../types"; // ★ 修正: CartItem ではなく OrderItem をインポート
+import { Order, OrderItem } from "../types"; // ★ 修正: OrderItem をインポート
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[];
@@ -9,7 +9,7 @@ interface OrderHistoryPaneProps {
 }
 
 // ★ 修正: parseOrderItems 関数は不要になったため削除
-// (order.items は既に OrderItem[] のため、TS2345エラー解消)
+// (cartStore が items を OrderItem[] に変換済みの想定)
 
 const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   pendingOrders,
@@ -33,20 +33,16 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                 <span className="order-id">注文ID: {order.id}</span>
                 <span
                   className={`order-status ${
-                    // ★ 修正: "調理中" -> "PENDING" (TS2367エラー解消)
-                    order.status === "PENDING" ? "cooking" : "delivered"
+                    // ★ 修正: "PENDING" -> "調理中" (server.js に合わせる)
+                    order.status === "調理中" ? "cooking" : "delivered"
                   }`}
                 >
-                  {/* ★ 修正: 英語のステータスを日本語に変換して表示 */}
-                  {order.status === "PENDING"
-                    ? "調理中"
-                    : order.status === "COMPLETED"
-                    ? "提供済み"
-                    : "キャンセル"}
+                  {/* ★ 修正: status をそのまま表示 (型で "調理中" などが保証される) */}
+                  {order.status}
                 </span>
                 <span className="order-total">
-                  {/* ★ 修正: total_price -> totalAmount (TS2339エラー解消) */}¥
-                  {order.totalAmount.toLocaleString()}
+                  {/* ★ 修正: total_price -> totalAmount (types/index.ts に合わせる) */}
+                  ¥{order.totalAmount.toLocaleString()}
                 </span>
               </div>
 
@@ -60,7 +56,7 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                       </span>
                       <span>¥{item.totalPrice.toLocaleString()}</span>
                     </div>
-                    {/* オプションも表示（履歴用にスタイルを追加） */}
+                    {/* オプションも表示 */}
                     {item.options && item.options.length > 0 && (
                       <div className="item-options-history">
                         {item.options.map((opt) => `+ ${opt.name}`).join(" ")}
