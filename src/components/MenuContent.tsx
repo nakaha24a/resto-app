@@ -1,5 +1,3 @@
-// src/components/MenuContent.tsx (完成版)
-
 import React, { useEffect, useState } from "react";
 import useCartStore from "../store/cartStore";
 import { CartItem, MenuItem, Option, MenuData, Category } from "../types";
@@ -10,7 +8,9 @@ interface MenuContentProps {
   searchQuery: string;
 }
 
-const API_BASE_URL = "http://localhost:3000";
+// ★ 修正: localhost を .env 変数から読み込む
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
 const MenuContent: React.FC<MenuContentProps> = ({
   selectedCategory,
@@ -27,6 +27,15 @@ const MenuContent: React.FC<MenuContentProps> = ({
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // App.tsx で menuData を読み込むため、この useEffect は不要
+  /*
+  useEffect(() => {
+    if (!menuData && !menuLoading) {
+      fetchMenuData();
+    }
+  }, [fetchMenuData, menuData, menuLoading]);
+  */
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
@@ -48,9 +57,10 @@ const MenuContent: React.FC<MenuContentProps> = ({
   if (menuLoading && !menuData) {
     return (
       <div className="menu-list-container">
-        <p style={{ textAlign: "center", padding: "20px" }}>
-          メニュー読み込み中...
-        </p>
+        {/* ★ 修正: テキストをローディングスピナーに変更 */}
+        <div className="loading-spinner-container">
+          <div className="loading-spinner"></div>
+        </div>
       </div>
     );
   }
@@ -73,6 +83,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
     );
   }
 
+  // --- 表示するメニュー項目をフィルタリング ---
   let itemsToShow: MenuItem[] = [];
   if (!selectedCategory || selectedCategory === "TOP") {
     itemsToShow = menuData.categories.flatMap((cat: Category) => cat.items);
@@ -100,6 +111,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
             該当する商品がありません。
           </p>
         )}
+
         {itemsToShow.map((item) => {
           return (
             <div key={item.id} className="menu-item">
@@ -128,11 +140,12 @@ const MenuContent: React.FC<MenuContentProps> = ({
                   <p className="menu-price">¥{item.price.toLocaleString()}</p>
                 </div>
               </div>
-              {/* 数量コントロールブロックは削除済み */}
+              {/* ★ UI/UX改善のため、数量コントロールブロックは削除済み */}
             </div>
           );
         })}
       </div>
+
       {selectedItem && isModalOpen && (
         <OptionModal
           menuItem={selectedItem}

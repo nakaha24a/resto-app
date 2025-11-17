@@ -1,258 +1,220 @@
-// src/store/cartStore.ts
-// ★ 修正版: loading 状態を分離し、履歴重複バグを修正
-
 import { create } from "zustand";
-// ★ 修正: createJSONStorage を正しくインポート
-import { persist, createJSONStorage } from "zustand/middleware";
 import {
-  MenuItem,
   CartItem,
+  MenuItem,
   Option,
   Order,
-  OrderItem,
   MenuData,
+  Category,
+  OrderItem, // ★ 修正: OrderItem をインポート
 } from "../types";
 
-const API_BASE_URL = "http://localhost:3000";
+// 環境変数から API_BASE_URL を読み込む (修正済み)
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
-// Zustand ストアの状態の型定義
 interface CartState {
   cart: CartItem[];
-  isCartOpen: boolean;
   pendingOrders: Order[];
-  menuData: MenuData | null; // ★ 修正: loading を2つに分離
+  orderHistory: Order[];
+  menuData: MenuData | null;
+  loading: boolean;
   menuLoading: boolean;
-  orderLoading: boolean;
   error: string | null;
-}
-
-// Zustand ストアのアクションの型定義
-interface CartActions {
-  toggleCart: () => void;
-  updateCart: (
-    menuItem: MenuItem,
-    quantity: number,
-    selectedOptions?: Option[]
-  ) => void;
-  removeFromCart: (cartItemId: string) => void;
-  clearCart: () => void;
-  placeOrder: (tableNumber: number) => Promise<Order | null>;
-  fetchOrders: (tableNumber: number) => Promise<void>;
   fetchMenuData: () => Promise<void>;
-  calculateCartTotal: () => number;
-  calculatePendingOrderTotal: () => number;
+  updateCart: (item: MenuItem, quantity: number, options: Option[]) => void;
+  removeFromCart: (uniqueId: string) => void;
+  clearCart: () => void;
+  placeOrder: (tableNum: number) => Promise<Order | null>;
+  fetchOrders: (tableNum: number) => Promise<void>;
   clearPendingOrders: () => void;
 }
 
-const useCartStore = create<CartState & CartActions>()(
-  persist(
-    (set, get) => ({
-      // --- 初期状態 ---
-      cart: [],
-      isCartOpen: false,
-      pendingOrders: [],
-      menuData: null, // ★ 修正: loading を2つに分離
-      menuLoading: false,
-      orderLoading: false,
-      error: null, // --- アクション ---
+const useCartStore = create<CartState>((set, get) => ({
+  cart: [],
+  pendingOrders: [],
+  orderHistory: [],
+  menuData: null,
+  loading: false,
+  menuLoading: false,
+  error: null,
 
-      toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })), // (中略: updateCart, removeFromCart, clearCart は変更なし)
+  fetchMenuData: async () => {
+    if (get().menuData) return; // 既にデータがあれば取得しない
+    set({ menuLoading: true, error: null });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/menu`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: MenuData = await response.json();
 
-      updateCart: (menuItem, quantity, selectedOptions = []) => {
-        set((state) => {
-          const optionsId = selectedOptions
-            .map((opt) => opt.name)
-            .sort()
-            .join("-");
-          const cartItemId = `${menuItem.id}-${optionsId || "no-options"}`;
-          const existingItemIndex = state.cart.findIndex(
-            (item) => item.id === cartItemId
-          );
+      if (!data.categories || data.categories.length === 0) {
+        console.warn("メニューデータにカテゴリが含まれていません。");
+      }
 
-          let newCart = [...state.cart];
-
-          if (quantity <= 0) {
-            if (existingItemIndex > -1) {
-              newCart.splice(existingItemIndex, 1);
-            }
-          } else if (existingItemIndex > -1) {
-            newCart[existingItemIndex] = {
-              ...newCart[existingItemIndex],
-              quantity: quantity,
-            };
-          } else {
-            const newItem: CartItem = {
-              id: cartItemId,
-              menuItemId: menuItem.id,
-              name: menuItem.name,
-              price: menuItem.price,
-              quantity: quantity,
-              selectedOptions: selectedOptions,
-            };
-            newCart.push(newItem);
-          }
-          return { cart: newCart };
-        });
-      },
-      removeFromCart: (cartItemId) => {
-        set((state) => ({
-          cart: state.cart.filter((item) => item.id !== cartItemId),
-        }));
-      },
-      clearCart: () => set({ cart: [] }),
-      clearPendingOrders: () => set({ pendingOrders: [] }), // (中略ここまで)
-      placeOrder: async (tableNumber) => {
-        const cartItems = get().cart;
-        if (cartItems.length === 0) {
-          console.warn("カートが空です");
-          return null;
-        }
-
-        const orderData = {
-          tableNumber: tableNumber,
-          items: cartItems.map((item) => ({
-            id: item.menuItemId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            selectedOptions: item.selectedOptions || [],
-          })),
-        };
-
-        try {
-          // ★ 修正: orderLoading を true に
-          set({ orderLoading: true, error: null });
-          const response = await fetch(`${API_BASE_URL}/api/orders`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderData),
-          });
-
-          if (!response.ok) {
-            let errorBody = "サーバーエラーが発生しました";
-            try {
-              const errorJson = await response.json();
-              errorBody = errorJson.error || JSON.stringify(errorJson);
-            } catch (_) {
-              errorBody = await response.text();
-            }
-            throw new Error(
-              `HTTP error! status: ${response.status}, message: ${errorBody}`
-            );
-          }
-
-          const newOrder: Order = await response.json(); // ★ 修正: orderLoading を false に
-
-          set({
-            cart: [],
-            isCartOpen: false,
-            orderLoading: false,
-          }); // ★ 修正: 注文成功後、履歴を再取得
-
-          await get().fetchOrders(tableNumber);
-
-          console.log("Order placed and history refetched:", newOrder);
-          return newOrder;
-        } catch (error) {
-          console.error("注文処理中にエラーが発生しました:", error);
-          const errorMessage =
-            error instanceof Error ? error.message : String(error); // ★ 修正: orderLoading を false に
-          set({
-            error: `注文処理エラー: ${errorMessage}`,
-            orderLoading: false,
-          });
-          return null;
-        }
-      },
-
-      fetchOrders: async (tableNumber: number) => {
-        if (!tableNumber) {
-          console.warn("fetchOrders: tableNumber がありません。");
-          set({
-            error: "注文履歴取得エラー: テーブル番号がありません。",
-            orderLoading: false, // ★ 修正: orderLoading
-          });
-          return;
-        }
-
-        try {
-          // ★ 修正: orderLoading を true に
-          set({ orderLoading: true, error: null });
-          const response = await fetch(
-            `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`
-          );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const orders: Order[] = await response.json(); // ★ 修正: orderLoading を false に (上書きロジックは正しい)
-          set({ pendingOrders: orders, orderLoading: false });
-        } catch (error: any) {
-          console.error("注文履歴の取得に失敗:", error);
-          const errorMessage =
-            error instanceof Error ? error.message : String(error); // ★ 修正: orderLoading を false に
-          set({
-            error: `注文履歴取得エラー: ${errorMessage}`,
-            orderLoading: false,
-          });
-        }
-      },
-
-      fetchMenuData: async () => {
-        // ★ 修正: 既にデータがある場合のみ return
-        if (get().menuData) {
-          return;
-        }
-        try {
-          // ★ 修正: menuLoading を true に
-          set({ menuLoading: true, error: null });
-          const response = await fetch(`${API_BASE_URL}/api/menu`);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data: MenuData = await response.json(); // ★ 修正: menuLoading を false に
-          set({ menuData: data, menuLoading: false });
-        } catch (e) {
-          console.error("メニューデータの取得に失敗しました:", e);
-          const errorMessage = e instanceof Error ? e.message : String(e); // ★ 修正: menuLoading を false に
-          set({
-            error: `メニューデータ取得エラー: ${errorMessage}`,
-            menuLoading: false,
-          });
-        }
-      }, // (中略: calculateCartTotal, calculatePendingOrderTotal は変更なし)
-
-      calculateCartTotal: () => {
-        return get().cart.reduce((total, item) => {
-          const optionsTotal =
-            item.selectedOptions?.reduce(
-              (sum, option) => sum + option.price,
-              0
-            ) || 0;
-          return total + (item.price + optionsTotal) * item.quantity;
-        }, 0);
-      },
-      calculatePendingOrderTotal: () => {
-        return get().pendingOrders.reduce((total, order) => {
-          return total + (order.total_price || 0);
-        }, 0);
-      }, // (中略ここまで)
-    }),
-    {
-      name: "cart-storage",
-      storage: createJSONStorage(() => localStorage), // ★ インポートエラー修正 // ★ 修正: 履歴(pendingOrders)やローディング状態は保存しない
-      partialize: (state) => ({
-        cart: state.cart,
-      }),
+      set({ menuData: data, menuLoading: false });
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : "メニューの読み込みに失敗しました。";
+      console.error("fetchMenuData error:", errorMsg);
+      set({ error: errorMsg, menuLoading: false });
     }
-  )
-);
+  },
 
-// (中略: export は変更なし)
+  updateCart: (item, quantity, selectedOptions) =>
+    set((state) => {
+      // ★ 修正: Option に id がないため、name を使ってキーを生成
+      const optionsKey = selectedOptions
+        .map((opt) => opt.name) // opt.id から opt.name に変更
+        .sort()
+        .join("-");
+      const uniqueId = `${item.id}_${optionsKey || "default"}`;
+
+      const existingItemIndex = state.cart.findIndex(
+        (cartItem) => cartItem.uniqueId === uniqueId
+      );
+
+      let newCart = [...state.cart];
+      const optionsTotalPrice = selectedOptions.reduce(
+        (total, opt) => total + (opt.price || 0),
+        0
+      );
+      const itemTotalPrice = (item.price + optionsTotalPrice) * quantity;
+
+      if (existingItemIndex > -1) {
+        // 既存アイテムの数量を更新
+        const newQuantity = newCart[existingItemIndex].quantity + quantity;
+
+        if (newQuantity <= 0) {
+          // 数量が0以下ならカートから削除
+          newCart.splice(existingItemIndex, 1);
+        } else {
+          // 数量と合計金額を更新
+          newCart[existingItemIndex] = {
+            ...newCart[existingItemIndex],
+            quantity: newQuantity,
+            // ★ 修正: totalPrice も更新
+            totalPrice: (item.price + optionsTotalPrice) * newQuantity,
+          };
+        }
+      } else if (quantity > 0) {
+        // 新規アイテムとしてカートに追加 (★ 修正: 型定義に合わせて全プロパティを設定)
+        newCart.push({
+          ...item, // MenuItem のプロパティ (id, name, price, image...) を継承
+          uniqueId: uniqueId,
+          quantity: quantity,
+          selectedOptions: selectedOptions,
+          totalPrice: itemTotalPrice, // (単価 + オプション価格) * 数量
+        });
+      }
+
+      return { cart: newCart };
+    }),
+
+  removeFromCart: (uniqueId) =>
+    set((state) => ({
+      cart: state.cart.filter((item) => item.uniqueId !== uniqueId),
+    })),
+
+  clearCart: () => set({ cart: [] }),
+
+  placeOrder: async (tableNum) => {
+    const { cart } = get();
+    if (cart.length === 0) {
+      set({ error: "カートが空です。" });
+      return null;
+    }
+    set({ loading: true, error: null });
+    try {
+      // ★ 修正: 型を OrderItem[] に指定 (types/index.ts と一致)
+      const orderDetails: OrderItem[] = cart.map((item) => ({
+        menuItemId: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price, // 単価
+        options: item.selectedOptions, // types/index.ts の OrderItem に合わせる
+        totalPrice: item.totalPrice, // types/index.ts の OrderItem に合わせる
+      }));
+
+      // ★ 修正: totalPrice を使って合計金額を計算
+      const totalAmount = orderDetails.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0
+      );
+
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // ★ 修正: types/index.ts の Order 型に一致させる
+        body: JSON.stringify({
+          tableNum: tableNum,
+          items: orderDetails,
+          totalAmount: totalAmount,
+          status: "PENDING",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "注文処理に失敗しました。");
+      }
+
+      const newOrder: Order = await response.json();
+
+      set((state) => ({
+        pendingOrders: [...state.pendingOrders, newOrder],
+        cart: [], // カートを空にする
+        loading: false,
+      }));
+      return newOrder;
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "注文の送信に失敗しました。";
+      console.error("placeOrder error:", errorMsg);
+      set({ error: errorMsg, loading: false });
+      return null;
+    }
+  },
+
+  fetchOrders: async (tableNum) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/orders/table/${tableNum}`
+      );
+      if (!response.ok) {
+        throw new Error("注文履歴の取得に失敗しました。");
+      }
+      const orders: Order[] = await response.json();
+      const pending = orders.filter((order) => order.status === "PENDING");
+      const history = orders.filter((order) => order.status !== "PENDING");
+      set({ pendingOrders: pending, orderHistory: history, loading: false });
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "注文履歴の取得に失敗しました。";
+      console.error("fetchOrders error:", errorMsg);
+      set({ error: errorMsg, loading: false });
+    }
+  },
+
+  clearPendingOrders: () => set({ pendingOrders: [] }),
+}));
+
+// ★ 修正: item.totalPrice を参照
 export const useCartTotalAmount = () =>
-  useCartStore((state) => state.calculateCartTotal());
+  useCartStore((state) =>
+    state.cart.reduce((total, item) => total + item.totalPrice, 0)
+  );
+
+// ★ 修正: order.totalAmount を参照
 export const usePendingOrderTotalAmount = () =>
-  useCartStore((state) => state.calculatePendingOrderTotal());
-// (中略ここまで)
+  useCartStore((state) =>
+    state.pendingOrders.reduce((total, order) => total + order.totalAmount, 0)
+  );
 
 export default useCartStore;

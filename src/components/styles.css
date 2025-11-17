@@ -1,4 +1,4 @@
-/* src/components/styles.css - PC/タブレット固定版 (スマホレスポンシブ削除、構文エラー修正済) */
+/* src/components/styles.css - PC/タブレット固定版 (ヘッダー高さ・カート高さ修正) */
 
 :root {
   --primary-color: #e67e22; /* オレンジ系 */
@@ -70,7 +70,7 @@ body {
 
 /* 1. ヘッダー (OrderHeader) */
 .order-header {
-  height: 60px;
+  height: 70px; /* ★ 修正: 60px から 70px に高さを増やす */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -81,6 +81,7 @@ body {
   box-shadow: 0 2px 4px var(--shadow-color);
   z-index: 10;
   flex-shrink: 0; /* ヘッダーが縮まないように */
+  position: relative;
 }
 .tablet-info {
   font-size: 1.2rem;
@@ -153,6 +154,8 @@ body {
   flex-direction: column;
   overflow: hidden;
   background-color: var(--background-color);
+  position: relative; /* z-index のスタッキングコンテキストのため */
+  /* ★ 修正: z-index: 1 を削除 */
 }
 
 /* カテゴリナビ (上部) */
@@ -212,6 +215,7 @@ body {
   flex-direction: column;
   overflow: hidden;
   transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  animation: fadeInItem 0.4s ease-out forwards;
 }
 .menu-item:hover {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08); /* ホバー時の影も調整 */
@@ -223,6 +227,11 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+.menu-item-clickable:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .menu-image {
@@ -323,12 +332,13 @@ body {
   flex-basis: 380px; /* カートの幅を広げる */
   flex-shrink: 0; /* 縮まない */
   padding: 20px; /* パディング */
-  height: 100%; /* 高さいっぱい */
+  /* ★ 修正: height: 100% を削除 (padding と競合し、はみ出しの原因になるため) */
   overflow: hidden; /* スクロールは .cart-list で */
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--border-color);
   background-color: var(--sidebar-background);
+  box-sizing: border-box; /* ★ 追加: padding が flex-basis に含まれるように */
 }
 .sidebar-title {
   padding: 10px 0 15px;
@@ -637,6 +647,28 @@ body {
 .empty-history-message p:first-child {
   font-size: 1.5rem;
   margin-bottom: 10px;
+}
+
+/* --- 履歴画面（OrderHistoryPane）用の追加スタイル --- */
+
+/* 履歴画面のオプション表示用スタイル */
+.item-options-history {
+  font-size: 0.8rem;
+  color: var(--text-color-light);
+  padding-left: 15px;
+  margin-top: -2px;
+  margin-bottom: 4px;
+}
+
+/* 履歴画面のステータス (調理中) */
+.order-status.cooking {
+  color: var(--warning-color); /* 黄色 */
+  font-weight: bold;
+}
+
+/* 履歴画面のステータス (提供済みなど) */
+.order-status.delivered {
+  color: var(--accent-color); /* 緑色 */
 }
 
 /* ------------------------------------- */
@@ -1164,22 +1196,85 @@ body {
   animation: zoomIn 0.3s ease-out;
 }
 
-/* ANIMATIONS */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
+/* 3. 汎用的なボタンにtransitionを統一 */
+.order-confirm-button,
+.goto-payment-btn,
+.call-staff-button-header,
+.quantity-button,
+.cart-qty-btn,
+.nav-tab,
+.category-tab,
+.option-card,
+.option-button,
+.back-button-bottom,
+.count-stepper button,
+.option-buttons .option-btn,
+.split-controls-footer button,
+.thanks-screen button,
+.modal-close-button,
+.modal-quantity button,
+.add-to-cart-button {
+  transition: all 0.2s ease;
+}
+
+/* 4. 汎用的なボタンクリック時のエフェクト */
+.order-confirm-button:active:not(:disabled),
+.goto-payment-btn:active:not(:disabled),
+.call-staff-button-header:active,
+.quantity-button:active:not(:disabled),
+.cart-qty-btn:active,
+.option-card:active,
+.option-button:active,
+.back-button-bottom:active,
+.count-stepper button:active:not(:disabled),
+.option-buttons .option-btn:active,
+.split-controls-footer button:active,
+.thanks-screen button:active,
+.modal-close-button:active,
+.modal-quantity button:active:not(:disabled),
+.add-to-cart-button:active {
+  transform: scale(0.97);
+  filter: brightness(90%);
+}
+
+.nav-tab:active,
+.category-tab:active {
+  transform: scale(0.95);
+}
+
+/* 5. 読み込み中スピナーのスタイル */
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 6. アニメーションの定義 (Keyframes) */
+@keyframes spin {
   to {
-    opacity: 1;
+    transform: rotate(360deg);
   }
 }
-@keyframes zoomIn {
+
+@keyframes fadeInItem {
   from {
-    transform: scale(0.8);
     opacity: 0;
+    transform: translateY(10px);
   }
   to {
-    transform: scale(1);
     opacity: 1;
+    transform: translateY(0);
   }
 }

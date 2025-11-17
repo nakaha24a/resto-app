@@ -1,23 +1,5 @@
-// src/components/OrderHistoryPane.tsx
-// ★ デザイン修正版
-
 import React from "react";
-// ★ Order, Option の型をインポート
-import { Order, Option, CartItem } from "../types";
-
-// ★ Order 型が items を JSON 文字列ではなく CartItem[] として持つことを期待
-// (もし items が JSON 文字列のままなら、ここでパースする必要がある)
-const parseOrderItems = (items: string | CartItem[]): CartItem[] => {
-  if (typeof items === "string") {
-    try {
-      return JSON.parse(items);
-    } catch (e) {
-      console.error("Failed to parse order items:", e);
-      return [];
-    }
-  }
-  return items;
-};
+import { Order, OrderItem } from "../types"; // ★ 修正: CartItem ではなく OrderItem をインポート
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[];
@@ -25,6 +7,9 @@ interface OrderHistoryPaneProps {
   onGoToPaymentView: () => void;
   onCallStaff: () => void;
 }
+
+// ★ 修正: parseOrderItems 関数は不要になったため削除
+// (order.items は既に OrderItem[] のため、TS2345エラー解消)
 
 const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   pendingOrders,
@@ -34,101 +19,76 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
 }) => {
   return (
     <div className="history-pane-layout">
-      {/* 1. 注文履歴メイン (左側) */}
       <div className="history-content-main">
+        <h2>提供待ちのご注文 ( {pendingOrders.length}件 )</h2>
         {pendingOrders.length === 0 ? (
           <div className="empty-history-message">
-            <p>注文履歴はありません</p>
-            <p>メニューから商品をご注文ください。</p>
+            <p>現在、提供待ちのご注文はありません。</p>
+            <p>「注文」タブから新しいご注文ができます。</p>
           </div>
         ) : (
           pendingOrders.map((order) => (
             <div key={order.id} className="order-history-card">
-              {/* ★ カードヘッダー (ID, ステータス, 合計金額) */}
               <div className="order-header-info">
-                <span className="order-id">
-                  注文 #{order.id}
-                  <span
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "#888",
-                      marginLeft: "10px",
-                    }}
-                  >
-                    (
-                    {new Date(order.timestamp).toLocaleTimeString("ja-JP", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    )
-                  </span>
-                </span>
-
-                {/* ★ ステータス表示 (CSSに合わせてクラス名を変更) */}
+                <span className="order-id">注文ID: {order.id}</span>
                 <span
                   className={`order-status ${
-                    order.status === "調理中" ? "cooking" : "delivered"
+                    // ★ 修正: "調理中" -> "PENDING" (TS2367エラー解消)
+                    order.status === "PENDING" ? "cooking" : "delivered"
                   }`}
                 >
-                  {order.status}
+                  {/* ★ 修正: 英語のステータスを日本語に変換して表示 */}
+                  {order.status === "PENDING"
+                    ? "調理中"
+                    : order.status === "COMPLETED"
+                    ? "提供済み"
+                    : "キャンセル"}
                 </span>
-
                 <span className="order-total">
-                  ¥{order.total_price.toLocaleString()}
+                  {/* ★ 修正: total_price -> totalAmount (TS2339エラー解消) */}¥
+                  {order.totalAmount.toLocaleString()}
                 </span>
               </div>
 
-              {/* ★ 注文内容リスト */}
+              {/* ★ 修正: order.items (OrderItem[]) を直接マップ */}
               <ul className="item-list">
-                {parseOrderItems(order.items).map(
-                  (item: CartItem, index: number) => (
-                    <li key={`${item.id}-${index}`}>
-                      <div className="item-detail">
-                        <span>
-                          {item.name} (x{item.quantity})
-                        </span>
-                        <span>
-                          ¥{(item.price * item.quantity).toLocaleString()}
-                        </span>
+                {order.items.map((item: OrderItem, index: number) => (
+                  <li key={`${item.menuItemId}-${index}`}>
+                    <div className="item-detail">
+                      <span>
+                        {item.name} (x{item.quantity})
+                      </span>
+                      <span>¥{item.totalPrice.toLocaleString()}</span>
+                    </div>
+                    {/* オプションも表示（履歴用にスタイルを追加） */}
+                    {item.options && item.options.length > 0 && (
+                      <div className="item-options-history">
+                        {item.options.map((opt) => `+ ${opt.name}`).join(" ")}
                       </div>
-                      {/* オプション表示 */}
-                      {item.selectedOptions &&
-                        item.selectedOptions.length > 0 && (
-                          <div className="item-options-list">
-                            {item.selectedOptions
-                              .map((opt: Option) => opt.name)
-                              .join(", ")}
-                          </div>
-                        )}
-                    </li>
-                  )
-                )}
+                    )}
+                  </li>
+                ))}
               </ul>
             </div>
           ))
         )}
       </div>
 
-      {/* 2. 会計サイドバー (右側) */}
-      <div className="history-summary-sidebar">
+      <aside className="history-summary-sidebar">
         <h3>お会計</h3>
         <h1>¥{orderHistoryTotalAmount.toLocaleString()}</h1>
 
         <button
-          className="payment-button" // ★ CSSの .payment-button に合わせる
+          className="payment-button"
           onClick={onGoToPaymentView}
           disabled={orderHistoryTotalAmount === 0}
         >
           お会計に進む
         </button>
-
-        <button
-          className="call-button" // ★ CSSの .call-button に合わせる
-          onClick={onCallStaff}
-        >
+        <button className="call-button" onClick={onCallStaff}>
           スタッフを呼び出す
         </button>
-      </div>
+      </aside>
     </div>
   );
 };

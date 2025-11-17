@@ -16,10 +16,11 @@ export interface MenuItem {
   category: string;
   options: Option[];
   isRecommended: boolean;
-  allergens?: string[]; // (OrderHistoryPane.tsx のために追加)
+  allergens?: string[];
 }
 
 export interface Category {
+  id: string; // ★ cartStore.ts で MenuData が categories: Category[] となっているため id を追加
   name: string;
   items: MenuItem[];
 }
@@ -30,34 +31,40 @@ export interface MenuData {
 
 // --- カート関連 ---
 
-export interface CartItem {
-  id: string; // カート内で一意 (menuItemId + optionsId)
-  menuItemId: string; // 元の MenuItem の ID
-  name: string;
-  price: number;
+/**
+ * ★ 修正: CartItem が MenuItem の全プロパティを継承 (extends) するように変更。
+ * これにより、MenuItem の id, name, price などが CartItem でも使えるようになります。
+ * cartStore.ts のロジックで必要なプロパティ (uniqueId, totalPrice) を追加。
+ */
+export interface CartItem extends MenuItem {
+  uniqueId: string; // カート内で一意 (menuItemId + optionsKey)
   quantity: number;
   selectedOptions: Option[];
+  totalPrice: number; // (単価 + オプション価格) * 数量
 }
 
 // --- 注文関連 ---
 
-// (注: OrderItem は cartStore.ts で直接定義されているため、ここでは不要かもしれないが念のため)
+/**
+ * ★ 修正: cartStore.ts の placeOrder で送信するデータ構造に合わせる
+ */
 export interface OrderItem {
-  id: string;
+  menuItemId: string; // MenuItem の 'id'
   name: string;
-  price: number;
+  price: number; // 単価
   quantity: number;
-  selectedOptions: Option[];
+  options: Option[]; // selectedOptions から 'options' に変更
+  totalPrice: number; // このアイテムの合計金額
 }
 
+/**
+ * ★ 修正: cartStore.ts のロジック (API送受信) に型を合わせる
+ */
 export interface Order {
-  id: number;
-  table_number: number;
-  items: CartItem[] | string; // DBからはstring, APIレスポンスではCartItem[]
-  total_price: number;
-  timestamp: string;
-
-  // ★★★ エラー修正: この行を追加 ★★★
-  status: string; // (例: "調理中", "提供済み")
-  // ★★★ 修正ここまで ★★★
+  id: string; // DBのID (通常 string)
+  tableNum: number; // table_number から変更
+  items: OrderItem[]; // CartItem[] | string から OrderItem[] に変更
+  totalAmount: number; // total_price から変更
+  timestamp: string; // createdAt や timestamp
+  status: "PENDING" | "COMPLETED" | "CANCELLED"; // string から具体的なステータスに変更
 }
