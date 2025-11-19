@@ -24,8 +24,8 @@ interface CartState {
   updateCart: (item: MenuItem, quantity: number, options: Option[]) => void;
   removeFromCart: (uniqueId: string) => void;
   clearCart: () => void;
-  placeOrder: (tableNum: number) => Promise<Order | null>;
-  fetchOrders: (tableNum: number) => Promise<void>;
+  placeOrder: (tableNum: string) => Promise<Order | null>;
+  fetchOrders: (tableNum: string) => Promise<void>;
   clearPendingOrders: () => void;
 }
 
@@ -109,7 +109,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  placeOrder: async (tableNum) => {
+  placeOrder: async (tableNum: string) => {
     const { cart } = get();
     if (cart.length === 0) {
       set({ error: "カートが空です。" });
@@ -126,20 +126,12 @@ const useCartStore = create<CartState>((set, get) => ({
         totalPrice: item.totalPrice,
       }));
 
-      const totalAmount = orderDetails.reduce(
-        (sum, item) => sum + item.totalPrice,
-        0
-      );
-
       const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ★ 修正: server.js の body と status に合わせる
         body: JSON.stringify({
-          tableNumber: tableNum, // server.js は 'tableNumber' を期待
+          tableNumber: tableNum, // 文字列のまま送信
           items: orderDetails,
-          // totalAmount は server.js が計算するので不要
-          // status も server.js が '調理中' を設定
         }),
       });
 
@@ -148,15 +140,14 @@ const useCartStore = create<CartState>((set, get) => ({
         throw new Error(errorData.message || "注文処理に失敗しました。");
       }
 
-      // ★ 修正: server.js が返すレスポンス (DBカラム名) をマッピング
       const newOrderResponse = await response.json();
       const newOrder: Order = {
         id: newOrderResponse.id.toString(),
-        tableNum: newOrderResponse.table_number,
+        tableNum: newOrderResponse.table_number.toString(), // 文字列として扱う
         items: newOrderResponse.items, // server.js は items オブジェクトを返す
         totalAmount: newOrderResponse.total_price,
         timestamp: newOrderResponse.timestamp,
-        status: newOrderResponse.status, // "調理中"
+        status: newOrderResponse.status, // "注文受付" が返ってくる
       };
 
       set((state) => ({
@@ -174,12 +165,11 @@ const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  fetchOrders: async (tableNum) => {
+  fetchOrders: async (tableNum: string) => {
     set({ loading: true, error: null });
     try {
-      // ★ 修正: server.js の /api/orders?tableNumber=X に合わせる
       const response = await fetch(
-        `${API_BASE_URL}/api/orders?tableNumber=${tableNum}`
+        `${API_BASE_URL}/api/orders?tableNumber=${encodeURIComponent(tableNum)}`
       );
       if (!response.ok) {
         throw new Error("注文履歴の取得に失敗しました。");
@@ -187,19 +177,24 @@ const useCartStore = create<CartState>((set, get) => ({
 
       const ordersResponse: any[] = await response.json();
 
-      // ★ 修正: server.js が返すDBの生データを Order[] 型にマッピング
       const mappedOrders: Order[] = ordersResponse.map((order) => ({
         id: order.id.toString(),
-        tableNum: order.table_number,
+        tableNum: order.table_number.toString(), // 文字列として扱う
         items: JSON.parse(order.items || "[]"), // server.js は items を JSON 文字列で返す
         totalAmount: order.total_price,
         timestamp: order.timestamp,
-        status: order.status, // "調理中" など
+        status: order.status, // "注文受付" など
       }));
 
-      // ★ 修正: "PENDING" ではなく "調理中" でフィルタリング
-      const pending = mappedOrders.filter((order) => order.status === "調理中");
-      const history = mappedOrders.filter((order) => order.status !== "調理中");
+      // ★ 修正: "注文受付" も "調理中" と同じく pending（まだ料理が来ていない状態）に含める
+      const pending = mappedOrders.filter(
+        (order) => order.status === "調理中" || order.status === "注文受付"
+      );
+      // それ以外（提供済み、会計済みなど）を履歴とする
+      const history = mappedOrders.filter(
+        (order) => order.status !== "調理中" && order.status !== "注文受付"
+      );
+
       set({ pendingOrders: pending, orderHistory: history, loading: false });
     } catch (err) {
       const errorMsg =
@@ -212,7 +207,6 @@ const useCartStore = create<CartState>((set, get) => ({
   clearPendingOrders: () => set({ pendingOrders: [] }),
 }));
 
-// (useCartTotalAmount, usePendingOrderTotalAmount は変更なし)
 export const useCartTotalAmount = () =>
   useCartStore((state) =>
     state.cart.reduce((total, item) => total + item.totalPrice, 0)

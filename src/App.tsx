@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// ★ fetchMenuData をストアから直接インポート
 import useCartStore, { usePendingOrderTotalAmount } from "./store/cartStore";
 
 // コンポーネントのインポート
@@ -7,28 +6,41 @@ import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";
 import ThanksScreen from "./components/ThanksScreen";
 
-// ★ index.tsx でインポート済みのため、ここでは削除
-// import "./components/styles.css";
-
-type AppScreen = "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
-const TABLE_ID = "T-05";
+// 画面の定義に "TABLE_INPUT" を追加
+type AppScreen = "TABLE_INPUT" | "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>("ORDER");
-  const [tableNumber] = useState<string>(TABLE_ID);
-  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER"); // ★ fetchMenuData をストアから取得
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>("TABLE_INPUT");
+  const [tableNumber, setTableNumber] = useState<string>(""); // 初期値は空
+  const [inputTableNum, setInputTableNum] = useState(""); // 入力フォーム用
+  const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER");
 
   const { cart, clearCart, clearPendingOrders, fetchMenuData } = useCartStore();
 
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(
     null
   );
-  const pendingOrderTotalAmount = usePendingOrderTotalAmount(); // ★★★ 修正点 ★★★ // アプリ起動時に1回だけメニューデータを取得する
+  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
+  // ① アプリ起動時にURLパラメータまたはローカルストレージからテーブル番号を探す
   useEffect(() => {
-    fetchMenuData();
-  }, [fetchMenuData]); // 依存配列に fetchMenuData を指定 // (中略: メッセージ自動消去の useEffect は変更なし)
+    const params = new URLSearchParams(window.location.search);
+    const tableQuery = params.get("table");
 
+    if (tableQuery) {
+      // URLに ?table=T-01 があればそれを使う
+      setTableNumber(tableQuery);
+      setCurrentScreen("ORDER");
+    } else {
+      // URLになくても、入力待ち画面にする
+      setCurrentScreen("TABLE_INPUT");
+    }
+
+    // メニューデータの取得
+    fetchMenuData();
+  }, [fetchMenuData]);
+
+  // メッセージの自動消去
   useEffect(() => {
     if (confirmationMessage) {
       const timer = setTimeout(() => {
@@ -36,7 +48,16 @@ const App: React.FC = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [confirmationMessage]); // (中略ここまで) // (中略: handleBackToTitle, handleBackToOrderHistory, handleNavigateOrderTab, handleGoToSplitBill, handleRequestPayment, handleCallStaff のロジックは変更なし)
+  }, [confirmationMessage]);
+
+  // ② テーブル番号入力の確定処理
+  const handleTableSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputTableNum.trim()) return;
+    setTableNumber(inputTableNum);
+    setCurrentScreen("ORDER");
+  };
+
   const handleBackToTitle = () => {
     clearCart();
     clearPendingOrders();
@@ -69,9 +90,38 @@ const App: React.FC = () => {
   const handleCallStaff = (message: string) => {
     console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
     setConfirmationMessage(message);
-  }; // (中略ここまで)
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
+      // ★ テーブル番号入力画面
+      case "TABLE_INPUT":
+        return (
+          <div style={styles.inputContainer}>
+            <div style={styles.inputBox}>
+              <h2>テーブル番号を入力</h2>
+              <form onSubmit={handleTableSubmit} style={styles.form}>
+                <input
+                  type="text"
+                  value={inputTableNum}
+                  onChange={(e) => setInputTableNum(e.target.value)}
+                  placeholder="例: T-01"
+                  style={styles.input}
+                  autoFocus
+                />
+                <button type="submit" style={styles.button}>
+                  開始する
+                </button>
+              </form>
+              <p style={{ fontSize: "12px", color: "#666", marginTop: "20px" }}>
+                またはURLパラメータで指定:
+                <br />
+                /?table=T-05
+              </p>
+            </div>
+          </div>
+        );
+
       case "ORDER":
         return (
           <OrderScreen
@@ -93,16 +143,7 @@ const App: React.FC = () => {
       case "COMPLETE_PAYMENT":
         return <ThanksScreen onBackToTitle={handleBackToTitle} />;
       default:
-        return (
-          <OrderScreen
-            userId={tableNumber}
-            activeTab={activeOrderTab}
-            onNavigate={handleNavigateOrderTab}
-            onGoToPayment={handleGoToSplitBill}
-            setConfirmationMessage={setConfirmationMessage}
-            onCallStaff={handleCallStaff}
-          />
-        );
+        return null;
     }
   };
 
@@ -120,6 +161,48 @@ const App: React.FC = () => {
       )}
     </div>
   );
+};
+
+// 簡易スタイル
+const styles = {
+  inputContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    backgroundColor: "#f5f5f5",
+  },
+  inputBox: {
+    backgroundColor: "white",
+    padding: "2rem",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    textAlign: "center" as const,
+    width: "90%",
+    maxWidth: "400px",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "1rem",
+    marginTop: "1rem",
+  },
+  input: {
+    padding: "12px",
+    fontSize: "16px",
+    borderRadius: "4px",
+    border: "1px solid #ccc",
+  },
+  button: {
+    padding: "12px",
+    fontSize: "16px",
+    backgroundColor: "#FF9800",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
 };
 
 export default App;

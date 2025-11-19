@@ -49,11 +49,11 @@ export interface OrderItem {
 
 export interface Order {
   id: string; // DBのID (string)
-  tableNum: number; // cartStore.ts でマッピング後のキー
+  tableNum: string; // ★ 修正: number から string に変更
   items: OrderItem[]; // cartStore.ts でマッピング後のキー
   totalAmount: number; // cartStore.ts でマッピング後のキー
   timestamp: string;
 
-  // ★ 修正: "PENDING" を server.js の定義に合わせる
-  status: "調理中" | "提供済み" | "会計済み" | "キャンセル";
+  // ★ 修正: "注文受付" を追加
+  status: "注文受付" | "調理中" | "提供済み" | "会計済み" | "キャンセル";
 }
