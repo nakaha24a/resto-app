@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import useCartStore, { usePendingOrderTotalAmount } from "./store/cartStore";
-
+import "./components/styles.css";
 // コンポーネントのインポート
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import SplitBillScreen from "./components/SplitBillScreen";

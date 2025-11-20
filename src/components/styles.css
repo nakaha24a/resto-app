@@ -1278,3 +1278,151 @@ body {
     transform: translateY(0);
   }
 }
+/* =========================================
+   ▼ ここから下を追加してください ▼
+   デザイン刷新用オーバーライドスタイル
+   ========================================= */
+
+/* --- 1. 全体の背景とカード化 --- */
+/* メインエリアの背景を少し明るく */
+.order-screen-layout,
+.order-main-area {
+  background-color: var(--bg-color);
+}
+
+/* メニューリストや注文履歴のアイテムをカード風にする */
+.menu-item,
+.order-card,
+.history-order-item {
+  background-color: var(--card-bg);
+  border: 1px solid #eee; /* 既存の枠線を薄く */
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md); /* 影をつけて浮き上がらせる */
+  margin-bottom: 16px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+/* ホバー時に少し浮くエフェクト */
+.menu-item:active,
+.order-card:active {
+  transform: scale(0.98);
+}
+
+/* --- 2. ヘッダーとナビゲーション --- */
+.order-header {
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-bottom: none;
+}
+
+.category-nav {
+  background-color: #fff;
+  padding: 12px 0;
+}
+
+/* カテゴリタブのデザイン変更 */
+.category-tab {
+  border-radius: 20px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  font-weight: bold;
+  border: 1px solid transparent;
+}
+
+/* 選択中のカテゴリをオレンジに */
+.category-tab.active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color);
+}
+
+.category-tab:not(.active) {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+/* --- 3. ボタンのデザイン刷新 --- */
+/* 全てのボタンを押しやすく */
+button {
+  touch-action: manipulation; /* スマホでのタップ遅延をなくす */
+}
+
+/* 「カートに追加」などの主要ボタン */
+.add-cart-btn,
+.place-order-btn,
+.order-button {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
+}
+
+/* ボタンを押したときの色 */
+.add-cart-btn:active,
+.place-order-btn:active {
+  background-color: var(--primary-dark);
+}
+
+/* カートボタン（フローティングなど） */
+.bottom-nav {
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item.active {
+  color: var(--primary-color) !important;
+}
+
+/* --- 4. カートサイドバー（PC表示時）の調整 --- */
+.cart-sidebar {
+  background-color: #fff;
+  border-left: 1px solid #eee;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.cart-total {
+  color: var(--primary-dark);
+  font-size: 1.2rem;
+}
+
+/* --- 5. スマホ・レスポンシブ対応 --- */
+@media (max-width: 768px) {
+  /* メニューを2列グリッド表示にして見やすくする */
+  .menu-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* メニュー画像の調整（もし画像があれば） */
+  .menu-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* カートサイドバーを非表示（BottomNavがあるため） */
+  /* もしカートボタンでモーダルを開く仕様ならOKですが、
+     画面が狭くなるのを防ぐため調整 */
+  .cart-sidebar {
+    position: fixed;
+    bottom: 60px; /* BottomNavの高さ分 */
+    left: 0;
+    right: 0;
+    top: auto;
+    height: auto;
+    max-height: 60vh;
+    border-top: 2px solid var(--primary-color);
+    transform: translateY(110%); /* デフォルトは隠す */
+    transition: transform 0.3s ease;
+    z-index: 90;
+  }
+
+  /* .cart-open クラスがついたら表示するなどのJS制御が必要ですが、
+     まずはレイアウト崩れを防ぐために一旦そのままにします */
+}

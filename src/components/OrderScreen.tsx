@@ -15,7 +15,7 @@ import BottomNav from "./BottomNav";
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
 interface OrderScreenProps {
-  userId: string;
+  userId: string; // IDは文字列で来る ("T-5"など)
   activeTab: NavTab;
   onNavigate: (tab: NavTab) => void;
   onGoToPayment: () => void;
@@ -23,14 +23,12 @@ interface OrderScreenProps {
   onCallStaff: (message: string) => void;
 }
 const getCategories = (menuData: MenuData | null): string[] => {
-  if (!menuData || !Array.isArray(menuData.categories)) {
-    return ["TOP"];
-  }
+  if (!menuData || !Array.isArray(menuData.categories)) return ["TOP"];
   const categoryNames = new Set(
-    menuData.categories.flatMap((category: Category) => category.name)
+    menuData.categories.flatMap((c: Category) => c.name)
   );
-  const hasRecommended = menuData.categories.some((cat: Category) =>
-    cat.items.some((item: MenuItem) => item.isRecommended)
+  const hasRecommended = menuData.categories.some((c: Category) =>
+    c.items.some((i: MenuItem) => i.isRecommended)
   );
   return [
     "TOP",
@@ -55,13 +53,15 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const menuLoading = useCartStore((state) => state.menuLoading);
   const menuError = useCartStore((state) => state.error);
 
-  // ★ 修正: 数値変換せず、userId (テーブルID) をそのまま使用する
-  // 数値以外のID (例: "T-05") も許容するため parseInt を削除
-  const tableNum = userId;
+  // ★ 修正: 文字列IDから数値を抽出して利用する (例: "T-05" -> 5)
+  const tableNum = useMemo(() => {
+    // 数字以外を除去してパース
+    const num = parseInt(userId.replace(/[^0-9]/g, ""), 10);
+    return isNaN(num) ? 0 : num; // 失敗したら0
+  }, [userId]);
 
-  // ★ 履歴取得の useEffect
   useEffect(() => {
-    if (tableNum) {
+    if (tableNum > 0) {
       fetchOrders(tableNum);
     }
   }, [fetchOrders, tableNum]);
@@ -84,8 +84,8 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]);
 
   const handlePlaceOrder = async () => {
-    // ★ 修正: 数値チェック (isNaN) を削除し、空文字チェックのみにする
-    if (!tableNum) {
+    // ★ 修正: 数値チェック
+    if (tableNum <= 0) {
       setConfirmationMessage(`テーブル番号が無効です。(ID: ${userId})`);
       return;
     }
@@ -97,6 +97,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       setConfirmationMessage(`注文処理に失敗しました。\n${storeError || ""}`);
     }
   };
+
   const renderMainContent = () => {
     if (menuLoading && !menuData)
       return (
@@ -135,7 +136,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
             />
-
             <MenuContent
               selectedCategory={
                 selectedCategory === "TOP" ? null : selectedCategory
@@ -143,7 +143,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
               searchQuery={searchQuery}
             />
           </div>
-
           <CartSidebar
             cart={cart}
             totalAmount={cartTotalAmount}
@@ -165,15 +164,15 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
     }
     return null;
   };
+
   return (
     <div className="order-screen-layout">
       <OrderHeader
-        userId={userId}
+        userId={userId} // 表示用にはそのまま渡す
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => onCallStaff("スタッフを呼び出しました")}
       />
-
       <div
         className={`order-main-area ${
           activeTab === "HISTORY" ? "history-layout" : ""
@@ -181,7 +180,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       >
         {renderMainContent()}
       </div>
-
       <BottomNav
         activeTab={activeTab}
         onNavigate={onNavigate}

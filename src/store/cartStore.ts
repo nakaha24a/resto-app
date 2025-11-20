@@ -5,7 +5,6 @@ import {
   Option,
   Order,
   MenuData,
-  Category,
   OrderItem,
 } from "../types";
 
@@ -24,8 +23,10 @@ interface CartState {
   updateCart: (item: MenuItem, quantity: number, options: Option[]) => void;
   removeFromCart: (uniqueId: string) => void;
   clearCart: () => void;
-  placeOrder: (tableNum: string) => Promise<Order | null>;
-  fetchOrders: (tableNum: string) => Promise<void>;
+  // ★ 修正: 引数を number に
+  placeOrder: (tableNum: number) => Promise<Order | null>;
+  fetchOrders: (tableNum: number) => Promise<void>;
+  callStaff: (tableNum: number) => Promise<boolean>;
   clearPendingOrders: () => void;
 }
 
@@ -43,47 +44,35 @@ const useCartStore = create<CartState>((set, get) => ({
     set({ menuLoading: true, error: null });
     try {
       const response = await fetch(`${API_BASE_URL}/api/menu`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error("Error");
       const data: MenuData = await response.json();
-      if (!data.categories || data.categories.length === 0) {
-        console.warn("メニューデータにカテゴリが含まれていません。");
-      }
       set({ menuData: data, menuLoading: false });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error
-          ? err.message
-          : "メニューの読み込みに失敗しました。";
-      console.error("fetchMenuData error:", errorMsg);
-      set({ error: errorMsg, menuLoading: false });
+      set({ error: "メニュー取得失敗", menuLoading: false });
     }
   },
 
   updateCart: (item, quantity, selectedOptions) =>
     set((state) => {
+      // (既存のカート追加ロジック - 変更なし)
       const optionsKey = selectedOptions
-        .map((opt) => opt.name) // Option型は name のみ
+        .map((opt) => opt.name)
         .sort()
         .join("-");
       const uniqueId = `${item.id}_${optionsKey || "default"}`;
-
       const existingItemIndex = state.cart.findIndex(
-        (cartItem) => cartItem.uniqueId === uniqueId
+        (c) => c.uniqueId === uniqueId
       );
-
       let newCart = [...state.cart];
       const optionsTotalPrice = selectedOptions.reduce(
-        (total, opt) => total + (opt.price || 0),
+        (t, o) => t + o.price,
         0
       );
 
       if (existingItemIndex > -1) {
         const newQuantity = newCart[existingItemIndex].quantity + quantity;
-        if (newQuantity <= 0) {
-          newCart.splice(existingItemIndex, 1);
-        } else {
+        if (newQuantity <= 0) newCart.splice(existingItemIndex, 1);
+        else {
           newCart[existingItemIndex] = {
             ...newCart[existingItemIndex],
             quantity: newQuantity,
@@ -93,9 +82,9 @@ const useCartStore = create<CartState>((set, get) => ({
       } else if (quantity > 0) {
         newCart.push({
           ...item,
-          uniqueId: uniqueId,
-          quantity: quantity,
-          selectedOptions: selectedOptions,
+          uniqueId,
+          quantity,
+          selectedOptions,
           totalPrice: (item.price + optionsTotalPrice) * quantity,
         });
       }
@@ -104,17 +93,14 @@ const useCartStore = create<CartState>((set, get) => ({
 
   removeFromCart: (uniqueId) =>
     set((state) => ({
-      cart: state.cart.filter((item) => item.uniqueId !== uniqueId),
+      cart: state.cart.filter((i) => i.uniqueId !== uniqueId),
     })),
 
   clearCart: () => set({ cart: [] }),
 
-  placeOrder: async (tableNum: string) => {
+  // ★ 修正: number 引数
+  placeOrder: async (tableNum: number) => {
     const { cart } = get();
-    if (cart.length === 0) {
-      set({ error: "カートが空です。" });
-      return null;
-    }
     set({ loading: true, error: null });
     try {
       const orderDetails: OrderItem[] = cart.map((item) => ({
@@ -130,24 +116,21 @@ const useCartStore = create<CartState>((set, get) => ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableNumber: tableNum, // 文字列のまま送信
+          tableNumber: tableNum, // 数値を送信
           items: orderDetails,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "注文処理に失敗しました。");
-      }
+      if (!response.ok) throw new Error("注文失敗");
 
       const newOrderResponse = await response.json();
       const newOrder: Order = {
         id: newOrderResponse.id.toString(),
-        tableNum: newOrderResponse.table_number.toString(), // 文字列として扱う
-        items: newOrderResponse.items, // server.js は items オブジェクトを返す
+        tableNum: Number(newOrderResponse.table_number), // 数値として受け取る
+        items: newOrderResponse.items,
         totalAmount: newOrderResponse.total_price,
         timestamp: newOrderResponse.timestamp,
-        status: newOrderResponse.status, // "注文受付" が返ってくる
+        status: newOrderResponse.status,
       };
 
       set((state) => ({
@@ -157,50 +140,55 @@ const useCartStore = create<CartState>((set, get) => ({
       }));
       return newOrder;
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "注文の送信に失敗しました。";
-      console.error("placeOrder error:", errorMsg);
-      set({ error: errorMsg, loading: false });
+      set({ error: "注文送信エラー", loading: false });
       return null;
     }
   },
 
-  fetchOrders: async (tableNum: string) => {
+  // ★ 修正: number 引数
+  fetchOrders: async (tableNum: number) => {
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/orders?tableNumber=${encodeURIComponent(tableNum)}`
+        `${API_BASE_URL}/api/orders?tableNumber=${tableNum}`
       );
-      if (!response.ok) {
-        throw new Error("注文履歴の取得に失敗しました。");
-      }
-
+      if (!response.ok) throw new Error("履歴取得失敗");
       const ordersResponse: any[] = await response.json();
 
       const mappedOrders: Order[] = ordersResponse.map((order) => ({
         id: order.id.toString(),
-        tableNum: order.table_number.toString(), // 文字列として扱う
-        items: JSON.parse(order.items || "[]"), // server.js は items を JSON 文字列で返す
+        tableNum: Number(order.table_number), // 数値変換
+        items: JSON.parse(order.items || "[]"),
         totalAmount: order.total_price,
         timestamp: order.timestamp,
-        status: order.status, // "注文受付" など
+        status: order.status,
       }));
 
-      // ★ 修正: "注文受付" も "調理中" と同じく pending（まだ料理が来ていない状態）に含める
+      // "注文受付" も pending に含める
       const pending = mappedOrders.filter(
-        (order) => order.status === "調理中" || order.status === "注文受付"
+        (o) => o.status === "調理中" || o.status === "注文受付"
       );
-      // それ以外（提供済み、会計済みなど）を履歴とする
       const history = mappedOrders.filter(
-        (order) => order.status !== "調理中" && order.status !== "注文受付"
+        (o) => o.status !== "調理中" && o.status !== "注文受付"
       );
 
       set({ pendingOrders: pending, orderHistory: history, loading: false });
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "注文履歴の取得に失敗しました。";
-      console.error("fetchOrders error:", errorMsg);
-      set({ error: errorMsg, loading: false });
+      set({ error: "履歴エラー", loading: false });
+    }
+  },
+
+  // ★ 修正: number 引数
+  callStaff: async (tableNum: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableNumber: tableNum }),
+      });
+      return response.ok;
+    } catch (err) {
+      return false;
     }
   },
 
@@ -208,13 +196,11 @@ const useCartStore = create<CartState>((set, get) => ({
 }));
 
 export const useCartTotalAmount = () =>
-  useCartStore((state) =>
-    state.cart.reduce((total, item) => total + item.totalPrice, 0)
-  );
+  useCartStore((state) => state.cart.reduce((t, i) => t + i.totalPrice, 0));
 
 export const usePendingOrderTotalAmount = () =>
   useCartStore((state) =>
-    state.pendingOrders.reduce((total, order) => total + order.totalAmount, 0)
+    state.pendingOrders.reduce((t, o) => t + o.totalAmount, 0)
   );
 
 export default useCartStore;
