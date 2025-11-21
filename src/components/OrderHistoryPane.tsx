@@ -1,5 +1,5 @@
 import React from "react";
-import { Order, OrderItem } from "../types"; // ★ 修正: OrderItem をインポート
+import { Order, OrderItem } from "../types";
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[];
@@ -8,83 +8,120 @@ interface OrderHistoryPaneProps {
   onCallStaff: () => void;
 }
 
-// ★ 修正: parseOrderItems 関数は不要になったため削除
-// (cartStore が items を OrderItem[] に変換済みの想定)
-
 const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   pendingOrders,
   orderHistoryTotalAmount,
   onGoToPaymentView,
   onCallStaff,
 }) => {
+  // 日付フォーマット用ヘルパー
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return isNaN(date.getTime())
+      ? ""
+      : date.toLocaleString("ja-JP", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  };
+
   return (
-    <div className="history-pane-layout">
-      <div className="history-content-main">
-        <h2>提供待ちのご注文 ( {pendingOrders.length}件 )</h2>
+    <div className="history-container">
+      <h2 className="history-section-title">注文履歴</h2>
+
+      <div className="history-list">
         {pendingOrders.length === 0 ? (
-          <div className="empty-history-message">
-            <p>現在、提供待ちのご注文はありません。</p>
-            <p>「注文」タブから新しいご注文ができます。</p>
-          </div>
+          <p style={{ textAlign: "center", color: "#999", padding: "20px" }}>
+            まだ注文履歴がありません。
+          </p>
         ) : (
           pendingOrders.map((order) => (
-            <div key={order.id} className="order-history-card">
-              <div className="order-header-info">
-                <span className="order-id">注文ID: {order.id}</span>
-                <span
-                  className={`order-status ${
-                    // ★ 修正: "PENDING" -> "調理中" (server.js に合わせる)
-                    order.status === "調理中" ? "cooking" : "delivered"
-                  }`}
+            <div key={order.id} className="history-order-item">
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    marginBottom: "4px",
+                    fontSize: "0.85rem",
+                    color: "#757575",
+                  }}
                 >
-                  {/* ★ 修正: status をそのまま表示 (型で "調理中" などが保証される) */}
-                  {order.status}
-                </span>
-                <span className="order-total">
-                  {/* ★ 修正: total_price -> totalAmount (types/index.ts に合わせる) */}
-                  ¥{order.totalAmount.toLocaleString()}
-                </span>
-              </div>
+                  {/* ★ 日時フォーマットの安全策 */}
+                  <span style={{ marginRight: "10px" }}>
+                    {formatDate(order.timestamp)}
+                  </span>
+                  <span
+                    className={`history-status status-${
+                      order.status === "調理中" ? "cooking" : "received"
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
 
-              {/* ★ 修正: order.items (OrderItem[]) を直接マップ */}
-              <ul className="item-list">
-                {order.items.map((item: OrderItem, index: number) => (
-                  <li key={`${item.menuItemId}-${index}`}>
-                    <div className="item-detail">
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {order.items.map((item: OrderItem, idx: number) => (
+                    <li
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
                       <span>
-                        {item.name} (x{item.quantity})
+                        {item.name} × {item.quantity}
                       </span>
-                      <span>¥{item.totalPrice.toLocaleString()}</span>
-                    </div>
-                    {/* オプションも表示 */}
-                    {item.options && item.options.length > 0 && (
-                      <div className="item-options-history">
-                        {item.options.map((opt) => `+ ${opt.name}`).join(" ")}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      {/* ★ 金額フォーマットの安全策 (item.totalPrice || 0) */}
+                      <span>¥{(item.totalPrice || 0).toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      <aside className="history-summary-sidebar">
-        <h3>お会計</h3>
-        <h1>¥{orderHistoryTotalAmount.toLocaleString()}</h1>
+      <div
+        className="cart-footer"
+        style={{
+          marginTop: "20px",
+          backgroundColor: "transparent",
+          border: "none",
+          padding: 0,
+        }}
+      >
+        <div className="cart-total">
+          <span>合計</span>
+          {/* ★ 合計金額フォーマットの安全策 */}
+          <span>¥{(orderHistoryTotalAmount || 0).toLocaleString()}</span>
+        </div>
 
-        <button
-          className="payment-button"
-          onClick={onGoToPaymentView}
-          disabled={orderHistoryTotalAmount === 0}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "10px",
+            marginTop: "1rem",
+          }}
         >
-          お会計に進む
-        </button>
-        <button className="call-button" onClick={onCallStaff}>
-          スタッフを呼び出す
-        </button>
-      </aside>
+          <button
+            className="order-button"
+            style={{
+              backgroundColor: "#fff",
+              color: "#555",
+              border: "1px solid #ccc",
+            }}
+            onClick={onCallStaff}
+          >
+            スタッフ呼出
+          </button>
+          <button className="place-order-btn" onClick={onGoToPaymentView}>
+            お会計へ
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
