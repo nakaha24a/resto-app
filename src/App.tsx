@@ -105,7 +105,7 @@ const App: React.FC = () => {
                   type="text"
                   value={inputTableNum}
                   onChange={(e) => setInputTableNum(e.target.value)}
-                  placeholder="例: T-01"
+                  placeholder="例: 5"
                   style={styles.input}
                   autoFocus
                 />
