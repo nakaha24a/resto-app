@@ -1,208 +1,154 @@
 import React, { useState, useEffect } from "react";
-import useCartStore, { usePendingOrderTotalAmount } from "./store/cartStore";
+import useCartStore from "./store/cartStore";
 import "./components/styles.css";
-// コンポーネントのインポート
+// SplitBillScreen は使用しない
 import OrderScreen, { NavTab } from "./components/OrderScreen";
-import SplitBillScreen from "./components/SplitBillScreen";
+import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 import ThanksScreen from "./components/ThanksScreen";
 
-// 画面の定義に "TABLE_INPUT" を追加
-type AppScreen = "TABLE_INPUT" | "ORDER" | "SPLIT_BILL" | "COMPLETE_PAYMENT";
+// ★ AppScreen から SPLIT_BILL を削除
+type AppScreen = "TABLE_INPUT" | "ORDER" | "PAYMENT_OPTIONS" | "THANKS";
 
 const App: React.FC = () => {
+  const [userId, setUserId] = useState<string>("");
+  const [tableNum, setTableNum] = useState<number>(0);
+
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("TABLE_INPUT");
-  const [tableNumber, setTableNumber] = useState<string>(""); // 初期値は空
-  const [inputTableNum, setInputTableNum] = useState(""); // 入力フォーム用
   const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("ORDER");
 
-  const { cart, clearCart, clearPendingOrders, fetchMenuData } = useCartStore();
+  // clearPendingOrders は cartStore で復活させたのでエラーは消えるはずです
+  const { clearCart, fetchMenuData, checkout } = useCartStore();
 
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(
     null
   );
-  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
 
-  // ① アプリ起動時にURLパラメータまたはローカルストレージからテーブル番号を探す
+  // アプリ起動時の処理
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tableQuery = params.get("table");
-
-    if (tableQuery) {
-      // URLに ?table=T-01 があればそれを使う
-      setTableNumber(tableQuery);
-      setCurrentScreen("ORDER");
-    } else {
-      // URLになくても、入力待ち画面にする
-      setCurrentScreen("TABLE_INPUT");
-    }
-
-    // メニューデータの取得
     fetchMenuData();
+
+    // URLパラメータがあればそれを使う (?table=5)
+    const queryParams = new URLSearchParams(window.location.search);
+    const tableParam = queryParams.get("table");
+    if (tableParam) {
+      const num = parseInt(tableParam.replace(/[^0-9]/g, ""), 10);
+      if (!isNaN(num) && num > 0) {
+        setUserId(`T-${num}`);
+        setTableNum(num);
+        setCurrentScreen("ORDER");
+      }
+    }
   }, [fetchMenuData]);
 
-  // メッセージの自動消去
+  // メッセージ消去タイマー
   useEffect(() => {
     if (confirmationMessage) {
-      const timer = setTimeout(() => {
-        setConfirmationMessage(null);
-      }, 2000);
+      const timer = setTimeout(() => setConfirmationMessage(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [confirmationMessage]);
 
-  // ② テーブル番号入力の確定処理
-  const handleTableSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputTableNum.trim()) return;
-    setTableNumber(inputTableNum);
-    setCurrentScreen("ORDER");
-  };
-
-  const handleBackToTitle = () => {
-    clearCart();
-    clearPendingOrders();
-    setCurrentScreen("ORDER");
-    setActiveOrderTab("ORDER");
-  };
-
-  const handleBackToOrderHistory = () => {
-    setCurrentScreen("ORDER");
-    setActiveOrderTab("HISTORY");
-  };
-
-  const handleNavigateOrderTab = (tab: NavTab) => setActiveOrderTab(tab);
-
-  const handleGoToSplitBill = () => {
-    if (pendingOrderTotalAmount === 0 && cart.length === 0) {
-      setConfirmationMessage("商品がないため、お会計に進めません。");
-      return;
-    }
-    setCurrentScreen("SPLIT_BILL");
-  };
-
-  const handleRequestPayment = (message: string) => {
-    console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
-    clearCart();
-    clearPendingOrders();
-    setCurrentScreen("COMPLETE_PAYMENT");
-  };
-
   const handleCallStaff = (message: string) => {
-    console.log(`[STAFF CALL] ${tableNumber}: ${message}`);
     setConfirmationMessage(message);
+    useCartStore.getState().callStaff(tableNum);
   };
 
-  const renderScreen = () => {
-    switch (currentScreen) {
-      // ★ テーブル番号入力画面
-      case "TABLE_INPUT":
-        return (
-          <div style={styles.inputContainer}>
-            <div style={styles.inputBox}>
-              <h2>テーブル番号を入力</h2>
-              <form onSubmit={handleTableSubmit} style={styles.form}>
-                <input
-                  type="text"
-                  value={inputTableNum}
-                  onChange={(e) => setInputTableNum(e.target.value)}
-                  placeholder="例: 5"
-                  style={styles.input}
-                  autoFocus
-                />
-                <button type="submit" style={styles.button}>
-                  開始する
-                </button>
-              </form>
-              <p style={{ fontSize: "12px", color: "#666", marginTop: "20px" }}>
-                またはURLパラメータで指定:
-                <br />
-                /?table=T-05
-              </p>
-            </div>
-          </div>
-        );
+  const navigateTo = (screen: AppScreen) => {
+    setCurrentScreen(screen);
+  };
 
-      case "ORDER":
-        return (
-          <OrderScreen
-            userId={tableNumber}
-            activeTab={activeOrderTab}
-            onNavigate={handleNavigateOrderTab}
-            onGoToPayment={handleGoToSplitBill}
-            setConfirmationMessage={setConfirmationMessage}
-            onCallStaff={handleCallStaff}
-          />
-        );
-      case "SPLIT_BILL":
-        return (
-          <SplitBillScreen
-            onCallStaff={handleRequestPayment}
-            onBack={handleBackToOrderHistory}
-          />
-        );
-      case "COMPLETE_PAYMENT":
-        return <ThanksScreen onBackToTitle={handleBackToTitle} />;
-      default:
-        return null;
+  // ★ 支払い完了時の処理: サーバー上の注文を会計済みにして、Thanks画面へ遷移
+  const handlePaymentComplete = async () => {
+    if (tableNum > 0) {
+      setConfirmationMessage("会計処理を実行中...");
+      await checkout(tableNum);
     }
+    clearCart();
+    navigateTo("THANKS");
   };
+
+  // テーブル番号入力画面
+  if (currentScreen === "TABLE_INPUT") {
+    return (
+      <div
+        className="screen table-input-screen"
+        style={{ padding: "40px", textAlign: "center" }}
+      >
+        <h2>いらっしゃいませ</h2>
+        <p>テーブル番号を入力してください</p>
+        <input
+          type="number"
+          style={{
+            fontSize: "2rem",
+            padding: "10px",
+            width: "100px",
+            textAlign: "center",
+          }}
+          onChange={(e) => setTableNum(parseInt(e.target.value, 10) || 0)}
+        />
+        <br />
+        <br />
+        <button
+          onClick={() => {
+            if (tableNum > 0) {
+              setUserId(`T-${tableNum}`);
+              setCurrentScreen("ORDER");
+            } else {
+              alert("正しい番号を入力してください");
+            }
+          }}
+          style={{
+            padding: "15px 30px",
+            fontSize: "1.2rem",
+            backgroundColor: "#ff9800",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+          }}
+        >
+          注文を始める
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="app-container">
-      {renderScreen()}
-
+    <div className="App">
       {confirmationMessage && (
         <div className="confirmation-overlay">
           <div className="confirmation-box">
-            {confirmationMessage.includes("承り") ? "✅" : "✋"}{" "}
-            {confirmationMessage}
+            <p>{confirmationMessage}</p>
           </div>
         </div>
       )}
+
+      {currentScreen === "ORDER" && (
+        <OrderScreen
+          userId={userId}
+          activeTab={activeOrderTab}
+          onNavigate={setActiveOrderTab}
+          onGoToPayment={() => navigateTo("PAYMENT_OPTIONS")}
+          setConfirmationMessage={setConfirmationMessage}
+          onCallStaff={handleCallStaff}
+        />
+      )}
+
+      {currentScreen === "PAYMENT_OPTIONS" && (
+        <PaymentOptionsScreen
+          onGoToSplitBill={() => navigateTo("PAYMENT_OPTIONS")} // SplitBillScreenを削除
+          onCallStaff={handleCallStaff}
+          onBack={() => navigateTo("ORDER")}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
+
+      {/* SplitBillScreen の Route を削除 */}
+
+      {currentScreen === "THANKS" && (
+        <ThanksScreen onBackToTop={() => navigateTo("TABLE_INPUT")} />
+      )}
     </div>
   );
-};
-
-// 簡易スタイル
-const styles = {
-  inputContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    backgroundColor: "#f5f5f5",
-  },
-  inputBox: {
-    backgroundColor: "white",
-    padding: "2rem",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-    textAlign: "center" as const,
-    width: "90%",
-    maxWidth: "400px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "1rem",
-    marginTop: "1rem",
-  },
-  input: {
-    padding: "12px",
-    fontSize: "16px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    padding: "12px",
-    fontSize: "16px",
-    backgroundColor: "#FF9800",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
 };
 
 export default App;

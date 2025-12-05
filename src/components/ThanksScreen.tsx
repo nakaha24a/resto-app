@@ -1,29 +1,39 @@
-// src/components/ThanksScreen.tsx
-
 import React from "react";
 
+// ★ 追加: Props の型定義
 interface ThanksScreenProps {
-  // App.tsxで使用されているプロパティを定義します
-  onBackToTitle: () => void;
+  onBackToTop: () => void;
 }
 
-const ThanksScreen: React.FC<ThanksScreenProps> = ({ onBackToTitle }) => {
+const ThanksScreen: React.FC<ThanksScreenProps> = ({ onBackToTop }) => {
   return (
-    <div className="screen thanks-screen flex flex-col items-center justify-center p-8 text-center bg-white h-full">
-      <div className="p-10 rounded-xl shadow-2xl bg-teal-50">
-        <h1 className="text-6xl font-extrabold text-teal-600 mb-6">
-          ありがとうございました！
-        </h1>
-        <p className="text-2xl text-gray-700 mb-8">
-          またのご利用をお待ちしております。
-        </p>
-        <button
-          onClick={onBackToTitle}
-          className="py-4 px-10 bg-red-500 text-white rounded-xl text-xl font-bold hover:bg-red-600 transition shadow-lg"
-        >
-          最初の画面に戻る
-        </button>
-      </div>
+    <div
+      className="screen thanks-screen"
+      style={{ textAlign: "center", padding: "50px 20px" }}
+    >
+      <div style={{ fontSize: "4rem", marginBottom: "20px" }}>😊</div>
+      <h2 style={{ fontSize: "1.5rem", color: "#333", marginBottom: "10px" }}>
+        ご利用ありがとうございました！
+      </h2>
+      <p style={{ color: "#666", marginBottom: "40px" }}>
+        またのご来店を心よりお待ちしております。
+      </p>
+
+      <button
+        className="back-to-top-btn"
+        onClick={onBackToTop}
+        style={{
+          padding: "15px 30px",
+          fontSize: "1.1rem",
+          backgroundColor: "#f2994a",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+        }}
+      >
+        トップ画面へ戻る
+      </button>
     </div>
   );
 };

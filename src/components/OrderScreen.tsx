@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import useCartStore, {
   useCartTotalAmount,
-  usePendingOrderTotalAmount,
+  useTotalBillAmount, // 新しいフックを使用
 } from "../store/cartStore";
 import { MenuItem, CartItem, MenuData, Category } from "../types";
 
@@ -15,13 +15,14 @@ import BottomNav from "./BottomNav";
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
 interface OrderScreenProps {
-  userId: string; // IDは文字列で来る ("T-5"など)
+  userId: string;
   activeTab: NavTab;
   onNavigate: (tab: NavTab) => void;
   onGoToPayment: () => void;
   setConfirmationMessage: (message: string) => void;
   onCallStaff: (message: string) => void;
 }
+
 const getCategories = (menuData: MenuData | null): string[] => {
   if (!menuData || !Array.isArray(menuData.categories)) return ["TOP"];
   const categoryNames = new Set(
@@ -45,24 +46,33 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   setConfirmationMessage,
   onCallStaff,
 }) => {
-  const { cart, pendingOrders, placeOrder, fetchOrders } = useCartStore();
+  // orders を取得 (store側で互換性確保しているので pendingOrders でも動くが、ordersが正)
+  const { cart, orders, placeOrder, fetchOrders } = useCartStore();
+
   const cartTotalAmount = useCartTotalAmount();
-  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
+  // 未払い合計金額を使用
+  const totalBillAmount = useTotalBillAmount();
 
   const menuData = useCartStore((state) => state.menuData);
   const menuLoading = useCartStore((state) => state.menuLoading);
   const menuError = useCartStore((state) => state.error);
 
-  // ★ 修正: 文字列IDから数値を抽出して利用する (例: "T-05" -> 5)
   const tableNum = useMemo(() => {
-    // 数字以外を除去してパース
     const num = parseInt(userId.replace(/[^0-9]/g, ""), 10);
-    return isNaN(num) ? 0 : num; // 失敗したら0
+    return isNaN(num) ? 0 : num;
   }, [userId]);
 
+  // ★ ポーリング処理の実装: 5秒ごとに注文状況を更新
   useEffect(() => {
     if (tableNum > 0) {
+      // 初回取得
       fetchOrders(tableNum);
+
+      const intervalId = setInterval(() => {
+        fetchOrders(tableNum);
+      }, 5000);
+
+      return () => clearInterval(intervalId);
     }
   }, [fetchOrders, tableNum]);
 
@@ -84,7 +94,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]);
 
   const handlePlaceOrder = async () => {
-    // ★ 修正: 数値チェック
     if (tableNum <= 0) {
       setConfirmationMessage(`テーブル番号が無効です。(ID: ${userId})`);
       return;
@@ -148,15 +157,16 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
             totalAmount={cartTotalAmount}
             onPlaceOrder={handlePlaceOrder}
             onGoToPayment={onGoToPayment}
-            pendingOrderTotalAmount={pendingOrderTotalAmount}
+            pendingOrderTotalAmount={totalBillAmount}
           />
         </>
       );
     } else if (activeTab === "HISTORY") {
       return (
         <OrderHistoryPane
-          pendingOrders={pendingOrders}
-          orderHistoryTotalAmount={pendingOrderTotalAmount}
+          // orders を渡すことで全ての注文を表示
+          pendingOrders={orders}
+          orderHistoryTotalAmount={totalBillAmount}
           onGoToPaymentView={onGoToPayment}
           onCallStaff={() => onCallStaff("スタッフを呼び出しました")}
         />
@@ -168,7 +178,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   return (
     <div className="order-screen-layout">
       <OrderHeader
-        userId={userId} // 表示用にはそのまま渡す
+        userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => onCallStaff("スタッフを呼び出しました")}

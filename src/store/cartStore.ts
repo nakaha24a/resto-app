@@ -8,32 +8,44 @@ import {
   OrderItem,
 } from "../types";
 
+// CRA用の環境変数設定
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
 interface CartState {
   cart: CartItem[];
+  orders: Order[];
+  // 互換用
   pendingOrders: Order[];
   orderHistory: Order[];
+
   menuData: MenuData | null;
   loading: boolean;
   menuLoading: boolean;
   error: string | null;
+
   fetchMenuData: () => Promise<void>;
   updateCart: (item: MenuItem, quantity: number, options: Option[]) => void;
   removeFromCart: (uniqueId: string) => void;
   clearCart: () => void;
-  // ★ 修正: 引数を number に
+
   placeOrder: (tableNum: number) => Promise<Order | null>;
   fetchOrders: (tableNum: number) => Promise<void>;
   callStaff: (tableNum: number) => Promise<boolean>;
+
+  // 支払い完了処理
+  checkout: (tableNum: number) => Promise<void>;
+
+  // 互換用
   clearPendingOrders: () => void;
 }
 
 const useCartStore = create<CartState>((set, get) => ({
   cart: [],
+  orders: [],
   pendingOrders: [],
   orderHistory: [],
+
   menuData: null,
   loading: false,
   menuLoading: false,
@@ -54,7 +66,6 @@ const useCartStore = create<CartState>((set, get) => ({
 
   updateCart: (item, quantity, selectedOptions) =>
     set((state) => {
-      // (既存のカート追加ロジック - 変更なし)
       const optionsKey = selectedOptions
         .map((opt) => opt.name)
         .sort()
@@ -98,7 +109,6 @@ const useCartStore = create<CartState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  // ★ 修正: number 引数
   placeOrder: async (tableNum: number) => {
     const { cart } = get();
     set({ loading: true, error: null });
@@ -116,69 +126,64 @@ const useCartStore = create<CartState>((set, get) => ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableNumber: tableNum, // 数値を送信
+          tableNumber: tableNum,
           items: orderDetails,
         }),
       });
 
       if (!response.ok) throw new Error("注文失敗");
 
-      const newOrderResponse = await response.json();
-      const newOrder: Order = {
-        id: newOrderResponse.id.toString(),
-        tableNum: Number(newOrderResponse.table_number), // 数値として受け取る
-        items: newOrderResponse.items,
-        totalAmount: newOrderResponse.total_price,
-        timestamp: newOrderResponse.timestamp,
-        status: newOrderResponse.status,
-      };
+      // 注文成功後、最新データを取得
+      await get().fetchOrders(tableNum);
 
-      set((state) => ({
-        pendingOrders: [...state.pendingOrders, newOrder],
-        cart: [],
-        loading: false,
-      }));
-      return newOrder;
+      set({ cart: [], loading: false });
+
+      return {
+        id: "success",
+        tableNum,
+        items: [],
+        totalAmount: 0,
+        timestamp: new Date().toISOString(),
+        status: "注文受付",
+      };
     } catch (err) {
       set({ error: "注文送信エラー", loading: false });
       return null;
     }
   },
 
-  // ★ 修正: number 引数
   fetchOrders: async (tableNum: number) => {
-    set({ loading: true, error: null });
     try {
+      // キャッシュ防止のためにタイムスタンプをつける
       const response = await fetch(
-        `${API_BASE_URL}/api/orders?tableNumber=${tableNum}`
+        `${API_BASE_URL}/api/orders?tableNumber=${tableNum}&_t=${Date.now()}`
       );
       if (!response.ok) throw new Error("履歴取得失敗");
       const ordersResponse: any[] = await response.json();
 
       const mappedOrders: Order[] = ordersResponse.map((order) => ({
         id: order.id.toString(),
-        tableNum: Number(order.table_number), // 数値変換
+        tableNum: Number(order.table_number),
         items: JSON.parse(order.items || "[]"),
         totalAmount: order.total_price,
         timestamp: order.timestamp,
         status: order.status,
       }));
 
-      // "注文受付" も pending に含める
-      const pending = mappedOrders.filter(
-        (o) => o.status === "調理中" || o.status === "注文受付"
-      );
-      const history = mappedOrders.filter(
-        (o) => o.status !== "調理中" && o.status !== "注文受付"
-      );
+      // 会計済みのものは除外されている前提だが、念のためフィルタリング
+      const activeOrders = mappedOrders.filter((o) => o.status !== "会計済み");
 
-      set({ pendingOrders: pending, orderHistory: history, loading: false });
+      set({
+        orders: activeOrders,
+        pendingOrders: activeOrders,
+        loading: false,
+      });
     } catch (err) {
-      set({ error: "履歴エラー", loading: false });
+      console.error(err);
+      set({ loading: false });
     }
   },
 
-  // ★ 修正: number 引数
   callStaff: async (tableNum: number) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/call`, {
@@ -192,15 +197,39 @@ const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  clearPendingOrders: () => set({ pendingOrders: [] }),
+  // サーバー上の注文を全て「会計済み」にする
+  checkout: async (tableNum: number) => {
+    const { orders } = get();
+    set({ loading: true });
+
+    try {
+      // 順番に処理して確実に更新する
+      for (const order of orders) {
+        await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "会計済み" }),
+        });
+      }
+
+      // 更新が終わったら、ローカルの状態をクリア
+      set({ orders: [], pendingOrders: [], orderHistory: [], loading: false });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      // エラーでも一旦クリアして進む（スタック防止）
+      set({ orders: [], pendingOrders: [], orderHistory: [], loading: false });
+    }
+  },
+
+  clearPendingOrders: () => set({ orders: [], pendingOrders: [] }),
 }));
+
+export const useTotalBillAmount = () =>
+  useCartStore((state) => state.orders.reduce((t, o) => t + o.totalAmount, 0));
 
 export const useCartTotalAmount = () =>
   useCartStore((state) => state.cart.reduce((t, i) => t + i.totalPrice, 0));
 
-export const usePendingOrderTotalAmount = () =>
-  useCartStore((state) =>
-    state.pendingOrders.reduce((t, o) => t + o.totalAmount, 0)
-  );
+export const usePendingOrderTotalAmount = useTotalBillAmount;
 
 export default useCartStore;

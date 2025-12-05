@@ -1,62 +1,170 @@
-// src/components/PaymentOptionsScreen.tsx
-
-import React from "react";
-// ★ usePendingOrderTotalAmount をインポート
-import useCartStore, { usePendingOrderTotalAmount } from "../store/cartStore";
+import React, { useState, useMemo } from "react";
+// useTotalBillAmount は cartStore.tsで定義されていることを前提とする
+import { useTotalBillAmount } from "../store/cartStore";
 
 interface PaymentOptionsScreenProps {
+  // 以前の割り勘や店員呼び出しのPropsは残しますが、使用しません
   onGoToSplitBill: () => void;
   onCallStaff: (message: string) => void;
   onBack: () => void;
+  onPaymentComplete: () => void;
 }
 
 const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
-  onGoToSplitBill,
-  onCallStaff,
   onBack,
+  onPaymentComplete,
 }) => {
-  // ★ フックを使って合計金額を取得
-  const pendingOrderTotalAmount = usePendingOrderTotalAmount();
+  const totalAmount = useTotalBillAmount();
+  // ★ 状態管理: デフォルトを2人とする
+  const [peopleCount, setPeopleCount] = useState(2);
+
+  // ★ 割り勘計算ロジック
+  const splitResult = useMemo(() => {
+    if (peopleCount <= 0 || totalAmount <= 0) {
+      return { perPerson: 0 };
+    }
+    // 小数点以下切り上げ（日本の飲食店会計の一般的な慣習）
+    const perPerson = Math.ceil(totalAmount / peopleCount);
+    return { perPerson };
+  }, [totalAmount, peopleCount]);
+
+  // 人数増減ハンドラ
+  const handleCountChange = (delta: number) => {
+    setPeopleCount((prev) => Math.max(1, prev + delta));
+  };
+
+  // 念のため、割り勘結果をゼロにしたくない場合は、こちらを使用します:
+  const displayPerPerson = totalAmount > 0 ? splitResult.perPerson : 0;
 
   return (
-    <div className="screen payment-options-screen">
-      <h2 className="screen-title">お支払い方法の選択</h2>
+    <div
+      className="screen payment-options-screen"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      <h2
+        className="screen-title"
+        style={{ marginBottom: "40px", fontSize: "24px", color: "#333" }}
+      >
+        お会計確認
+      </h2>
 
-      <div className="payment-summary">
-        <p className="total-label">お会計金額 (税込)</p>
-        <p className="total-amount-display">
-          ¥{pendingOrderTotalAmount.toLocaleString()}
+      {/* 合計金額表示 */}
+      <div className="payment-summary" style={{ marginBottom: "40px" }}>
+        <p style={{ fontSize: "1.2rem", color: "#666", marginBottom: "15px" }}>
+          お支払い合計 (税込)
+        </p>
+        <p
+          style={{
+            fontSize: "3.5rem",
+            fontWeight: "bold",
+            color: "#dc2626",
+            margin: 0,
+          }}
+        >
+          ¥{totalAmount.toLocaleString()}
         </p>
       </div>
 
-      <div className="payment-options-grid">
+      {/* ★ 割り勘人数コントロール */}
+      <div
+        style={{
+          marginBottom: "40px",
+          width: "100%",
+          maxWidth: "300px",
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          padding: "15px",
+        }}
+      >
+        <p style={{ fontWeight: "bold", marginBottom: "10px" }}>割り勘人数</p>
         <div
-          className="option-card full-payment"
-          onClick={() => onCallStaff("個別会計（現金/カード）")}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          <span className="card-icon">🧍</span>
-          <h3 className="card-title">個別会計</h3>
-          <p className="card-description">
-            お一人様ずつ、レジにて現金またはカードでお支払いします。
-          </p>
-          <button className="option-button primary">
-            個別会計で店員を呼ぶ
+          <button
+            onClick={() => handleCountChange(-1)}
+            disabled={peopleCount <= 1}
+            style={{
+              fontSize: "24px",
+              padding: "10px 20px",
+              border: "1px solid #ddd",
+              cursor: "pointer",
+              backgroundColor: peopleCount <= 1 ? "#eee" : "#fff",
+            }}
+          >
+            -
           </button>
-        </div>
-
-        <div className="option-card split-payment" onClick={onGoToSplitBill}>
-          <span className="card-icon">🧑‍🤝‍🧑</span>
-          <h3 className="card-title">割り勘計算</h3>
-          <p className="card-description">
-            人数や端数処理を指定して、一人あたりの金額を計算します。
-          </p>
-          <button className="option-button secondary">割り勘計算に進む</button>
+          <span style={{ fontSize: "28px", fontWeight: "bold" }}>
+            {peopleCount} 名
+          </span>
+          <button
+            onClick={() => handleCountChange(1)}
+            style={{
+              fontSize: "24px",
+              padding: "10px 20px",
+              border: "1px solid #ddd",
+              cursor: "pointer",
+              backgroundColor: "#fff",
+            }}
+          >
+            +
+          </button>
         </div>
       </div>
 
-      <button className="back-button-bottom" onClick={onBack}>
-        ← 注文履歴に戻る
-      </button>
+      {/* ★ 割り勘結果表示 */}
+      <div style={{ marginBottom: "60px" }}>
+        <p style={{ fontSize: "1.2rem", color: "#666", marginBottom: "10px" }}>
+          1人あたりの金額
+        </p>
+        <p
+          style={{
+            fontSize: "2.5rem",
+            fontWeight: "bold",
+            color: "#059669",
+            margin: 0,
+          }}
+        >
+          ¥{displayPerPerson.toLocaleString()}
+        </p>
+        <p style={{ fontSize: "0.9rem", color: "#666", marginTop: "5px" }}>
+          {/* 切り上げ処理を行った場合の合計金額と差額を表示（任意） */}
+          (合計 {peopleCount}名 × ¥{displayPerPerson.toLocaleString()} = ¥
+          {(displayPerPerson * peopleCount).toLocaleString()})
+        </p>
+      </div>
+
+      {/* 会計確定ボタン (これで完了) */}
+      <div style={{ width: "100%", maxWidth: "400px" }}>
+        <button
+          onClick={onPaymentComplete}
+          style={{
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            padding: "20px",
+            fontSize: "1.5rem",
+            borderRadius: "50px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 15px rgba(37, 99, 235, 0.4)",
+            cursor: "pointer",
+            width: "100%",
+          }}
+        >
+          支払い完了へ
+        </button>
+      </div>
     </div>
   );
 };
