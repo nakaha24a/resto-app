@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import useCartStore, {
   useCartTotalAmount,
   usePendingOrderTotalAmount,
 } from "../store/cartStore";
-import { CartItem, MenuItem, Option } from "../types"; // ★ Option をインポート
+import { CartItem } from "../types";
 
 interface CartSidebarProps {
   cart: CartItem[];
@@ -20,102 +20,97 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   onGoToPayment,
   pendingOrderTotalAmount,
 }) => {
-  const { updateCart } = useCartStore(); // ★ menuData は不要
+  const { removeFromCart, updateCart } = useCartStore();
 
-  // ★ 修正:
-  // CartItem は MenuItem を継承しており、findMenuItemById は不要。
-  // cartItem 自体を updateCart に渡す。
-  // (TS2339: 'menuItemId' エラーの解消)
-  const handleUpdateQuantity = (cartItem: CartItem, newQuantity: number) => {
-    // 差分の数量を計算してストアを更新
-    const quantityDifference = newQuantity - cartItem.quantity;
-    updateCart(cartItem, quantityDifference, cartItem.selectedOptions);
+  const handleIncrease = (item: CartItem) => {
+    updateCart(item, 1, item.selectedOptions);
   };
 
-  // ★ 修正: selectedOptions の型を Option[] に指定
-  const getOptionsText = (options: Option[]) => {
-    if (!options || options.length === 0) return "";
-    return options.map((opt) => `+ ${opt.name}`).join(", ");
+  const handleDecrease = (item: CartItem) => {
+    updateCart(item, -1, item.selectedOptions);
   };
-
-  const totalPaymentAmount = totalAmount + pendingOrderTotalAmount;
-  const canPlaceOrder = cart.length > 0;
-  const canGoToPayment = totalPaymentAmount > 0;
 
   return (
-    <aside className="order-sidebar">
-      <h2 className="sidebar-title">🛒 現在の注文</h2>
+    <div className="cart-sidebar">
+      <div className="cart-header">
+        <h2 className="cart-title">現在の注文</h2>
+      </div>
 
-      {cart.length === 0 ? (
-        <p className="empty-cart-message">商品が選択されていません。</p>
-      ) : (
-        <ul className="cart-list">
-          {cart.map((item) => (
-            <li key={item.uniqueId} className="cart-item">
-              <div className="cart-item-info">
+      <div className="cart-items">
+        {cart.length === 0 ? (
+          <div className="empty-cart-container">
+            <p className="empty-cart-message">カートは空です</p>
+            <p className="empty-cart-sub">メニューを選んでください</p>
+          </div>
+        ) : (
+          cart.map((item) => (
+            <div key={item.uniqueId} className="cart-item">
+              <div className="item-info">
                 <span className="item-name">{item.name}</span>
-                <span className="item-options">
-                  {getOptionsText(item.selectedOptions)}
+                {item.selectedOptions.length > 0 && (
+                  <span className="item-options">
+                    {item.selectedOptions.map((o) => o.name).join(", ")}
+                  </span>
+                )}
+                <span className="item-price">
+                  ¥{item.totalPrice.toLocaleString()}
                 </span>
               </div>
-              <div className="item-control">
+              <div className="item-controls">
                 <button
-                  className="cart-qty-btn"
-                  onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                  className="quantity-btn"
+                  onClick={() => handleDecrease(item)}
                 >
                   -
                 </button>
                 <span className="item-quantity">{item.quantity}</span>
                 <button
-                  className="cart-qty-btn"
-                  onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                  className="quantity-btn"
+                  onClick={() => handleIncrease(item)}
                 >
                   +
                 </button>
+                <button
+                  className="remove-btn"
+                  onClick={() => removeFromCart(item.uniqueId)}
+                >
+                  ✕
+                </button>
               </div>
-              <span className="item-price">
-                ¥{item.totalPrice.toLocaleString()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          ))
+        )}
+      </div>
 
-      <div className="cart-summary">
-        {pendingOrderTotalAmount > 0 && (
-          <div className="summary-row">
-            <span>提供待ちの合計</span>
-            <span className="summary-amount">
-              ¥{pendingOrderTotalAmount.toLocaleString()}
-            </span>
+      <div className="cart-footer">
+        {cart.length > 0 && (
+          <div className="cart-summary-area">
+            <div className="cart-total">
+              <span className="total-label">合計</span>
+              <span className="total-price">
+                ¥{totalAmount.toLocaleString()}
+              </span>
+            </div>
+            <button className="place-order-btn" onClick={onPlaceOrder}>
+              注文を確定する
+            </button>
           </div>
         )}
-        <div className="summary-row">
-          <span>
-            {pendingOrderTotalAmount > 0 ? "お会計合計" : "合計 (税込)"}
-          </span>
-          <span className="summary-amount">
-            ¥{totalPaymentAmount.toLocaleString()}
-          </span>
-        </div>
-        <button
-          className="order-confirm-button"
-          onClick={onPlaceOrder}
-          disabled={!canPlaceOrder}
-        >
-          {totalAmount > 0
-            ? `(¥${totalAmount.toLocaleString()}) の注文を確定する`
-            : "注文を確定する"}
-        </button>
-        <button
-          className="goto-payment-btn"
-          onClick={onGoToPayment}
-          disabled={!canGoToPayment}
-        >
-          お会計に進む 💳
-        </button>
+
+        {/* 注文履歴・会計ボタンへの導線 */}
+        {pendingOrderTotalAmount > 0 && (
+          <div className="payment-link-area">
+            <div className="pending-amount-info">
+              <span>未会計分:</span>
+              <strong>¥{pendingOrderTotalAmount.toLocaleString()}</strong>
+            </div>
+            <button className="payment-nav-btn" onClick={onGoToPayment}>
+              会計 / 履歴へ進む
+            </button>
+          </div>
+        )}
       </div>
-    </aside>
+    </div>
   );
 };
 
