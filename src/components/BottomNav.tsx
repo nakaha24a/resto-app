@@ -1,5 +1,3 @@
-// src/components/BottomNav.tsx
-
 import React from "react";
 import { NavTab } from "./OrderScreen";
 
@@ -21,22 +19,26 @@ const BottomNav: React.FC<BottomNavProps> = ({
         onClick={() => onNavigate("TOP")}
       >
         <span className="nav-tab-icon">🏠</span>
-        <span>トップ</span>
+        <span className="nav-tab-label">トップ</span>
       </div>
+
       <div
         className={`nav-tab ${activeTab === "ORDER" ? "active" : ""}`}
         onClick={() => onNavigate("ORDER")}
       >
         <span className="nav-tab-icon">📋</span>
-        <span>注文</span>
-        {cartItemCount > 0 && <span className="badge">{cartItemCount}</span>}
+        <span className="nav-tab-label">メニュー</span>
       </div>
+
       <div
         className={`nav-tab ${activeTab === "HISTORY" ? "active" : ""}`}
         onClick={() => onNavigate("HISTORY")}
       >
-        <span className="nav-tab-icon">🧾</span>
-        <span>履歴・お会計</span>
+        <span className="nav-tab-icon" style={{ position: "relative" }}>
+          🧾
+          {/* 注文履歴バッジが必要ならここにロジック追加 */}
+        </span>
+        <span className="nav-tab-label">履歴・会計</span>
       </div>
     </div>
   );
