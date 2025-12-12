@@ -1,8 +1,5 @@
 import React from "react";
-import useCartStore, {
-  useCartTotalAmount,
-  usePendingOrderTotalAmount,
-} from "../store/cartStore";
+import useCartStore from "../store/cartStore";
 import { CartItem } from "../types";
 
 interface CartSidebarProps {
@@ -32,43 +29,45 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   return (
     <div className="cart-sidebar">
+      {/* ヘッダー */}
       <div className="cart-header">
         <h2 className="cart-title">現在の注文</h2>
-        <span
-          style={{ fontSize: "0.9rem", color: "#6b7280", fontWeight: "bold" }}
-        >
-          {cart.reduce((sum, i) => sum + i.quantity, 0)}点
+        <span style={{ fontSize: "0.9rem", color: "#888", fontWeight: "bold" }}>
+          合計 {cart.reduce((sum, i) => sum + i.quantity, 0)} 点
         </span>
       </div>
 
+      {/* アイテムリスト */}
       <div className="cart-items">
         {cart.length === 0 ? (
           <div className="empty-cart-container">
             <div className="empty-cart-icon">🍽️</div>
             <p className="empty-cart-message">カートは空です</p>
             <p className="empty-cart-sub">
-              左側のメニューから
+              メニューから商品を選んで
               <br />
-              商品を選んでください
+              追加してください
             </p>
           </div>
         ) : (
           cart.map((item) => (
             <div key={item.uniqueId} className="cart-item">
+              {/* 上段：商品名と価格 */}
               <div className="item-info-row">
                 <div style={{ flex: 1 }}>
-                  <span className="item-name">{item.name}</span>
+                  <div className="item-name">{item.name}</div>
                   {item.selectedOptions.length > 0 && (
                     <div className="item-options">
                       {item.selectedOptions.map((o) => o.name).join(", ")}
                     </div>
                   )}
                 </div>
-                <span className="item-price">
+                <div className="item-price">
                   ¥{item.totalPrice.toLocaleString()}
-                </span>
+                </div>
               </div>
 
+              {/* 下段：削除ボタンと数量変更 */}
               <div className="item-controls-row">
                 <button
                   className="remove-link"
@@ -76,6 +75,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 >
                   削除
                 </button>
+
                 <div className="quantity-adjuster">
                   <button
                     className="qty-btn"
@@ -97,6 +97,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         )}
       </div>
 
+      {/* フッター */}
       <div className="cart-footer">
         {cart.length > 0 && (
           <div className="cart-summary-area">
@@ -112,11 +113,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           </div>
         )}
 
-        {/* 注文履歴・会計ボタンへの導線 */}
+        {/* 会計待ちがある場合のみ表示 */}
         {pendingOrderTotalAmount > 0 && (
           <div className="payment-link-area">
             <div className="pending-info">
-              <span>お会計待ち金額:</span>
+              <span>お会計待ち金額</span>
               <strong>¥{pendingOrderTotalAmount.toLocaleString()}</strong>
             </div>
             <button className="payment-nav-btn" onClick={onGoToPayment}>
