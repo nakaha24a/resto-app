@@ -8,7 +8,7 @@ interface MenuContentProps {
   searchQuery: string;
 }
 
-// ★ 修正: localhost を .env 変数から読み込む
+// .env から読み込むか、なければ localhost (PCのIP推奨)
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
@@ -28,14 +28,19 @@ const MenuContent: React.FC<MenuContentProps> = ({
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // App.tsx で menuData を読み込むため、この useEffect は不要
-  /*
-  useEffect(() => {
-    if (!menuData && !menuLoading) {
-      fetchMenuData();
+  // 画像URLを判定するヘルパー関数
+  // 1. http から始まるなら、そのまま使う (DBに完全なURLが入っている場合)
+  // 2. そうでなければ、API_BASE_URL をくっつける (DBにファイル名だけの場合)
+  const getImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return `${API_BASE_URL}/static/placeholder.png`;
+
+    if (imagePath.startsWith("http")) {
+      return imagePath;
     }
-  }, [fetchMenuData, menuData, menuLoading]);
-  */
+    // パスの先頭に / があるかないかで調整
+    const path = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+    return `${API_BASE_URL}${path}`;
+  };
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
@@ -57,7 +62,6 @@ const MenuContent: React.FC<MenuContentProps> = ({
   if (menuLoading && !menuData) {
     return (
       <div className="menu-list-container">
-        {/* ★ 修正: テキストをローディングスピナーに変更 */}
         <div className="loading-spinner-container">
           <div className="loading-spinner"></div>
         </div>
@@ -70,8 +74,8 @@ const MenuContent: React.FC<MenuContentProps> = ({
         <p>メニューの読み込みに失敗しました。</p>
         <p style={{ fontSize: "0.8rem", color: "gray" }}>{menuError}</p>
         <button
-          className="call-staff-button-header" // 既存のボタンスタイルを流用
-          onClick={() => fetchMenuData()} // ストアのアクションを直接呼ぶ
+          className="call-staff-button-header"
+          onClick={() => fetchMenuData()}
         >
           再読み込み
         </button>
@@ -125,14 +129,15 @@ const MenuContent: React.FC<MenuContentProps> = ({
                 onClick={() => handleItemClick(item)}
               >
                 <img
-                  src={`${API_BASE_URL}${
-                    item.image || "/assets/placeholder.png"
-                  }`}
+                  // ★修正: ヘルパー関数を使って正しいURLを生成
+                  src={getImageUrl(item.image)}
                   alt={item.name}
                   className="menu-image"
-                  onError={(e: any) =>
-                    (e.currentTarget.src = `${API_BASE_URL}/assets/placeholder.png`)
-                  }
+                  // ★修正: 無限ループ防止を追加し、パスを /static/ に統一
+                  onError={(e: any) => {
+                    e.currentTarget.onerror = null; // ループ防止
+                    e.currentTarget.src = `${API_BASE_URL}/static/placeholder.png`;
+                  }}
                 />
                 <div className="menu-info">
                   <p className="menu-name">{item.name}</p>
@@ -145,7 +150,6 @@ const MenuContent: React.FC<MenuContentProps> = ({
                   <p className="menu-price">¥{item.price.toLocaleString()}</p>
                 </div>
               </div>
-              {/* ★ UI/UX改善のため、数量コントロールブロックは削除済み */}
             </div>
           );
         })}
@@ -157,7 +161,8 @@ const MenuContent: React.FC<MenuContentProps> = ({
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onAddToCart={handleAddToCartWithOptions}
-          imageUrl={`${API_BASE_URL}${selectedItem.image || ""}`}
+          // ★修正: モーダルにも正しいURLを渡す
+          imageUrl={getImageUrl(selectedItem.image)}
         />
       )}
     </div>

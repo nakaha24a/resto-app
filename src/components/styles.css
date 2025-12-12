@@ -1480,11 +1480,108 @@ button {
     border-radius: 8px;
     margin-bottom: 8px;
   }
+}
+:root {
+  /* 新しい色設定。これが既存の設定より優先されます */
+  --primary-color: #ff9f43;
+  --primary-dark: #e58e3c;
+  --secondary-color: #54a0ff;
+  --accent-color: #1dd1a1;
+  --danger-color: #ff6b6b;
+  --bg-color: #f5f6fa;
+  --card-bg: #ffffff;
+  --text-main: #2f3542;
+  --text-sub: #a4b0be;
+  --border-color: #dfe4ea;
 
-  /* カートサイドバーを非表示（BottomNavがあるため） */
-  /* もしカートボタンでモーダルを開く仕様ならOKですが、
-     画面が狭くなるのを防ぐため調整 */
+  /* レイアウト変数 */
+  --header-height: 70px;
+  --sidebar-width: 400px;
+  --radius-md: 12px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
-  /* .cart-open クラスがついたら表示するなどのJS制御が必要ですが、
-     まずはレイアウト崩れを防ぐために一旦そのままにします */
+  /* 互換性のための変数再定義 */
+  --background-color: var(--bg-color);
+  --card-background-color: var(--card-bg);
+  --text-color: var(--text-main);
+  --text-color-light: var(--text-sub);
+}
+
+/* 2. 注文画面のレイアウト上書き */
+.order-screen-layout {
+  background-color: var(--bg-color);
+  /* 既存のFlex設定などが残っていると競合する場合があるので、必要ならリセット */
+}
+
+/* 3. メニューリストをグリッド化 (スマホ・PC対応) */
+.menu-content {
+  display: grid !important; /* 既存のスタイルより強く適用させる */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+  gap: 20px !important;
+}
+
+/* 4. メニューアイテムのカード化 */
+.menu-item {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  height: 100%; /* 高さ揃え */
+  /* 不要な既存スタイルを打ち消す */
+  width: auto !important;
+  margin: 0 !important;
+}
+.menu-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(255, 159, 67, 0.3);
+}
+
+/* 5. 画像スタイルの調整 */
+.menu-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+/* 6. カテゴリナビのデザイン変更 */
+.category-nav {
+  background-color: var(--bg-color);
+  padding: 12px 20px;
+}
+.category-tab {
+  border-radius: 50px;
+  background-color: #ffffff;
+  margin-right: 12px;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
+}
+.category-tab.active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-bottom: none !important; /* 既存の下線スタイルを消す */
+}
+
+/* 7. カートサイドバー (PC用) */
+.cart-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--card-bg);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.03);
+  z-index: 50;
+  /* 既存の固定位置などをリセット */
+  position: static;
+  height: 100%;
+}
+
+/* スマホ表示時の調整 */
+@media (max-width: 1024px) {
+  .cart-sidebar {
+    display: none; /* BottomNavがあるため非表示 */
+  }
+  .menu-content {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 12px !important;
+  }
 }
