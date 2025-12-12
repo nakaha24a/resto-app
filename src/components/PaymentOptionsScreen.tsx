@@ -47,6 +47,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
         height: "100%",
         padding: "20px",
         textAlign: "center",
+        overflowY: "auto", // 内容が多い場合にスクロールできるように追加
       }}
     >
       <h2
@@ -99,6 +100,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
               fontSize: "24px",
               padding: "10px 20px",
               border: "1px solid #ddd",
+              borderRadius: "8px",
               cursor: "pointer",
               backgroundColor: peopleCount <= 1 ? "#eee" : "#fff",
             }}
@@ -114,6 +116,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
               fontSize: "24px",
               padding: "10px 20px",
               border: "1px solid #ddd",
+              borderRadius: "8px",
               cursor: "pointer",
               backgroundColor: "#fff",
             }}
@@ -165,6 +168,27 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
           支払い完了へ
         </button>
       </div>
+
+      {/* ▼▼▼ 追加した戻るボタン ▼▼▼ */}
+      <button
+        className="back-button-bottom" /* CSSクラスがあれば適用 */
+        onClick={onBack}
+        style={{
+          marginTop: "30px",
+          padding: "12px 30px",
+          background: "transparent",
+          border: "2px solid #ccc",
+          borderRadius: "8px",
+          fontSize: "1rem",
+          fontWeight: "bold",
+          color: "#666",
+          cursor: "pointer",
+          marginBottom: "20px", // 下に余白
+        }}
+      >
+        ← 注文画面に戻る
+      </button>
+      {/* ▲▲▲ ここまで ▲▲▲ */}
     </div>
   );
 };

@@ -20,9 +20,6 @@ const OrderHeader: React.FC<OrderHeaderProps> = ({
       <div className="tablet-info">テーブル: {userId}</div>
       <div className="search-bar-container">
         {/* ★ 修正: 隠しラベルを追加 (アクセシビリティ警告の修正) */}
-        <label htmlFor="menu-search" className="visually-hidden">
-          メニューを検索
-        </label>
 
         <input
           type="text"
