@@ -15,7 +15,10 @@ const API_BASE_URL =
 interface CartState {
   cart: CartItem[];
   orders: Order[];
-  // 互換用
+
+  // ★ ここで定義している関数が...
+  addToCart: (newItem: CartItem) => void;
+
   pendingOrders: Order[];
   orderHistory: Order[];
 
@@ -50,6 +53,44 @@ const useCartStore = create<CartState>((set, get) => ({
   loading: false,
   menuLoading: false,
   error: null,
+
+  // ★ ...実際にここで実装されていないとエラーになります。これを追加！
+  addToCart: (newItem) => {
+    set((state) => {
+      // 削除機能などが動くように uniqueId を生成して付与する
+      const optionsKey = newItem.selectedOptions
+        .map((opt) => opt.name)
+        .sort()
+        .join("-");
+      // ID生成ルール: 商品ID_オプション_ランダムな文字列 (被り防止)
+      const uniqueId = `${newItem.id}_${optionsKey || "default"}`;
+
+      // uniqueIdも含めた完全なアイテムデータ
+      const completeItem = { ...newItem, uniqueId };
+
+      // 全く同じ商品（IDとオプションが一致）が既にカートにあるか探す
+      const existingItemIndex = state.cart.findIndex(
+        (item) => item.uniqueId === uniqueId
+      );
+
+      if (existingItemIndex > -1) {
+        // あれば数量と合計金額を増やす
+        const newCart = [...state.cart];
+        const existingItem = newCart[existingItemIndex];
+
+        newCart[existingItemIndex] = {
+          ...existingItem,
+          quantity: existingItem.quantity + newItem.quantity,
+          totalPrice: existingItem.totalPrice + newItem.totalPrice,
+        };
+
+        return { cart: newCart };
+      } else {
+        // なければ新しく追加
+        return { cart: [...state.cart, completeItem] };
+      }
+    });
+  },
 
   fetchMenuData: async () => {
     if (get().menuData) return;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Order, OrderItem } from "../types";
+import { Order } from "../types";
 
 interface OrderHistoryPaneProps {
   pendingOrders: Order[];
@@ -14,111 +14,139 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   onGoToPaymentView,
   onCallStaff,
 }) => {
-  // 日付フォーマット用ヘルパー
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return isNaN(date.getTime())
-      ? ""
-      : date.toLocaleString("ja-JP", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+  const sortedOrders = [...pendingOrders].sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case "調理中":
+        return "status-cooking";
+      case "提供済み":
+        return "status-served";
+      case "会計済み":
+        return "status-paid";
+      default:
+        return "status-waiting";
+    }
   };
 
   return (
-    <div className="history-container">
-      <h2 className="history-section-title">注文履歴</h2>
+    <div className="history-pane-container">
+      <h2 className="history-title">注文履歴</h2>
 
       <div className="history-list">
-        {pendingOrders.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#999", padding: "20px" }}>
-            まだ注文履歴がありません。
-          </p>
+        {sortedOrders.length === 0 ? (
+          <div className="no-history">
+            <div
+              className="no-history-icon"
+              style={{ fontSize: "3rem", marginBottom: "15px" }}
+            >
+              🧾
+            </div>
+            <p style={{ fontWeight: "bold", color: "#7f8c8d" }}>
+              まだ注文がありません
+            </p>
+          </div>
         ) : (
-          pendingOrders.map((order) => (
-            <div key={order.id} className="history-order-item">
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    marginBottom: "4px",
-                    fontSize: "0.85rem",
-                    color: "#757575",
-                  }}
-                >
-                  {/* ★ 日時フォーマットの安全策 */}
-                  <span style={{ marginRight: "10px" }}>
-                    {formatDate(order.timestamp)}
-                  </span>
-                  <span
-                    className={`history-status status-${
-                      order.status === "調理中" ? "cooking" : "received"
-                    }`}
-                  >
-                    {order.status}
+          sortedOrders.map((order) => (
+            <div
+              key={order.id}
+              className={`history-card ${getStatusClass(order.status)}`}
+            >
+              <div className="history-card-header">
+                <div className="history-time">
+                  {order.timestamp
+                    ? new Date(order.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "--:--"}
+                  <span className="order-id">
+                    No. {order.id.slice(0, 8)}...
                   </span>
                 </div>
+                <span
+                  className={`status-badge ${getStatusClass(order.status)}`}
+                >
+                  {order.status || "受付"}
+                </span>
+              </div>
 
-                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {order.items.map((item: OrderItem, idx: number) => (
-                    <li
-                      key={idx}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <span>
-                        {item.name} × {item.quantity}
-                      </span>
-                      {/* ★ 金額フォーマットの安全策 (item.totalPrice || 0) */}
-                      <span>¥{(item.totalPrice || 0).toLocaleString()}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="history-items">
+                {(order.items || []).map((item, idx) => (
+                  <div key={idx} className="history-item-row">
+                    <div className="history-item-name">
+                      <span className="item-qty-badge">{item.quantity}</span>
+                      {item.name}
+                    </div>
+                    <div className="history-item-price">
+                      ¥{(item.totalPrice || 0).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="history-card-footer">
+                <span className="sub-total-label">小計</span>
+                <span className="sub-total-price">
+                  ¥{(order.totalAmount || 0).toLocaleString()}
+                </span>
               </div>
             </div>
           ))
         )}
       </div>
 
-      <div
-        className="cart-footer"
-        style={{
-          marginTop: "20px",
-          backgroundColor: "transparent",
-          border: "none",
-          padding: 0,
-        }}
-      >
-        <div className="cart-total">
-          <span>合計</span>
-          {/* ★ 合計金額フォーマットの安全策 */}
-          <span>¥{(orderHistoryTotalAmount || 0).toLocaleString()}</span>
+      <div className="history-footer-summary">
+        <div className="bill-total-row">
+          <span>お支払い合計</span>
+          <span className="bill-total-price">
+            ¥{(orderHistoryTotalAmount || 0).toLocaleString()}
+          </span>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "10px",
-            marginTop: "1rem",
-          }}
-        >
-          <button
-            className="order-button"
-            style={{
-              backgroundColor: "#fff",
-              color: "#555",
-              border: "1px solid #ccc",
-            }}
-            onClick={onCallStaff}
-          >
-            スタッフ呼出
+        <div className="history-actions">
+          {/* 店員呼び出しボタン（オレンジ） */}
+          <button className="call-staff-btn-secondary" onClick={onCallStaff}>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span>店員呼出</span>
           </button>
-          <button className="place-order-btn" onClick={onGoToPaymentView}>
-            お会計へ
+
+          {/* お会計ボタン（グリーン） */}
+          <button
+            className="goto-payment-btn"
+            onClick={onGoToPaymentView}
+            disabled={sortedOrders.length === 0}
+          >
+            <span>お会計へ進む</span>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>

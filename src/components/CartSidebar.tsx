@@ -17,59 +17,51 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   onGoToPayment,
   pendingOrderTotalAmount,
 }) => {
-  const { removeFromCart, updateCart } = useCartStore();
+  const { updateCart, removeFromCart } = useCartStore();
 
-  const handleIncrease = (item: CartItem) => {
-    updateCart(item, 1, item.selectedOptions);
-  };
-
-  const handleDecrease = (item: CartItem) => {
-    updateCart(item, -1, item.selectedOptions);
+  const handleQuantityChange = (item: CartItem, delta: number) => {
+    const newQuantity = item.quantity + delta;
+    if (newQuantity <= 0) {
+      removeFromCart(item.uniqueId);
+    } else {
+      updateCart(item, delta, item.selectedOptions);
+    }
   };
 
   return (
     <div className="cart-sidebar">
-      {/* ヘッダー */}
       <div className="cart-header">
         <h2 className="cart-title">現在の注文</h2>
-        <span style={{ fontSize: "0.9rem", color: "#888", fontWeight: "bold" }}>
-          {cart.reduce((sum, i) => sum + i.quantity, 0)} 点
+        <span className="cart-count-badge">
+          {cart.reduce((sum, item) => sum + item.quantity, 0)}点
         </span>
       </div>
 
-      {/* 商品リスト */}
       <div className="cart-items">
         {cart.length === 0 ? (
           <div className="empty-cart-container">
-            <div className="empty-cart-icon">🍽️</div>
-            <p style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
-              カートは空です
-            </p>
-            <p style={{ fontSize: "0.9rem" }}>
-              メニューから商品を選んで
-              <br />
-              追加してください
-            </p>
+            <div className="empty-cart-icon">🛒</div>
+            <p>カートは空です</p>
           </div>
         ) : (
           cart.map((item) => (
-            <div key={item.uniqueId} className="cart-item">
-              {/* 上段：名前と価格 */}
+            <div key={item.uniqueId || item.id} className="cart-item">
               <div className="item-info-row">
-                <div style={{ flex: 1 }}>
-                  <div className="item-name">{item.name}</div>
-                  {item.selectedOptions.length > 0 && (
-                    <div className="item-options">
+                <div className="cart-item-info">
+                  <span className="item-name">{item.name}</span>
+                  {/* オプション表示 */}
+                  {item.selectedOptions && item.selectedOptions.length > 0 && (
+                    <span className="item-options">
                       {item.selectedOptions.map((o) => o.name).join(", ")}
-                    </div>
+                    </span>
                   )}
                 </div>
-                <div className="item-price">
-                  ¥{item.totalPrice.toLocaleString()}
-                </div>
+                {/* ★修正ポイント: ここで安全にtoLocaleStringを呼び出す */}
+                <span className="item-price">
+                  ¥{(item.totalPrice || 0).toLocaleString()}
+                </span>
               </div>
 
-              {/* 下段：操作ボタン */}
               <div className="item-controls-row">
                 <button
                   className="remove-link"
@@ -80,15 +72,15 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
                 <div className="quantity-adjuster">
                   <button
-                    className="qty-btn"
-                    onClick={() => handleDecrease(item)}
+                    className="qty-btn minus"
+                    onClick={() => handleQuantityChange(item, -1)}
                   >
-                    −
+                    -
                   </button>
                   <span className="item-qty-val">{item.quantity}</span>
                   <button
-                    className="qty-btn"
-                    onClick={() => handleIncrease(item)}
+                    className="qty-btn plus"
+                    onClick={() => handleQuantityChange(item, 1)}
                   >
                     +
                   </button>
@@ -99,65 +91,75 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         )}
       </div>
 
-      {/* フッター */}
       <div className="cart-footer">
-        {cart.length > 0 && (
-          <div className="cart-summary-area">
-            <div className="cart-total-row">
-              <span>合計 (税込)</span>
-              <span className="total-price">
-                ¥{totalAmount.toLocaleString()}
-              </span>
-            </div>
-            <button className="place-order-btn" onClick={onPlaceOrder}>
-              注文を確定する
-            </button>
+        {/* 未払い金額（注文済み）の表示 */}
+        {(pendingOrderTotalAmount || 0) > 0 && (
+          <div
+            className="cart-total-row"
+            style={{ color: "#666", fontSize: "0.9rem" }}
+          >
+            <span>注文済み未会計:</span>
+            <span>¥{(pendingOrderTotalAmount || 0).toLocaleString()}</span>
           </div>
         )}
 
-        {/* 会計待ちボタン */}
-        {pendingOrderTotalAmount > 0 && (
-          <div
-            style={{
-              marginTop: "15px",
-              padding: "12px",
-              backgroundColor: "#fff8e1",
-              borderRadius: "12px",
-              textAlign: "center",
-              border: "1px solid #ffe0b2",
-            }}
+        {/* カート内合計 */}
+        <div className="cart-total-row">
+          <span>カート合計:</span>
+          <span className="total-price">
+            ¥{(totalAmount || 0).toLocaleString()}
+          </span>
+        </div>
+
+        <div className="cart-actions">
+          <button
+            className="place-order-btn"
+            onClick={onPlaceOrder}
+            disabled={cart.length === 0}
+            style={{ marginBottom: "10px" }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-                color: "#333",
-                fontSize: "0.95rem",
-              }}
+            注文を確定する
+          </button>
+
+          <button
+            className="goto-payment-btn"
+            onClick={onGoToPayment}
+            // 注文済みがある場合のみ押せるようにする、などの制御はお好みで
+            disabled={(pendingOrderTotalAmount || 0) === 0 && cart.length === 0}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span>お会計待ち金額</span>
-              <strong style={{ color: "#e64a19" }}>
-                ¥{pendingOrderTotalAmount.toLocaleString()}
-              </strong>
-            </div>
-            <button
-              onClick={onGoToPayment}
-              style={{
-                width: "100%",
-                padding: "10px",
-                backgroundColor: "#fff",
-                color: "#e65100",
-                border: "1px solid #e65100",
-                borderRadius: "8px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+
+            <span>お会計へ進む</span>
+
+            {/* 矢印アイコン（右側） */}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ marginLeft: "auto" }} /* 右端に寄せる */
             >
-              注文履歴・お会計へ
-            </button>
-          </div>
-        )}
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

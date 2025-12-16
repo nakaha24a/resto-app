@@ -1,0 +1,125 @@
+/* ------------------------------------- */
+/* 1. 変数定義 (Variables) */
+/* ------------------------------------- */
+:root {
+  /* メインカラーパレット */
+  --primary-color: #ff9f43;
+  --primary-dark: #e58e3c;
+  --secondary-color: #54a0ff;
+  --accent-color: #1dd1a1;
+  --danger-color: #ff6b6b;
+  --warning-color: #f39c12;
+
+  /* 背景・テキスト色 */
+  --bg-color: #f5f6fa;
+  --card-bg: #ffffff;
+  --text-main: #2f3542;
+  --text-sub: #a4b0be;
+  --border-color: #dfe4ea;
+
+  /* 互換用エイリアス */
+  --background-color: var(--bg-color);
+  --card-background-color: var(--card-bg);
+  --text-color: var(--text-main);
+  --text-color-light: var(--text-sub);
+  --header-background: #ffffff;
+  --header-text: var(--text-main);
+
+  /* UI要素 */
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --sidebar-background: #ffffff;
+  --category-nav-background: #ffffff;
+  --modal-overlay-background: rgba(0, 0, 0, 0.6);
+
+  --button-primary-background: var(--secondary-color);
+  --button-secondary-background: var(--warning-color);
+  --button-danger-background: var(--danger-color);
+  --button-success-background: var(--accent-color);
+  --button-disabled-background: #bdc3c7;
+
+  --radius-md: 12px;
+}
+
+/* ------------------------------------- */
+/* 2. 基本リセット & アニメーション */
+/* ------------------------------------- */
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica Neue", sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 16px;
+  overflow: hidden; /* アプリ全体の大枠はスクロールさせない */
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* アニメーション定義 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes zoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes fadeInItem {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}

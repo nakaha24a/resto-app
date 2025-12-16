@@ -1,9 +1,17 @@
+/* src/components/OrderScreen.tsx */
 import React, { useMemo, useState, useEffect } from "react";
 import useCartStore, {
   useCartTotalAmount,
-  useTotalBillAmount, // 新しいフックを使用
+  useTotalBillAmount,
 } from "../store/cartStore";
-import { MenuItem, CartItem, MenuData, Category } from "../types";
+import {
+  MenuItem as MenuItemType,
+  CartItem,
+  MenuData,
+  Category,
+} from "../types";
+// MenuItemはMenuContent内で使われているので、ここでは直接使わなくてもOKですが、エラー防止で残しても可
+// import { MenuItem } from "./MenuItem";
 
 import OrderHistoryPane from "./OrderHistoryPane";
 import OrderHeader from "./OrderHeader";
@@ -11,6 +19,7 @@ import CategoryNav from "./CategoryNav";
 import MenuContent from "./MenuContent";
 import CartSidebar from "./CartSidebar";
 import BottomNav from "./BottomNav";
+import TopScreen from "./TopScreen"; // ★追加: ポータル画面
 
 export type NavTab = "TOP" | "ORDER" | "HISTORY";
 
@@ -25,17 +34,12 @@ interface OrderScreenProps {
 
 const getCategories = (menuData: MenuData | null): string[] => {
   if (!menuData || !Array.isArray(menuData.categories)) return ["TOP"];
-  const categoryNames = new Set(
-    menuData.categories.flatMap((c: Category) => c.name)
+  const categoryNames = menuData.categories.map((c: Category) => c.name);
+  const uniqueNames = Array.from(new Set(categoryNames)).filter(
+    (n) => n !== "TOP"
   );
-  const hasRecommended = menuData.categories.some((c: Category) =>
-    c.items.some((i: MenuItem) => i.isRecommended)
-  );
-  return [
-    "TOP",
-    ...(hasRecommended ? ["おすすめ"] : []),
-    ...Array.from(categoryNames),
-  ];
+  // カテゴリリストとしては "TOP" を先頭にしておく
+  return ["TOP", ...uniqueNames];
 };
 
 const OrderScreen: React.FC<OrderScreenProps> = ({
@@ -46,52 +50,50 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   setConfirmationMessage,
   onCallStaff,
 }) => {
-  // orders を取得 (store側で互換性確保しているので pendingOrders でも動くが、ordersが正)
   const { cart, orders, placeOrder, fetchOrders } = useCartStore();
 
   const cartTotalAmount = useCartTotalAmount();
-  // 未払い合計金額を使用
   const totalBillAmount = useTotalBillAmount();
 
   const menuData = useCartStore((state) => state.menuData);
   const menuLoading = useCartStore((state) => state.menuLoading);
   const menuError = useCartStore((state) => state.error);
 
+  // ★追加: ポータル画面に渡す「おすすめ商品」リストを作成
+  const recommendedItems = useMemo(() => {
+    if (!menuData) return [];
+    return menuData.categories
+      .flatMap((c) => c.items)
+      .filter((i) => i.isRecommended);
+  }, [menuData]);
+
   const tableNum = useMemo(() => {
     const num = parseInt(userId.replace(/[^0-9]/g, ""), 10);
     return isNaN(num) ? 0 : num;
   }, [userId]);
 
-  // ★ ポーリング処理の実装: 5秒ごとに注文状況を更新
   useEffect(() => {
     if (tableNum > 0) {
-      // 初回取得
       fetchOrders(tableNum);
-
       const intervalId = setInterval(() => {
         fetchOrders(tableNum);
       }, 5000);
-
       return () => clearInterval(intervalId);
     }
   }, [fetchOrders, tableNum]);
 
   const CATEGORIES = useMemo(() => getCategories(menuData), [menuData]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("TOP");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (
-      !menuLoading &&
-      menuData &&
-      CATEGORIES.length > 0 &&
-      !CATEGORIES.includes(selectedCategory)
-    ) {
-      setSelectedCategory("TOP");
-    } else if (!menuLoading && !menuData && !menuError) {
-      setSelectedCategory("TOP");
+    if (!menuLoading && menuData && CATEGORIES.length > 0) {
+      if (!selectedCategory || !CATEGORIES.includes(selectedCategory)) {
+        setSelectedCategory("TOP");
+      }
     }
-  }, [CATEGORIES, selectedCategory, menuLoading, menuData, menuError]);
+  }, [CATEGORIES, selectedCategory, menuLoading, menuData]);
 
   const handlePlaceOrder = async () => {
     if (tableNum <= 0) {
@@ -109,34 +111,31 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   const renderMainContent = () => {
     if (menuLoading && !menuData)
-      return (
-        <div
-          className="loading-message"
-          style={{ padding: "20px", flex: 1, textAlign: "center" }}
-        >
-          メニュー読み込み中...
-        </div>
-      );
+      return <div style={{ padding: "20px" }}>読み込み中...</div>;
     if (menuError)
       return (
-        <div
-          className="error-message"
-          style={{ color: "red", padding: "20px", flex: 1 }}
-        >
-          エラー: {menuError}
-        </div>
+        <div style={{ padding: "20px", color: "red" }}>エラー: {menuError}</div>
       );
-    if (!menuData)
-      return (
-        <div
-          className="loading-message"
-          style={{ padding: "20px", flex: 1, textAlign: "center" }}
-        >
-          メニューデータがありません。
-        </div>
-      );
+    if (!menuData) return null;
 
-    if (activeTab === "ORDER" || activeTab === "TOP") {
+    // ★修正1: "TOP"タブの時はポータル画面(TopScreen)を表示
+    if (activeTab === "TOP") {
+      return (
+        <TopScreen
+          categories={CATEGORIES}
+          recommendations={recommendedItems}
+          onSelectCategory={(cat) => {
+            // カテゴリを選んだら、そのカテゴリを選択状態にしてORDER画面へ移動
+            setSelectedCategory(cat);
+            onNavigate("ORDER");
+          }}
+          onCallStaff={(msg) => onCallStaff(msg)}
+        />
+      );
+    }
+
+    // ★修正2: "ORDER"タブの時はいつものメニューリストを表示
+    if (activeTab === "ORDER") {
       return (
         <>
           <div className="main-content-wrapper">
@@ -146,9 +145,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
               onSelectCategory={setSelectedCategory}
             />
             <MenuContent
-              selectedCategory={
-                selectedCategory === "TOP" ? null : selectedCategory
-              }
+              selectedCategory={selectedCategory}
               searchQuery={searchQuery}
             />
           </div>
@@ -161,10 +158,12 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
           />
         </>
       );
-    } else if (activeTab === "HISTORY") {
+    }
+
+    // ★修正3: 履歴画面
+    if (activeTab === "HISTORY") {
       return (
         <OrderHistoryPane
-          // orders を渡すことで全ての注文を表示
           pendingOrders={orders}
           orderHistoryTotalAmount={totalBillAmount}
           onGoToPaymentView={onGoToPayment}
@@ -177,12 +176,14 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
 
   return (
     <div className="order-screen-layout">
+      {/* ヘッダーは全画面共通 */}
       <OrderHeader
         userId={userId}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCallStaff={() => onCallStaff("スタッフを呼び出しました")}
       />
+
       <div
         className={`order-main-area ${
           activeTab === "HISTORY" ? "history-layout" : ""
@@ -190,13 +191,20 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       >
         {renderMainContent()}
       </div>
+
       <BottomNav
+        // ★修正: TOPの時に "ORDER" と偽るのをやめて、そのまま渡す
         activeTab={activeTab}
-        onNavigate={onNavigate}
-        cartItemCount={cart.reduce(
-          (sum: number, item: CartItem) => sum + item.quantity,
-          0
-        )}
+        onNavigate={(tab) => {
+          if (tab === "TOP") {
+            // TOPボタンが押されたらTOPカテゴリに戻してTOP画面へ
+            setSelectedCategory("TOP");
+            onNavigate("TOP");
+          } else {
+            onNavigate(tab);
+          }
+        }}
+        cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
       />
     </div>
   );

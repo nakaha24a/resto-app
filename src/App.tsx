@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import useCartStore from "./store/cartStore";
+//import "./components/styles/variables.css"; /* 変数は最初に読み込む */
+//import "./components/styles/layout.css"; /* 次にレイアウト */
+//import "./components/styles/components.css"; /* 最後に細かい部品 */
+
 import "./components/styles.css";
-// SplitBillScreen は削除
+
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
 import ThanksScreen from "./components/ThanksScreen";
