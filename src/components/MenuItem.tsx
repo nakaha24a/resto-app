@@ -11,23 +11,34 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartStore((state) => state.addToCart);
 
-  // サーバーのURL（画像表示用）
+  // パソコンのIPアドレスがわかっている場合はそれに書き換えてください
+  // 例: "http://192.168.1.15:3000"
   const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
 
+  // ★ここを修正：どんなパスが来ても確実に「assets」を含めたURLを作る
   const getImageUrl = (imagePath: string | undefined) => {
-    if (!imagePath) return "https://via.placeholder.com/150?text=No+Image";
+    if (!imagePath) return "https://via.placeholder.com/300x200?text=No+Image";
+
+    // すでにhttpがついている完全なURLならそのまま返す
     if (imagePath.startsWith("http")) return imagePath;
-    const path = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-    return `${API_BASE_URL}${path}`;
+
+    // 先頭の / を削除してきれいにする
+    let cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+
+    // ★ここが重要修正ポイント★
+    // パスの中に「assets」も「static」も含まれていなければ、「assets/」を先頭に足す
+    if (!cleanPath.startsWith("assets/") && !cleanPath.startsWith("static/")) {
+      cleanPath = `assets/${cleanPath}`;
+    }
+
+    return `${API_BASE_URL}/${cleanPath}`;
   };
 
   const handleItemClick = () => {
-    // オプションがある場合はモーダルを開く
     if (item.options && item.options.length > 0) {
       setIsModalOpen(true);
     } else {
-      // オプションがない場合は直接カートへ (数量1, オプションなし)
       addToCart(item, 1, []);
     }
   };
@@ -41,18 +52,41 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     <>
       <div className="menu-item">
         <div className="menu-item-clickable" onClick={handleItemClick}>
-          <img
-            src={getImageUrl(item.image)}
-            alt={item.name}
-            className="menu-image"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/150?text=No+Image";
+          <div
+            style={{
+              width: "100%",
+              height: "180px",
+              overflow: "hidden",
+              flexShrink: 0,
             }}
-          />
+          >
+            <img
+              src={getImageUrl(item.image)}
+              alt={item.name}
+              className="menu-image"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              onError={(e) => {
+                // エラーになったらconsoleに実際のURLを出して確認できるようにする
+                console.error(
+                  "画像読み込み失敗:",
+                  (e.target as HTMLImageElement).src
+                );
+                (e.target as HTMLImageElement).src =
+                  "https://via.placeholder.com/300x200?text=No+Image";
+              }}
+            />
+          </div>
+
           <div className="menu-info">
             <div className="menu-name">{item.name}</div>
-            <div className="menu-description">{item.description}</div>
+            <div className="menu-description">
+              {item.description || "美味しいメニューです。"}
+            </div>
             {item.allergens && item.allergens.length > 0 && (
               <div className="menu-allergens">
                 アレルギー: {item.allergens.join(", ")}

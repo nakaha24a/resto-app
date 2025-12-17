@@ -1,3 +1,4 @@
+/* src/components/MenuContent.tsx - 修正版 */
 import React, { useMemo } from "react";
 import useCartStore from "../store/cartStore";
 import { MenuItem } from "./MenuItem";
@@ -24,16 +25,17 @@ const MenuContent: React.FC<MenuContentProps> = ({
 
     let items: MenuItemType[] = [];
 
-    // ★修正: TOPなら全商品を表示
-    if (!selectedCategory || selectedCategory === "TOP") {
-      items = menuData.categories.flatMap((cat: Category) => cat.items);
+    // ★ 修正: "TOP" の処理を削除
+    if (!selectedCategory) {
+      // カテゴリが選択されていない場合は空配列
+      return [];
     } else if (selectedCategory === "おすすめ") {
-      // おすすめタブも残しておきたい場合（DBにデータがあれば表示される）
+      // おすすめタブ: isRecommended が true のアイテムのみ
       items = menuData.categories.flatMap((cat: Category) =>
         cat.items.filter((item: MenuItemType) => item.isRecommended)
       );
     } else {
-      // 通常カテゴリ
+      // 通常カテゴリ: そのカテゴリに属するアイテムのみ
       const category = menuData.categories.find(
         (cat: Category) => cat.name === selectedCategory
       );
@@ -43,7 +45,11 @@ const MenuContent: React.FC<MenuContentProps> = ({
     // 検索フィルタリング
     if (searchQuery) {
       const lowerQ = searchQuery.toLowerCase();
-      items = items.filter((item) => item.name.toLowerCase().includes(lowerQ));
+      items = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(lowerQ) ||
+          item.description?.toLowerCase().includes(lowerQ)
+      );
     }
 
     return items;
@@ -51,6 +57,7 @@ const MenuContent: React.FC<MenuContentProps> = ({
 
   if (menuLoading && !menuData)
     return <div style={{ padding: "20px" }}>読み込み中...</div>;
+
   if (menuError) {
     return (
       <div style={{ color: "red", padding: "20px" }}>
@@ -64,9 +71,38 @@ const MenuContent: React.FC<MenuContentProps> = ({
     <div className="menu-list-container">
       <div className="menu-content">
         {itemsToShow.length === 0 ? (
-          <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>
-            メニューがありません
-          </p>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "#999",
+            }}
+          >
+            {searchQuery ? (
+              <>
+                <p style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
+                  「{searchQuery}」に該当するメニューが見つかりません
+                </p>
+                <p style={{ fontSize: "0.9rem" }}>
+                  別のキーワードで検索してみてください
+                </p>
+              </>
+            ) : selectedCategory === "おすすめ" ? (
+              <>
+                <p style={{ fontSize: "1.2rem", marginBottom: "10px" }}>
+                  おすすめメニューはまだ設定されていません
+                </p>
+                <p style={{ fontSize: "0.9rem" }}>
+                  他のカテゴリからお選びください
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: "1.2rem" }}>
+                このカテゴリにメニューがありません
+              </p>
+            )}
+          </div>
         ) : (
           itemsToShow.map((item) => <MenuItem key={item.id} item={item} />)
         )}
