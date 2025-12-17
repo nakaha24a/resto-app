@@ -1,131 +1,100 @@
-// src/components/OptionModal.tsx
-
 import React, { useState, useEffect } from "react";
-// ★ MenuItem, Option 型をインポート
-import { MenuItem, Option } from "../types";
+// ★修正: Option型は削除されたのでインポートしない
+import { MenuItem } from "../types";
 
 interface OptionModalProps {
-  // ★ item プロパティ名を menuItem に変更
   menuItem: MenuItem;
-  isOpen: boolean; // ★ isOpen プロパティを追加
+  isOpen: boolean;
   onClose: () => void;
-  // ★ onAddToCart のシグネチャを変更 (quantity を追加)
-  onAddToCart: (options: Option[], quantity: number) => void;
-  imageUrl: string;
+  onConfirm: (quantity: number, selectedOptions: string[]) => void;
 }
 
 const OptionModal: React.FC<OptionModalProps> = ({
-  menuItem, // ★ item から menuItem に変更
+  menuItem,
   isOpen,
   onClose,
-  onAddToCart,
-  imageUrl,
+  onConfirm,
 }) => {
-  // 数量の状態
   const [quantity, setQuantity] = useState(1);
-  // 選択されたオプションの状態 (オプション名をキー、Optionオブジェクトを値とするMap)
-  const [selectedOptions, setSelectedOptions] = useState<Map<string, Option>>(
-    new Map()
+  // ★修正: Setの中身は string
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(
+    new Set()
   );
 
-  // モーダルが開かれたときに状態をリセット
   useEffect(() => {
     if (isOpen) {
       setQuantity(1);
-      setSelectedOptions(new Map());
+      setSelectedOptions(new Set());
     }
   }, [isOpen]);
 
-  // オプション選択/解除のハンドラ
-  const handleOptionChange = (option: Option) => {
-    setSelectedOptions((prev) => {
-      const newOptions = new Map(prev);
-      if (newOptions.has(option.name)) {
-        newOptions.delete(option.name); // 既に選択されていれば解除
-      } else {
-        newOptions.set(option.name, option); // 新規選択
-      }
-      return newOptions;
-    });
-  };
-
-  // 数量を増やす
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  // 数量を減らす (最低1)
-  const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
-
-  // 合計金額を計算 (基本価格 + オプション価格) * 数量
-  const calculateTotalPrice = () => {
-    const optionsTotal = Array.from(selectedOptions.values()).reduce(
-      (sum, option) => sum + option.price,
-      0
-    );
-    // ★ menuItem.price を使用
-    return (menuItem.price + optionsTotal) * quantity;
-  };
-
-  // カートに追加ボタンのハンドラ
-  const handleAddToCart = () => {
-    // 選択されたオプションの配列を作成
-    const optionsArray = Array.from(selectedOptions.values());
-    // ★ 親コンポーネントのハンドラを呼び出し (options と quantity を渡す)
-    onAddToCart(optionsArray, quantity);
-  };
-
-  // isOpen が false なら何もレンダリングしない
   if (!isOpen) return null;
 
+  // ★修正: オプションは string として受け取る
+  const handleOptionChange = (optionName: string) => {
+    const newOptions = new Set(selectedOptions);
+    if (newOptions.has(optionName)) {
+      newOptions.delete(optionName);
+    } else {
+      newOptions.add(optionName);
+    }
+    setSelectedOptions(newOptions);
+  };
+
+  const handleConfirm = () => {
+    onConfirm(quantity, Array.from(selectedOptions));
+    onClose();
+  };
+
   return (
-    // モーダルの背景オーバーレイ
     <div className="modal-overlay" onClick={onClose}>
-      {/* モーダルコンテンツ (クリックイベントが伝播しないようにする) */}
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {/* 閉じるボタン */}
-        <button onClick={onClose} className="modal-close-button">
-          &times;
+        <button className="modal-close-button" onClick={onClose}>
+          ×
         </button>
-        {/* 商品画像 */}
-        <img src={imageUrl} alt={menuItem.name} className="modal-image" />
-        {/* 商品名 */}
+
+        {menuItem.image && (
+          <img
+            src={menuItem.image}
+            alt={menuItem.name}
+            className="modal-image"
+          />
+        )}
+
         <h2>{menuItem.name}</h2>
-        {/* 商品説明 */}
         <p>{menuItem.description}</p>
 
-        {/* オプション選択セクション */}
-        {/* ★ menuItem.options が存在し配列の場合のみ表示 */}
-        {menuItem.options &&
-          Array.isArray(menuItem.options) &&
-          menuItem.options.length > 0 && (
-            <div className="modal-options">
-              <h4>オプションを選択:</h4>
-              {menuItem.options.map((option) => (
-                <div key={option.name} className="option-item">
-                  <input
-                    type="checkbox"
-                    id={`option-${option.name}`}
-                    checked={selectedOptions.has(option.name)}
-                    onChange={() => handleOptionChange(option)}
-                  />
-                  <label htmlFor={`option-${option.name}`}>
-                    {option.name} (+ ¥{option.price.toLocaleString()})
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
+        {menuItem.options && menuItem.options.length > 0 && (
+          <div className="modal-options">
+            <h4>オプションを選択:</h4>
+            {/* ★修正: option は文字列そのもの */}
+            {menuItem.options.map((optionName, idx) => (
+              <div key={idx} className="option-item">
+                <input
+                  type="checkbox"
+                  id={`option-${idx}`}
+                  checked={selectedOptions.has(optionName)}
+                  onChange={() => handleOptionChange(optionName)}
+                />
+                <label htmlFor={`option-${idx}`}>{optionName}</label>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* 数量調整セクション */}
         <div className="modal-quantity">
-          <button onClick={decrementQuantity} disabled={quantity <= 1}>
+          <button
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            disabled={quantity <= 1}
+          >
             -
           </button>
           <span>{quantity}</span>
-          <button onClick={incrementQuantity}>+</button>
+          <button onClick={() => setQuantity(quantity + 1)}>+</button>
         </div>
 
-        {/* カートに追加ボタン */}
-        <button onClick={handleAddToCart} className="add-to-cart-button">
-          カートに追加 - ¥{calculateTotalPrice().toLocaleString()}
+        <button className="add-to-cart-button" onClick={handleConfirm}>
+          カートに追加 (¥{(menuItem.price * quantity).toLocaleString()})
         </button>
       </div>
     </div>

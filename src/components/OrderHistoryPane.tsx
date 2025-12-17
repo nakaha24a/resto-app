@@ -39,16 +39,8 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
 
       <div className="history-list">
         {sortedOrders.length === 0 ? (
-          <div className="no-history">
-            <div
-              className="no-history-icon"
-              style={{ fontSize: "3rem", marginBottom: "15px" }}
-            >
-              🧾
-            </div>
-            <p style={{ fontWeight: "bold", color: "#7f8c8d" }}>
-              まだ注文がありません
-            </p>
+          <div className="empty-history-message">
+            <p>まだ注文履歴がありません</p>
           </div>
         ) : (
           sortedOrders.map((order) => (
@@ -64,9 +56,8 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                         minute: "2-digit",
                       })
                     : "--:--"}
-                  <span className="order-id">
-                    No. {order.id.slice(0, 8)}...
-                  </span>
+                  {/* ★修正: 数値IDなので slice せずそのまま表示 */}
+                  <span className="order-id">No. {order.id}</span>
                 </div>
                 <span
                   className={`status-badge ${getStatusClass(order.status)}`}
@@ -77,14 +68,23 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
 
               <div className="history-items">
                 {(order.items || []).map((item, idx) => (
-                  <div key={idx} className="history-item-row">
-                    <div className="history-item-name">
-                      <span className="item-qty-badge">{item.quantity}</span>
-                      {item.name}
+                  <div key={idx}>
+                    <div className="history-item-row">
+                      <div className="history-item-name">
+                        <span className="item-qty-badge">{item.quantity}</span>
+                        {item.name}
+                      </div>
+                      <div className="sub-total-price">
+                        ¥{(item.totalPrice || 0).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="history-item-price">
-                      ¥{(item.totalPrice || 0).toLocaleString()}
-                    </div>
+                    {/* オプション表示 */}
+                    {item.selectedOptions &&
+                      item.selectedOptions.length > 0 && (
+                        <div className="item-options-history">
+                          {item.selectedOptions.join(", ")}
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>
@@ -92,7 +92,12 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
               <div className="history-card-footer">
                 <span className="sub-total-label">小計</span>
                 <span className="sub-total-price">
-                  ¥{(order.totalAmount || 0).toLocaleString()}
+                  {/* totalAmount または totalPrice どちらかある方を使う */}¥
+                  {(
+                    order.totalAmount ||
+                    order.totalPrice ||
+                    0
+                  ).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -109,7 +114,6 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
         </div>
 
         <div className="history-actions">
-          {/* 店員呼び出しボタン（オレンジ） */}
           <button className="call-staff-btn-secondary" onClick={onCallStaff}>
             <svg
               width="24"
@@ -127,7 +131,6 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
             <span>店員呼出</span>
           </button>
 
-          {/* お会計ボタン（グリーン） */}
           <button
             className="goto-payment-btn"
             onClick={onGoToPaymentView}
