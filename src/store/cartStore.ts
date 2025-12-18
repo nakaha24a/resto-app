@@ -3,7 +3,7 @@ import { MenuItem, CartItem, Order, MenuData } from "../types";
 
 // APIのベースURL
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+  process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
 
 interface CartState {
   cart: CartItem[];

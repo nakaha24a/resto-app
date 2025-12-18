@@ -1,6 +1,7 @@
-// src/components/CategoryNav.tsx
-
+/* src/components/CategoryNav.tsx */
 import React from "react";
+// ★ CSSを読み込む（TopScreenと同じやり方です）
+import "./styles/components.css";
 
 interface CategoryNavProps {
   categories: string[];
@@ -14,11 +15,12 @@ const CategoryNav: React.FC<CategoryNavProps> = ({
   onSelectCategory,
 }) => {
   return (
-    <div className="category-nav">
+    <div className="category-nav-container">
       {categories.map((category) => (
         <button
           key={category}
-          className={`category-tab ${
+          // ★ 選択中かどうかでクラスを切り替える
+          className={`category-nav-button ${
             selectedCategory === category ? "active" : ""
           }`}
           onClick={() => onSelectCategory(category)}

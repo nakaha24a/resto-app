@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 
-// 型定義（既存のMenuItem型を使用）
 interface MenuItem {
   id: string;
   name: string;
@@ -10,8 +9,6 @@ interface MenuItem {
   description?: string;
   isNew?: boolean;
   isSeasonal?: boolean;
-  popularity?: number;
-  isRecommended?: boolean;
 }
 
 interface TopScreenProps {
@@ -19,454 +16,304 @@ interface TopScreenProps {
   recommendations: MenuItem[];
   onSelectCategory: (category: string) => void;
   onCallStaff: (message: string) => void;
-  onSelectItem?: (item: MenuItem) => void;
 }
 
 const PLACEHOLDER_IMG = "https://via.placeholder.com/400x250?text=No+Image";
 
 const TopScreen: React.FC<TopScreenProps> = ({
-  categories,
   recommendations,
   onSelectCategory,
   onCallStaff,
-  onSelectItem,
 }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
-  // ヒーローバナー用のコンテンツ
   const heroSlides = [
     {
       image:
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
-      title: "ようこそ",
-      subtitle: "美味しい料理をお楽しみください",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-      title: "本日のおすすめ",
-      subtitle: "シェフ厳選の特別メニュー",
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80",
+      title: "WELCOME",
+      subtitle: "画面から簡単にご注文いただけます",
     },
   ];
 
-  // 自動スライド
-  useEffect(() => {
-    if (heroSlides.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [heroSlides.length]);
-
-  const getImageUrl = (imagePath: string | undefined) => {
-    if (!imagePath) return PLACEHOLDER_IMG;
-    if (imagePath.startsWith("http")) return imagePath;
-    const path = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
-    return `${API_BASE_URL}${path}`;
+  const getImageUrl = (image?: string) => {
+    if (!image) return PLACEHOLDER_IMG;
+    if (image.startsWith("http")) return image;
+    return `${API_BASE_URL}${image.startsWith("/") ? image : `/${image}`}`;
   };
 
-  // カテゴリアイコンマッピング
-  const categoryIcons: { [key: string]: string } = {
-    前菜: "🥗",
-    メイン: "🍖",
-    デザート: "🍰",
-    ドリンク: "🍷",
-    サイドメニュー: "🍟",
-    コース: "🍽️",
-    default: "🍽️",
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
   };
-
-  // おすすめメニューが実際に存在する場合のみ表示
-  const hasRecommendations = recommendations && recommendations.length > 0;
 
   return (
-    <div style={styles.container}>
-      {/* 1. ヒーローエリア（スライドショー） */}
-      <div style={styles.heroSlider}>
-        {heroSlides.map((slide, index) => (
-          <div
-            key={index}
-            style={{
-              ...styles.heroSlide,
-              opacity: currentSlide === index ? 1 : 0,
-              zIndex: currentSlide === index ? 1 : 0,
-            }}
-          >
-            <img src={slide.image} alt={slide.title} style={styles.heroImage} />
-            <div style={styles.heroOverlay}>
-              <h1 style={styles.heroTitle}>{slide.title}</h1>
-              <p style={styles.heroSubtitle}>{slide.subtitle}</p>
+    <>
+      <style>
+        {`
+/* ========= 共通 ========= */
+.top-container {
+  height: 100%;
+  overflow-y: auto;
+  background: #f2f1ee;
+  padding-bottom: 90px;
+  overflow-x: hidden;
+  font-family: "Noto Sans JP", system-ui, sans-serif;
+}
+
+/* ========= HERO ========= */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.7) contrast(1.08);
+}
+
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 70px 32px 32px;
+  background: linear-gradient(
+    transparent 0%,
+    rgba(0,0,0,0.9) 100%
+  );
+  color: #fff;
+}
+
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  margin: 0;
+}
+
+.hero-subtitle {
+  margin-top: 10px;
+  font-size: 1rem;
+  opacity: 0.85;
+  letter-spacing: 0.08em;
+}
+
+/* ========= MAIN ACTION ========= */
+.main-action {
+  padding: 36px 28px;
+  margin-top: -40px;
+}
+
+.menu-main-btn {
+  width: 100%;
+  padding: 38px 20px;
+  border-radius: 26px;
+  border: none;
+  background: linear-gradient(135deg, #2b2b2b, #111);
+  color: #fff;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.menu-main-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 65px rgba(0,0,0,0.45);
+}
+
+.menu-main-btn:active {
+  transform: translateY(-1px);
+}
+
+.menu-sub {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  letter-spacing: 0.15em;
+}
+
+/* ========= RECOMMEND ========= */
+.recommend-scroll {
+  display: flex;
+  gap: 22px;
+  padding: 10px 28px 40px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.recommend-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.rec-card {
+  min-width: 240px;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  cursor: pointer;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.rec-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 55px rgba(0,0,0,.28);
+}
+
+.rec-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  filter: contrast(1.05) saturate(0.95);
+}
+
+.rec-info {
+  padding: 16px;
+}
+
+.rec-name {
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.rec-price {
+  font-weight: 700;
+  color: #b79b5b; /* ゴールド */
+  letter-spacing: 0.04em;
+}
+
+/* ========= CALL STAFF ========= */
+.call-btn-area {
+  padding: 10px 28px 20px;
+}
+
+.quick-btn.call {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.quick-btn.call:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+/* ========= PC ========= */
+@media (min-width: 1024px) {
+  .hero { height: 380px; }
+  .main-action,
+  .call-btn-area {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+}
+        `}
+      </style>
+
+      <div className="top-container">
+        {/* HERO */}
+        <div className="hero">
+          {heroSlides.map((slide, i) => (
+            <div key={i} className="hero-slide">
+              <img src={slide.image} className="hero-image" alt={slide.title} />
+              <div className="hero-overlay">
+                <h1 className="hero-title">{slide.title}</h1>
+                <p className="hero-subtitle">{slide.subtitle}</p>
+              </div>
             </div>
-          </div>
-        ))}
-
-        {/* スライドインジケーター */}
-        {heroSlides.length > 1 && (
-          <div style={styles.slideIndicators}>
-            {heroSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                style={{
-                  ...styles.indicator,
-                  backgroundColor:
-                    currentSlide === index ? "#fff" : "rgba(255,255,255,0.5)",
-                }}
-                aria-label={`スライド ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 2. クイックアクション */}
-      <div style={styles.quickActions}>
-        <button
-          style={styles.quickBtn}
-          onClick={() => onCallStaff("お水をお願いします")}
-        >
-          <span style={styles.quickIcon}>💧</span>
-          <span style={styles.quickText}>お水</span>
-        </button>
-        <button
-          style={styles.quickBtn}
-          onClick={() => onCallStaff("おしぼりをお願いします")}
-        >
-          <span style={styles.quickIcon}>🧻</span>
-          <span style={styles.quickText}>おしぼり</span>
-        </button>
-        <button
-          style={{ ...styles.quickBtn, ...styles.callBtn }}
-          onClick={() => onCallStaff("スタッフ呼び出し")}
-        >
-          <span style={styles.quickIcon}>🔔</span>
-          <span style={styles.quickText}>店員呼出</span>
-        </button>
-      </div>
-
-      {/* 3. カテゴリグリッド */}
-      <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>
-          <span style={styles.titleBar}></span>
-          カテゴリーから探す
-        </h2>
-        <div style={styles.categoryGrid}>
-          {categories
-            .filter((c) => c !== "TOP" && c !== "おすすめ")
-            .map((cat) => (
-              <button
-                key={cat}
-                style={styles.categoryCard}
-                onClick={() => onSelectCategory(cat)}
-              >
-                <span style={styles.categoryIcon}>
-                  {categoryIcons[cat] || categoryIcons.default}
-                </span>
-                <span style={styles.categoryName}>{cat}</span>
-              </button>
-            ))}
+          ))}
         </div>
-      </section>
 
-      {/* 4. おすすめメニュー（データがある場合のみ表示） */}
-      {hasRecommendations && (
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>
-            <span style={styles.titleBar}></span>
-            シェフのおすすめ
-          </h2>
-          <div style={styles.recommendationScroll}>
+        {/* MAIN MENU ACTION */}
+        <div className="main-action">
+          <button
+            className="menu-main-btn"
+            onClick={() => onSelectCategory("ALL")}
+          >
+            メニューを見る
+            <span className="menu-sub">TAP TO ORDER</span>
+          </button>
+        </div>
+
+        {/* RECOMMEND */}
+        {recommendations.length > 0 && (
+          <div
+            className="recommend-scroll"
+            ref={scrollRef}
+            onScroll={handleScroll}
+          >
             {recommendations.map((item) => (
               <div
                 key={item.id}
-                style={styles.recCard}
-                onClick={() => {
-                  // おすすめアイテムをクリックしたら、そのカテゴリに移動
-                  if (item.category && item.category !== "TOP") {
-                    onSelectCategory(item.category);
-                  } else {
-                    // カテゴリ情報がない場合はメニュー画面へ
-                    onSelectCategory("メニュー");
-                  }
-                }}
+                className="rec-card"
+                onClick={() => onSelectCategory(item.category || "メニュー")}
               >
-                {item.isNew && <div style={styles.newBadge}>NEW</div>}
-                {item.isSeasonal && (
-                  <div style={styles.seasonalBadge}>期間限定</div>
-                )}
-
                 <img
                   src={getImageUrl(item.image)}
+                  className="rec-image"
                   alt={item.name}
-                  style={styles.recImage}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = PLACEHOLDER_IMG;
-                  }}
+                  onError={(e) =>
+                    ((e.target as HTMLImageElement).src = PLACEHOLDER_IMG)
+                  }
                 />
-
-                <div style={styles.recInfo}>
-                  <h3 style={styles.recName}>{item.name}</h3>
-                  {item.description && (
-                    <p style={styles.recDescription}>{item.description}</p>
-                  )}
-                  <p style={styles.recPrice}>¥{item.price.toLocaleString()}</p>
+                <div className="rec-info">
+                  <div className="rec-name">{item.name}</div>
+                  <div className="rec-price">
+                    ¥{item.price.toLocaleString()}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
 
-      {/* おすすめメニューがない場合のメッセージ（開発中のみ表示） */}
-      {!hasRecommendations && process.env.NODE_ENV === "development" && (
-        <div style={styles.emptyMessage}>
-          <p>おすすめメニューはまだ設定されていません</p>
-          <p style={{ fontSize: "0.9rem", color: "#999" }}>
-            管理画面からメニューに「おすすめ」フラグを設定してください
-          </p>
+        {/* CALL STAFF */}
+        <div className="call-btn-area">
+          <button
+            className="quick-btn call"
+            onClick={() => onCallStaff("スタッフ呼び出し")}
+          >
+            🔔 店員を呼ぶ
+          </button>
         </div>
-      )}
-
-      {/* 余白 */}
-      <div style={{ height: "100px" }}></div>
-    </div>
+      </div>
+    </>
   );
-};
-
-// スタイル定義
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    width: "100%",
-    height: "100%",
-    overflowY: "auto",
-    backgroundColor: "#f8f9fa",
-    paddingBottom: "80px",
-  },
-
-  // ヒーロースライダー
-  heroSlider: {
-    position: "relative",
-    width: "100%",
-    height: "280px",
-    overflow: "hidden",
-    marginBottom: "20px",
-  },
-  heroSlide: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    transition: "opacity 1s ease-in-out",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  heroOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
-    padding: "40px 20px 20px",
-    color: "#fff",
-  },
-  heroTitle: {
-    margin: 0,
-    fontSize: "2rem",
-    fontWeight: "800",
-    letterSpacing: "0.05em",
-  },
-  heroSubtitle: {
-    margin: "8px 0 0",
-    fontSize: "1.1rem",
-    opacity: 0.95,
-  },
-  slideIndicators: {
-    position: "absolute",
-    bottom: "10px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    display: "flex",
-    gap: "8px",
-    zIndex: 2,
-  },
-  indicator: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "50%",
-    border: "none",
-    cursor: "pointer",
-    transition: "all 0.3s",
-  },
-
-  // クイックアクション
-  quickActions: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "12px",
-    padding: "0 20px",
-    marginBottom: "30px",
-  },
-  quickBtn: {
-    background: "white",
-    border: "2px solid #e0e0e0",
-    borderRadius: "16px",
-    padding: "20px 10px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    transition: "all 0.2s",
-  },
-  callBtn: {
-    background: "linear-gradient(135deg, #f39c12, #d35400)",
-    borderColor: "#f39c12",
-    color: "white",
-  },
-  quickIcon: {
-    fontSize: "2rem",
-  },
-  quickText: {
-    fontSize: "1rem",
-    fontWeight: "700",
-  },
-
-  // セクション共通
-  section: {
-    marginBottom: "40px",
-  },
-  sectionTitle: {
-    fontSize: "1.4rem",
-    fontWeight: "800",
-    margin: "0 20px 20px",
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    color: "#2c3e50",
-  },
-  titleBar: {
-    width: "5px",
-    height: "24px",
-    backgroundColor: "#ff9f43",
-    borderRadius: "3px",
-  },
-
-  // カテゴリグリッド
-  categoryGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "15px",
-    padding: "0 20px",
-  },
-  categoryCard: {
-    background: "white",
-    border: "none",
-    borderRadius: "20px",
-    height: "100px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-    cursor: "pointer",
-    transition: "transform 0.2s, box-shadow 0.2s",
-  },
-  categoryIcon: {
-    fontSize: "2.5rem",
-  },
-  categoryName: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#333",
-  },
-
-  // おすすめメニュー
-  recommendationScroll: {
-    display: "flex",
-    overflowX: "auto",
-    gap: "20px",
-    padding: "0 20px 10px",
-    scrollSnapType: "x mandatory",
-    WebkitOverflowScrolling: "touch",
-  },
-  recCard: {
-    position: "relative",
-    minWidth: "220px",
-    background: "white",
-    borderRadius: "16px",
-    overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    cursor: "pointer",
-    scrollSnapAlign: "start",
-    transition: "transform 0.2s",
-  },
-  newBadge: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    background: "#ff6b6b",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "20px",
-    fontSize: "0.75rem",
-    fontWeight: "800",
-    zIndex: 1,
-  },
-  seasonalBadge: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    background: "#1dd1a1",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "20px",
-    fontSize: "0.75rem",
-    fontWeight: "800",
-    zIndex: 1,
-  },
-  recImage: {
-    width: "100%",
-    height: "140px",
-    objectFit: "cover",
-  },
-  recInfo: {
-    padding: "15px",
-  },
-  recName: {
-    margin: "0 0 8px",
-    fontSize: "1.05rem",
-    fontWeight: "700",
-    color: "#333",
-  },
-  recDescription: {
-    margin: "0 0 10px",
-    fontSize: "0.85rem",
-    color: "#777",
-    lineHeight: "1.4",
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  },
-  recPrice: {
-    margin: 0,
-    fontSize: "1.15rem",
-    fontWeight: "800",
-    color: "#ff6b6b",
-  },
-
-  // 空メッセージ
-  emptyMessage: {
-    textAlign: "center",
-    padding: "40px 20px",
-    color: "#999",
-  },
 };
 
 export default TopScreen;

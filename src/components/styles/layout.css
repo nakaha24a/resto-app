@@ -151,8 +151,7 @@ body,
 
 /* --- 決済・完了画面 --- */
 .payment-options-screen,
-.split-bill-screen,
-.thanks-screen {
+.split-bill-screen {
   padding: 30px;
   height: 100%;
   overflow-y: auto;

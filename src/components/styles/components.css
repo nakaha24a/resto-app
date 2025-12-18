@@ -77,6 +77,47 @@
   white-space: nowrap;
   border-bottom: 1px solid var(--border-color);
 }
+.category-nav-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding: 15px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+  /* スクロールバーを隠す（お好みで） */
+  scrollbar-width: none;
+}
+.category-nav-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* カテゴリボタン（ここを大きくします） */
+.category-nav-button {
+  flex: 0 0 auto; /* 勝手に縮まないようにする */
+  min-width: 100px; /* ★幅を最低100px確保 */
+  height: 50px; /* ★高さを50px（以前より大きく） */
+  padding: 0 20px;
+  border-radius: 25px; /* 丸みを強く */
+  border: 2px solid #ddd;
+  background-color: #f9f9f9;
+  font-size: 1.1rem; /* ★文字サイズを大きく */
+  font-weight: 700;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 選択中のカテゴリボタン */
+.category-nav-button.active {
+  background-color: #ff9f43; /* テーマカラー */
+  border-color: #ff9f43;
+  color: white;
+  transform: scale(1.05); /* 選んだ時に少し大きく */
+  box-shadow: 0 4px 10px rgba(255, 159, 67, 0.3);
+}
 .category-tab {
   display: inline-block;
   padding: 8px 16px;
@@ -704,8 +745,7 @@
 
 /* 画面全体のコンテナ */
 .payment-options-screen,
-.split-bill-screen,
-.thanks-screen {
+.split-bill-screen {
   height: 100%;
   width: 100%;
   display: flex;
@@ -728,22 +768,6 @@
   width: 100%;
 }
 
-/* --- ありがとうございました画面 (おしゃれ版) --- */
-.thanks-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  padding: 60px 40px;
-  border-radius: 30px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); /* ふんわり浮いた影 */
-  max-width: 600px;
-  width: 90%;
-  text-align: center;
-  animation: zoomIn 0.5s ease-out;
-}
-
 /* チェックマークのアニメーション円 */
 .checkmark-circle {
   width: 100px;
@@ -760,21 +784,6 @@
 .checkmark-icon {
   font-size: 3.5rem;
   color: white;
-}
-
-.thanks-container h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #2c3e50;
-  margin: 0 0 15px 0;
-  letter-spacing: 0.05em;
-}
-
-.thanks-container p {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-  margin: 0 0 40px 0;
-  line-height: 1.6;
 }
 
 /* トップへ戻るボタン */
@@ -1317,7 +1326,6 @@
 .count-stepper button,
 .option-buttons .option-btn,
 .split-controls-footer button,
-.thanks-screen button,
 .modal-close-button,
 .modal-quantity button,
 .add-to-cart-button {
@@ -1334,7 +1342,6 @@
 .count-stepper button:active:not(:disabled),
 .option-buttons .option-btn:active,
 .split-controls-footer button:active,
-.thanks-screen button:active,
 .modal-close-button:active,
 .modal-quantity button:active:not(:disabled),
 .add-to-cart-button:active {
