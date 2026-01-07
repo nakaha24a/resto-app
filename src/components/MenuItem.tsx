@@ -36,11 +36,9 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
   };
 
   const handleItemClick = () => {
-    if (item.options && item.options.length > 0) {
-      setIsModalOpen(true);
-    } else {
-      addToCart(item, 1, []);
-    }
+    // ★修正: オプションの有無に関わらず、常にモーダルを開くように変更
+    // これにより、すべての商品で「詳細確認 → 個数選択 → カート追加」の流れに統一されます
+    setIsModalOpen(true);
   };
 
   const handleModalConfirm = (quantity: number, selectedOptions: string[]) => {

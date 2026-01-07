@@ -6,9 +6,10 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  image?: string; // 画像はない場合もあるので ? (任意) に
+  image?: string;
   category: string;
-  options?: string[]; // ★修正: シンプルに文字列の配列に変更
+  // 文字列 または { name, price } のオブジェクトを許可
+  options?: (string | { name: string; price: number })[];
   isRecommended?: boolean;
   allergens?: string[];
 }
@@ -28,20 +29,18 @@ export interface MenuData {
 // カートに入っている商品の定義
 export interface CartItem extends MenuItem {
   quantity: number;
-  selectedOptions: string[]; // ★修正: string[] に統一してエラー解消
+  // ★ここを修正！ string[] から変更して、オブジェクトも許可します
+  selectedOptions: (string | { name: string; price: number })[];
   totalPrice: number;
 }
 
 // 注文履歴の定義
 export interface Order {
-  id: number; // ★修正: DBのIDは数値なので number
-  table_number: number; // ★修正: DBのカラム名に合わせる (tableNum → table_number)
-  items: CartItem[]; // 注文内容は CartItem の配列
-
-  // ★修正: 場所によって名前が違うため、両方定義してエラーを防ぐ
+  id: number;
+  table_number: number;
+  items: CartItem[];
   totalPrice?: number;
   totalAmount?: number;
-
   timestamp: string;
-  status: string; // 文字列として広く許容
+  status: string;
 }

@@ -25,22 +25,17 @@ interface OrderScreenProps {
   onCallStaff: (message: string) => void;
 }
 
-// カテゴリ取得ロジック
 const getCategories = (menuData: MenuData | null): string[] => {
   if (!menuData || !Array.isArray(menuData.categories)) return [];
 
   const categoryNames = menuData.categories.map((c: Category) => c.name);
   const uniqueNames = Array.from(new Set(categoryNames));
-
-  // "TOP" は除外
   const filtered = uniqueNames.filter((n) => n !== "TOP");
 
-  // おすすめメニューが存在するかチェック
   const hasRecommended = menuData.categories
     .flatMap((c) => c.items)
     .some((item) => item.isRecommended);
 
-  // おすすめがあれば先頭に追加
   if (hasRecommended && !filtered.includes("おすすめ")) {
     return ["おすすめ", ...filtered];
   }
@@ -65,7 +60,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const menuLoading = useCartStore((state) => state.menuLoading);
   const menuError = useCartStore((state) => state.error);
 
-  // おすすめ商品リスト
   const recommendedItems = useMemo(() => {
     if (!menuData) return [];
     return menuData.categories
@@ -74,6 +68,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   }, [menuData]);
 
   const tableNum = useMemo(() => {
+    // T-1 や user1 などの文字列から数字だけを取り出す
     const num = parseInt(userId.replace(/[^0-9]/g, ""), 10);
     return isNaN(num) ? 0 : num;
   }, [userId]);
@@ -93,17 +88,13 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ★ 修正: カテゴリ選択の自動補正ロジックを強化
   useEffect(() => {
     if (!menuLoading && menuData && CATEGORIES.length > 0) {
-      // まだカテゴリが選ばれていない、または無効なカテゴリが選ばれている場合
       if (!selectedCategory || !CATEGORIES.includes(selectedCategory)) {
-        // 「おすすめ」があればそれを、なければリストの先頭を選ぶ
         const initialCategory = CATEGORIES.includes("おすすめ")
           ? "おすすめ"
           : CATEGORIES[0];
 
-        // 念のため、空でないことを確認してセット
         if (initialCategory) {
           setSelectedCategory(initialCategory);
         }
@@ -134,7 +125,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       );
     if (!menuData) return null;
 
-    // TOP画面
     if (activeTab === "TOP") {
       return (
         <TopScreen
@@ -149,9 +139,7 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       );
     }
 
-    // メニュー画面
     if (activeTab === "ORDER") {
-      // ★念のためここでもカテゴリがない場合のガードを入れる
       const activeCategory =
         selectedCategory || (CATEGORIES.length > 0 ? CATEGORIES[0] : "");
 
@@ -179,7 +167,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
       );
     }
 
-    // 履歴画面
     if (activeTab === "HISTORY") {
       return (
         <OrderHistoryPane
@@ -214,7 +201,6 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
         activeTab={activeTab}
         onNavigate={(tab) => {
           if (tab === "ORDER") {
-            // メニュー画面に行くとき、カテゴリ未選択なら初期値をセット
             if (!selectedCategory && CATEGORIES.length > 0) {
               const defaultCat = CATEGORIES.includes("おすすめ")
                 ? "おすすめ"

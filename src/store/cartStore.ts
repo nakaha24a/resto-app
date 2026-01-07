@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { MenuItem, CartItem, Order, MenuData } from "../types";
 
-// APIのベースURL
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
 
@@ -11,26 +10,29 @@ interface CartState {
   menuData: MenuData | null;
   menuLoading: boolean;
   error: string | null;
+  lastCheckoutTime: number;
 
-  // アクション
   fetchMenu: () => Promise<void>;
-
-  // ★修正: 引数が渡されてもエラーにならないように any型で許可する
   fetchMenuData: (arg?: any) => Promise<void>;
-
   fetchOrders: (tableNumber: number) => Promise<void>;
-  addToCart: (item: MenuItem, quantity: number, options?: string[]) => void;
+  addToCart: (
+    item: MenuItem,
+    quantity: number,
+    options?: (string | { name: string; price: number })[]
+  ) => void;
   removeFromCart: (index: number) => void;
   updateCartItemQuantity: (index: number, quantity: number) => void;
-
   placeOrder: (tableNumber: number) => Promise<Order | null>;
-
-  // ★修正: 引数が渡されてもエラーにならないように any型で許可する
-  checkout: (arg?: any) => void;
-
+  checkout: (tableNumber: number) => Promise<void>;
   callStaff: (tableNumber: number) => Promise<void>;
   clearCart: () => void;
 }
+
+// 最後に会計した時間をlocalStorageから取得するヘルパー
+const getLastCheckoutTime = (tableNumber: number) => {
+  const stored = localStorage.getItem(`resto_last_checkout_${tableNumber}`);
+  return stored ? parseInt(stored, 10) : 0;
+};
 
 const useCartStore = create<CartState>((set, get) => ({
   cart: [],
@@ -38,8 +40,8 @@ const useCartStore = create<CartState>((set, get) => ({
   menuData: null,
   menuLoading: false,
   error: null,
+  lastCheckoutTime: 0,
 
-  // メニュー取得
   fetchMenu: async () => {
     set({ menuLoading: true, error: null });
     try {
@@ -52,29 +54,44 @@ const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  // ★修正: 引数を受け取るが、内部では無視して fetchMenu を呼ぶ
   fetchMenuData: async (_arg?: any) => {
     await get().fetchMenu();
   },
 
-  // 注文履歴取得
   fetchOrders: async (tableNumber: number) => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`
       );
       if (response.ok) {
-        const data = await response.json();
-        set({ orders: data });
+        const allOrders: Order[] = await response.json();
+
+        // フィルタリング: 「前回の会計時間」よりあとに作られた注文だけを表示
+        const checkoutTime = getLastCheckoutTime(tableNumber);
+
+        const currentSessionOrders = allOrders.filter((order) => {
+          const orderTime = new Date(order.timestamp).getTime();
+          return orderTime > checkoutTime;
+        });
+
+        set({ orders: currentSessionOrders, lastCheckoutTime: checkoutTime });
       }
     } catch (err) {
       console.error("注文履歴の取得に失敗:", err);
     }
   },
 
-  // カートに追加
   addToCart: (item, quantity, options = []) => {
     set((state) => {
+      const basePrice = Number(item.price) || 0;
+      const optionsPrice = options.reduce((sum, opt) => {
+        if (typeof opt === "object" && opt !== null && "price" in opt) {
+          return sum + (Number(opt.price) || 0);
+        }
+        return sum;
+      }, 0);
+
+      const unitPrice = basePrice + optionsPrice;
       const existingIndex = state.cart.findIndex(
         (c) =>
           c.id === item.id &&
@@ -85,14 +102,14 @@ const useCartStore = create<CartState>((set, get) => ({
         const newCart = [...state.cart];
         newCart[existingIndex].quantity += quantity;
         newCart[existingIndex].totalPrice =
-          newCart[existingIndex].price * newCart[existingIndex].quantity;
+          unitPrice * newCart[existingIndex].quantity;
         return { cart: newCart };
       } else {
         const newItem: CartItem = {
           ...item,
           quantity,
-          selectedOptions: options,
-          totalPrice: item.price * quantity,
+          selectedOptions: options as any,
+          totalPrice: unitPrice * quantity,
         };
         return { cart: [...state.cart, newItem] };
       }
@@ -111,18 +128,39 @@ const useCartStore = create<CartState>((set, get) => ({
       if (quantity <= 0) {
         return { cart: newCart.filter((_, i) => i !== index) };
       }
+
+      const item = newCart[index];
+      const basePrice = Number(item.price) || 0;
+      const optionsPrice = (item.selectedOptions || []).reduce(
+        (sum: number, opt: any) => {
+          if (typeof opt === "object" && opt !== null && "price" in opt) {
+            return sum + (Number(opt.price) || 0);
+          }
+          return sum;
+        },
+        0
+      );
+
       newCart[index].quantity = quantity;
-      newCart[index].totalPrice = newCart[index].price * quantity;
+      newCart[index].totalPrice = (basePrice + optionsPrice) * quantity;
       return { cart: newCart };
     });
   },
 
   clearCart: () => set({ cart: [] }),
 
-  // ★修正: 引数を受け取るが無視してカートを空にする
-  checkout: (_arg?: any) => set({ cart: [] }),
+  // ★修正箇所: ここから fetch を完全に削除しました
+  checkout: async (tableNumber: number) => {
+    const now = Date.now();
+    // 1. ローカルストレージに今の時間を記録（これが「区切り」になります）
+    localStorage.setItem(`resto_last_checkout_${tableNumber}`, now.toString());
 
-  // 注文確定
+    // 2. 画面の状態をリセット
+    set({ cart: [], orders: [], lastCheckoutTime: now });
+
+    // 通信処理は一切書きません！
+  },
+
   placeOrder: async (tableNumber: number) => {
     const { cart } = get();
     if (cart.length === 0) return null;
@@ -138,7 +176,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
       const newOrder = await response.json();
       set({ cart: [] });
-      await get().fetchOrders(tableNumber); // 履歴を即更新
+      await get().fetchOrders(tableNumber);
       return newOrder;
     } catch (err: any) {
       set({ error: err.message });
@@ -146,7 +184,6 @@ const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  // スタッフ呼び出し
   callStaff: async (tableNumber: number) => {
     try {
       await fetch(`${API_BASE_URL}/api/call`, {
@@ -161,7 +198,6 @@ const useCartStore = create<CartState>((set, get) => ({
   },
 }));
 
-// フック
 export const useCartTotalAmount = () => {
   const cart = useCartStore((state) => state.cart);
   return cart.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
@@ -169,10 +205,22 @@ export const useCartTotalAmount = () => {
 
 export const useTotalBillAmount = () => {
   const orders = useCartStore((state) => state.orders);
-  return orders.reduce((sum, order) => {
-    const price = order.totalAmount || order.totalPrice || 0;
-    return sum + price;
+  return orders.reduce((total, order) => {
+    const orderTotal =
+      order.totalAmount ||
+      order.totalPrice ||
+      (order.items || []).reduce(
+        (sub, item) => sub + (item.totalPrice || 0),
+        0
+      );
+    return total + orderTotal;
   }, 0);
+};
+
+export const useSessionTotal = () => {
+  const cartTotal = useCartTotalAmount();
+  const billTotal = useTotalBillAmount();
+  return billTotal + cartTotal;
 };
 
 export default useCartStore;

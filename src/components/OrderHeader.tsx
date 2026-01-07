@@ -16,14 +16,18 @@ const OrderHeader: React.FC<OrderHeaderProps> = ({
 }) => {
   return (
     <header className="order-header">
-      <div className="tablet-info">Table: {userId.replace("user", "")}</div>
+      <div className="header-left">
+        {/* シンプルにテーブル番号のみ表示 */}
+        <div className="tablet-info">
+          Table: {userId.replace("T-", "").replace("user", "")}
+        </div>
+      </div>
 
       <div className="search-bar-container">
-        {/* ★修正ポイント: id, name, autoComplete を追加 */}
         <input
-          id="menu-search-input" // ★追加
-          name="menuSearch" // ★追加
-          autoComplete="off" // ★追加（勝手な補完を防ぐ場合）
+          id="menu-search-input"
+          name="menuSearch"
+          autoComplete="off"
           type="text"
           className="search-input"
           placeholder="メニューを検索..."
@@ -48,6 +52,14 @@ const OrderHeader: React.FC<OrderHeaderProps> = ({
         </svg>
         <span>呼出</span>
       </button>
+
+      <style>{`
+        .header-left {
+          display: flex;
+          align-items: center;
+        }
+        /* 金額表示用のスタイルは削除 */
+      `}</style>
     </header>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// ★修正: Option型は削除されたのでインポートしない
 import { MenuItem } from "../types";
 
 interface OptionModalProps {
@@ -16,10 +15,30 @@ const OptionModal: React.FC<OptionModalProps> = ({
   onConfirm,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  // ★修正: Setの中身は string
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(
     new Set()
   );
+
+  // ★追加: 画像URL生成のためのロジック (MenuItem.tsxからコピー)
+  const API_BASE_URL =
+    process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
+
+  const getImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return "https://via.placeholder.com/300x200?text=No+Image";
+
+    // すでにhttpがついている完全なURLならそのまま返す
+    if (imagePath.startsWith("http")) return imagePath;
+
+    // 先頭の / を削除してきれいにする
+    let cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+
+    // パスの中に「assets」も「static」も含まれていなければ、「assets/」を先頭に足す
+    if (!cleanPath.startsWith("assets/") && !cleanPath.startsWith("static/")) {
+      cleanPath = `assets/${cleanPath}`;
+    }
+
+    return `${API_BASE_URL}/${cleanPath}`;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -30,7 +49,6 @@ const OptionModal: React.FC<OptionModalProps> = ({
 
   if (!isOpen) return null;
 
-  // ★修正: オプションは string として受け取る
   const handleOptionChange = (optionName: string) => {
     const newOptions = new Set(selectedOptions);
     if (newOptions.has(optionName)) {
@@ -55,9 +73,14 @@ const OptionModal: React.FC<OptionModalProps> = ({
 
         {menuItem.image && (
           <img
-            src={menuItem.image}
+            // ★修正: getImageUrlを通して正しいURLにする
+            src={getImageUrl(menuItem.image)}
             alt={menuItem.name}
             className="modal-image"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "https://via.placeholder.com/300x200?text=No+Image";
+            }}
           />
         )}
 
@@ -67,18 +90,29 @@ const OptionModal: React.FC<OptionModalProps> = ({
         {menuItem.options && menuItem.options.length > 0 && (
           <div className="modal-options">
             <h4>オプションを選択:</h4>
-            {/* ★修正: option は文字列そのもの */}
-            {menuItem.options.map((optionName, idx) => (
-              <div key={idx} className="option-item">
-                <input
-                  type="checkbox"
-                  id={`option-${idx}`}
-                  checked={selectedOptions.has(optionName)}
-                  onChange={() => handleOptionChange(optionName)}
-                />
-                <label htmlFor={`option-${idx}`}>{optionName}</label>
-              </div>
-            ))}
+            {menuItem.options.map((option, idx) => {
+              // ★安全策: optionがオブジェクトの場合にも対応できるようにする
+              const isObject = typeof option === "object" && option !== null;
+              // @ts-ignore
+              const optionName = isObject ? option.name : option;
+              // @ts-ignore
+              const optionPrice = isObject ? option.price : 0;
+
+              return (
+                <div key={idx} className="option-item">
+                  <input
+                    type="checkbox"
+                    id={`option-${idx}`}
+                    checked={selectedOptions.has(optionName)}
+                    onChange={() => handleOptionChange(optionName)}
+                  />
+                  <label htmlFor={`option-${idx}`}>
+                    {optionName}
+                    {optionPrice > 0 && ` (+¥${optionPrice})`}
+                  </label>
+                </div>
+              );
+            })}
           </div>
         )}
 

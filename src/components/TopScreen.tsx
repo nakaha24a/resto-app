@@ -60,6 +60,7 @@ const TopScreen: React.FC<TopScreenProps> = ({
         {`
 /* ========= 共通 ========= */
 .top-container {
+  width: 100%;
   height: 100%;
   overflow-y: auto;
   background: #f2f1ee;
@@ -95,7 +96,7 @@ const TopScreen: React.FC<TopScreenProps> = ({
   padding: 70px 32px 32px;
   background: linear-gradient(
     transparent 0%,
-    rgba(0,0,0,0.9) 100%
+    rgba(0,0,0,0.7) 100%
   );
   color: #fff;
 }
@@ -105,142 +106,150 @@ const TopScreen: React.FC<TopScreenProps> = ({
   font-weight: 600;
   letter-spacing: 0.25em;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .hero-subtitle {
   margin-top: 10px;
   font-size: 1rem;
-  opacity: 0.85;
+  opacity: 0.95;
   letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
-/* ========= MAIN ACTION ========= */
+/* ========= MAIN ACTION (修正: 重なりを解消) ========= */
 .main-action {
-  padding: 36px 28px;
-  margin-top: -40px;
+  padding: 24px 28px;
+  /* margin-top: -40px;  <-- これを削除して重なりをなくしました */
+  background: #fff; /* 背景を白にして区切りを明確に */
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid #eee;
 }
 
 .menu-main-btn {
   width: 100%;
-  padding: 38px 20px;
-  border-radius: 26px;
+  padding: 30px 20px;
+  border-radius: 16px;
   border: none;
-  background: linear-gradient(135deg, #2b2b2b, #111);
+  background: #222;
   color: #fff;
-  font-size: 1.9rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  letter-spacing: 0.1em;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
   cursor: pointer;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-
-.menu-main-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 24px 65px rgba(0,0,0,0.45);
+  gap: 15px;
+  transition: transform .2s ease;
 }
 
 .menu-main-btn:active {
-  transform: translateY(-1px);
+  transform: scale(0.98);
 }
 
 .menu-sub {
-  font-size: 0.85rem;
-  opacity: 0.7;
-  letter-spacing: 0.15em;
+  font-size: 0.9rem;
+  font-weight: normal;
+  opacity: 0.8;
+  letter-spacing: 0.05em;
+  margin-left: 10px;
 }
 
-/* ========= RECOMMEND ========= */
+/* ========= RECOMMEND (修正: 見出しを追加) ========= */
+.recommend-section {
+  padding: 30px 0;
+  background: #f8f9fa; /* 背景色をつけてエリアを分ける */
+}
+
+.recommend-header {
+  padding: 0 28px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recommend-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  letter-spacing: 0.05em;
+  margin: 0;
+  border-left: 5px solid #b79b5b; /* 左にアクセントライン */
+  padding-left: 12px;
+}
+
 .recommend-scroll {
   display: flex;
-  gap: 22px;
-  padding: 10px 28px 40px;
+  gap: 16px;
+  padding: 0 28px 20px;
   overflow-x: auto;
   scrollbar-width: none;
 }
-
 .recommend-scroll::-webkit-scrollbar {
   display: none;
 }
 
 .rec-card {
-  min-width: 240px;
+  min-width: 200px; /* サイズ調整 */
   background: #fff;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   cursor: pointer;
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-
-.rec-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 55px rgba(0,0,0,.28);
 }
 
 .rec-image {
   width: 100%;
-  height: 150px;
+  height: 130px;
   object-fit: cover;
-  filter: contrast(1.05) saturate(0.95);
 }
 
 .rec-info {
-  padding: 16px;
+  padding: 12px;
 }
 
 .rec-name {
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .rec-price {
-  font-weight: 700;
-  color: #b79b5b; /* ゴールド */
-  letter-spacing: 0.04em;
+  font-weight: bold;
+  color: #b79b5b;
 }
 
 /* ========= CALL STAFF ========= */
 .call-btn-area {
-  padding: 10px 28px 20px;
+  padding: 20px 28px 40px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .quick-btn.call {
   width: 100%;
-  background: transparent;
-  border: 1px solid rgba(0,0,0,0.25);
-  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
   padding: 18px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  color: #333;
+  color: #444;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
-  transition: background .2s ease;
-}
-
-.quick-btn.call:hover {
-  background: rgba(0,0,0,0.04);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 /* ========= PC ========= */
 @media (min-width: 1024px) {
-  .hero { height: 380px; }
-  .main-action,
-  .call-btn-area {
-    max-width: 640px;
-    margin: 0 auto;
-  }
+  .hero { height: 400px; }
 }
         `}
       </style>
@@ -266,39 +275,45 @@ const TopScreen: React.FC<TopScreenProps> = ({
             onClick={() => onSelectCategory("ALL")}
           >
             メニューを見る
-            <span className="menu-sub">TAP TO ORDER</span>
+            <span className="menu-sub">Tap to Order</span>
           </button>
         </div>
 
         {/* RECOMMEND */}
         {recommendations.length > 0 && (
-          <div
-            className="recommend-scroll"
-            ref={scrollRef}
-            onScroll={handleScroll}
-          >
-            {recommendations.map((item) => (
-              <div
-                key={item.id}
-                className="rec-card"
-                onClick={() => onSelectCategory(item.category || "メニュー")}
-              >
-                <img
-                  src={getImageUrl(item.image)}
-                  className="rec-image"
-                  alt={item.name}
-                  onError={(e) =>
-                    ((e.target as HTMLImageElement).src = PLACEHOLDER_IMG)
-                  }
-                />
-                <div className="rec-info">
-                  <div className="rec-name">{item.name}</div>
-                  <div className="rec-price">
-                    ¥{item.price.toLocaleString()}
+          <div className="recommend-section">
+            <div className="recommend-header">
+              <h3 className="recommend-title">おすすめメニュー</h3>
+            </div>
+
+            <div
+              className="recommend-scroll"
+              ref={scrollRef}
+              onScroll={handleScroll}
+            >
+              {recommendations.map((item) => (
+                <div
+                  key={item.id}
+                  className="rec-card"
+                  onClick={() => onSelectCategory(item.category || "メニュー")}
+                >
+                  <img
+                    src={getImageUrl(item.image)}
+                    className="rec-image"
+                    alt={item.name}
+                    onError={(e) =>
+                      ((e.target as HTMLImageElement).src = PLACEHOLDER_IMG)
+                    }
+                  />
+                  <div className="rec-info">
+                    <div className="rec-name">{item.name}</div>
+                    <div className="rec-price">
+                      ¥{item.price.toLocaleString()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
