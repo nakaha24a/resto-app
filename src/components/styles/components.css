@@ -1214,61 +1214,17 @@
   transform: scale(0.95);
   box-shadow: 0 2px 5px rgba(243, 156, 18, 0.3);
 }
-.goto-payment-btn {
-  background: linear-gradient(135deg, #1dd1a1, #10ac84);
-  color: white;
-  border: none;
-  border-radius: 50px;
-  padding: 16px 24px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(29, 209, 161, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
-}
-.goto-payment-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(29, 209, 161, 0.6);
-  filter: brightness(110%);
-}
-.goto-payment-btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 2px 10px rgba(29, 209, 161, 0.3);
-}
-.goto-payment-btn:disabled {
-  background: #bdc3c7;
-  box-shadow: none;
-  cursor: not-allowed;
-  opacity: 0.7;
-  transform: none;
-}
-.goto-payment-btn::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  transition: 0.5s;
-}
-.goto-payment-btn:hover::after {
-  left: 150%;
-  transition: 0.7s ease-in-out;
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 200%;
+  } /* 素早く通り過ぎる */
+  100% {
+    left: 200%;
+  } /* 残りの時間は待機 */
 }
 
 .nav-tab {
@@ -1314,7 +1270,6 @@
 }
 
 .order-confirm-button,
-.goto-payment-btn,
 .call-staff-button-header,
 .quantity-button,
 .cart-qty-btn,
@@ -1332,7 +1287,6 @@
   transition: all 0.2s ease;
 }
 .order-confirm-button:active:not(:disabled),
-.goto-payment-btn:active:not(:disabled),
 .call-staff-button-header:active,
 .quantity-button:active:not(:disabled),
 .cart-qty-btn:active,
@@ -1351,4 +1305,130 @@
 .nav-tab:active,
 .category-tab:active {
   transform: scale(0.95);
+}
+/* =========================================
+   基本レイアウト (1080x800 タブレット最適化)
+   ========================================= */
+
+/* 画面全体の枠組み */
+.order-screen-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f3f4f6;
+  overflow: hidden; /* 画面全体はスクロールさせない */
+}
+
+/* ヘッダーとボトムナビを除いたメインエリア */
+.order-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: row; /* 左：メニュー、右：カート */
+  overflow: hidden; /* 内部で個別にスクロールさせる */
+}
+
+/* ----------------------------------
+   左側：メニュー表示エリア
+   ---------------------------------- */
+.main-content-wrapper {
+  flex: 1; /* 残りの幅を全部使う (約 760px ~ 780px) */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* カテゴリナビ (横スクロール) */
+.category-nav {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 10px;
+  background-color: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0; /* 高さが縮まないように */
+}
+
+/* メニューコンテンツのスクロール領域 */
+.menu-content {
+  flex: 1;
+  overflow-y: auto; /* 縦スクロール */
+  padding: 15px;
+}
+
+/* ★重要: 1080px向けグリッド設定 (3列) */
+.menu-grid {
+  display: grid;
+  /* 最小幅 220px で自動折り返し
+     1080px画面でカート300pxを除くと、残り約780px。
+     Gapを含めてちょうど「3列」になります。
+  */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+  padding-bottom: 80px; /* 下部ナビに隠れないように余白 */
+}
+
+/* ----------------------------------
+   右側：カートサイドバー (固定幅)
+   ---------------------------------- */
+.cart-sidebar {
+  width: 320px; /* 1080pxの画面なら320pxが黄金比 */
+  background-color: #fff;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex-shrink: 0; /* 幅が縮まないように固定 */
+}
+
+/* ----------------------------------
+   メニューカードのデザイン
+   ---------------------------------- */
+.menu-item-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 高さを揃える */
+}
+
+.menu-item-image {
+  width: 100%;
+  height: 160px; /* 画像の高さ固定 */
+  object-fit: cover;
+}
+
+.menu-item-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.menu-item-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.menu-item-price {
+  font-weight: bold;
+  color: #333;
+  font-size: 1.2rem;
+  margin-top: auto; /* 価格を一番下に寄せる */
+}
+
+/* 追加ボタン */
+.add-button {
+  background-color: #eee;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
 }

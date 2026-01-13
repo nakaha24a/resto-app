@@ -14,7 +14,7 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   onGoToPaymentView,
   onCallStaff,
 }) => {
-  // 新しい順に並び替え
+  // 注文データの新しい順ソート（ロジックは維持）
   const sortedOrders = [...pendingOrders].sort((a, b) => {
     const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
     const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
@@ -22,79 +22,77 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
   });
 
   return (
-    <div className="history-pane-container">
-      <h2 className="history-title">注文履歴</h2>
+    <div
+      className="history-pane-container"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        backgroundColor: "#fff",
+        borderLeft: "1px solid #ddd", // 画面右端に置く場合の境界線
+      }}
+    >
+      {/* --- ヘッダー部分 --- */}
+      <div
+        style={{
+          padding: "20px",
+          borderBottom: "1px solid #eee",
+          textAlign: "center",
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: "1.5rem", color: "#333" }}>
+          注文履歴
+        </h2>
+      </div>
 
-      <div className="history-list">
+      {/* --- リスト部分 (ここをシンプルに) --- */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto", // スクロール可能に
+          padding: "10px 20px",
+        }}
+      >
         {sortedOrders.length === 0 ? (
-          <div className="empty-history-message">
-            <p>まだ注文履歴がありません</p>
-          </div>
+          <p style={{ textAlign: "center", color: "#999", marginTop: "30px" }}>
+            まだ注文がありません
+          </p>
         ) : (
-          sortedOrders.map((order) => (
-            <div key={order.id} className="history-card">
-              <div
-                className="history-card-header"
-                style={{ justifyContent: "space-between" }}
-              >
-                <div className="history-time">
-                  {order.timestamp
-                    ? new Date(order.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "--:--"}
-                </div>
-                {/* ステータスバッジを削除し、シンプルに合計金額のみ表示 */}
-                <div style={{ fontWeight: "bold" }}>
-                  ¥
-                  {(
-                    order.totalAmount ||
-                    order.totalPrice ||
-                    0
-                  ).toLocaleString()}
-                </div>
-              </div>
-
-              <div className="history-items">
-                {(order.items || []).map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      marginTop: "8px",
-                      borderBottom: "1px dashed #eee",
-                      paddingBottom: "8px",
-                    }}
-                  >
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {sortedOrders.map((order) =>
+              (order.items || []).map((item, itemIdx) => (
+                <li
+                  key={`${order.id}-${itemIdx}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    padding: "12px 0",
+                    borderBottom: "1px dashed #eee", // 点線で軽く区切るだけ
+                  }}
+                >
+                  {/* 左側: 商品名と数量・オプション */}
+                  <div style={{ flex: 1, marginRight: "10px" }}>
                     <div
-                      className="history-item-row"
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        fontSize: "1.1rem",
+                        fontWeight: "bold",
+                        color: "#333",
                       }}
                     >
-                      <div className="history-item-name">
-                        <span
-                          className="item-qty-badge"
-                          style={{ marginRight: "8px", fontWeight: "bold" }}
-                        >
-                          x{item.quantity}
-                        </span>
-                        {item.name}
-                      </div>
-                      <div className="sub-total-price">
-                        ¥{(item.totalPrice || 0).toLocaleString()}
-                      </div>
+                      {item.name}
+                      <span style={{ marginLeft: "8px", color: "#2563eb" }}>
+                        x{item.quantity}
+                      </span>
                     </div>
-                    {/* オプションがある場合のみシンプルに表示 */}
+                    {/* オプションがあれば小さく表示 */}
                     {item.selectedOptions &&
                       item.selectedOptions.length > 0 && (
                         <div
-                          className="item-options-history"
                           style={{
                             fontSize: "0.85rem",
-                            color: "#666",
-                            marginLeft: "30px",
+                            color: "#888",
+                            marginTop: "4px",
                           }}
                         >
                           {item.selectedOptions
@@ -105,30 +103,76 @@ const OrderHistoryPane: React.FC<OrderHistoryPaneProps> = ({
                         </div>
                       )}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))
+
+                  {/* 右側: 金額 */}
+                  <div style={{ fontWeight: "bold", color: "#333" }}>
+                    ¥{(item.totalPrice || 0).toLocaleString()}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
         )}
       </div>
 
-      <div className="history-footer-summary">
-        <div className="bill-total-row">
-          <span>お支払い合計</span>
-          <span className="bill-total-price">
-            ¥{(orderHistoryTotalAmount || 0).toLocaleString()}
+      {/* --- フッター部分 (合計とボタン) --- */}
+      <div
+        style={{
+          padding: "20px",
+          backgroundColor: "#f9fafb",
+          borderTop: "1px solid #ddd",
+        }}
+      >
+        {/* 合計金額 */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+            fontSize: "1.3rem",
+            fontWeight: "bold",
+          }}
+        >
+          <span>合計</span>
+          <span style={{ color: "#dc2626", fontSize: "1.6rem" }}>
+            ¥{orderHistoryTotalAmount.toLocaleString()}
           </span>
         </div>
 
-        <div className="history-actions">
-          <button className="call-staff-btn-secondary" onClick={onCallStaff}>
+        {/* ボタンエリア */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          {/* 店員呼出 */}
+          <button
+            onClick={onCallStaff}
+            style={{
+              flex: 1,
+              padding: "15px",
+              border: "2px solid #ddd",
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              color: "#666",
+              cursor: "pointer",
+            }}
+          >
             店員呼出
           </button>
 
+          {/* お会計へ */}
           <button
-            className="goto-payment-btn"
             onClick={onGoToPaymentView}
             disabled={sortedOrders.length === 0}
+            style={{
+              flex: 2, // ボタンを広めに
+              padding: "15px",
+              border: "none",
+              backgroundColor: sortedOrders.length === 0 ? "#ccc" : "#2563eb",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              color: "#fff",
+              cursor: sortedOrders.length === 0 ? "not-allowed" : "pointer",
+            }}
           >
             お会計へ
           </button>

@@ -7,19 +7,19 @@ import "./components/styles/components.css";
 
 import OrderScreen, { NavTab } from "./components/OrderScreen";
 import PaymentOptionsScreen from "./components/PaymentOptionsScreen";
-import ThanksScreen from "./components/ThanksScreen";
 
-type AppScreen = "TABLE_INPUT" | "ORDER" | "PAYMENT_OPTIONS" | "THANKS";
+// ★修正: THANKS を削除
+type AppScreen = "TABLE_INPUT" | "ORDER" | "PAYMENT_OPTIONS";
 
 const App: React.FC = () => {
   const [userId, setUserId] = useState<string>("");
   const [tableNum, setTableNum] = useState<number>(0);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("TABLE_INPUT");
 
-  // ★修正: 初期値を "TOP" に変更（最初からトップ画面を表示）
+  // 初期値は "TOP"
   const [activeOrderTab, setActiveOrderTab] = useState<NavTab>("TOP");
 
-  const { clearCart, fetchMenuData, checkout } = useCartStore();
+  const { clearCart, fetchMenuData, callStaff } = useCartStore();
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(
     null
   );
@@ -47,29 +47,23 @@ const App: React.FC = () => {
 
   const handleCallStaff = (message: string) => {
     setConfirmationMessage(message);
-    useCartStore.getState().callStaff(tableNum);
+    callStaff(tableNum);
   };
 
   const navigateTo = (screen: AppScreen) => {
     setCurrentScreen(screen);
   };
 
-  const handlePaymentComplete = async () => {
-    if (tableNum > 0) {
-      setConfirmationMessage("会計処理を実行中...");
-      await checkout(tableNum);
-    }
-    // ここでカートクリアは checkout 内で行われるので不要だが念のため
-    clearCart();
-    navigateTo("THANKS");
-  };
-
-  // ★修正: Thanks画面から戻る時の処理
-  const handleBackToTop = () => {
-    // 画面をテーブル入力に戻す
-    navigateTo("TABLE_INPUT");
-    // ★重要: 次回の表示タブを「TOP」にリセットする
-    setActiveOrderTab("TOP");
+  // ★修正: 決済完了(=リセット)時の処理
+  // PaymentOptionsScreen側でcheckout(データ消去)は実行済みなので、
+  // ここでは「画面を最初の状態に戻す」だけでOKです。
+  const handlePaymentComplete = () => {
+    setConfirmationMessage("ありがとうございました");
+    clearCart(); // 念のためローカルストアもクリア
+    setTableNum(0); // テーブル番号リセット
+    setUserId(""); // ユーザーIDリセット
+    setActiveOrderTab("TOP"); // タブをTOPに戻す
+    navigateTo("TABLE_INPUT"); // 最初(テーブル入力)に戻る
   };
 
   if (currentScreen === "TABLE_INPUT") {
@@ -106,7 +100,6 @@ const App: React.FC = () => {
           onClick={() => {
             if (tableNum > 0) {
               setUserId(`T-${tableNum}`);
-              // ★重要: 注文開始時にも念のためTOPにセット
               setActiveOrderTab("TOP");
               setCurrentScreen("ORDER");
             } else {
@@ -156,13 +149,11 @@ const App: React.FC = () => {
           onCallStaff={handleCallStaff}
           onBack={() => navigateTo("ORDER")}
           onPaymentComplete={handlePaymentComplete}
+          tableNumber={tableNum} // ★ここ重要: テーブル番号を渡す
         />
       )}
 
-      {currentScreen === "THANKS" && (
-        // ★修正: リセット処理を含んだ関数を渡す
-        <ThanksScreen onBackToTop={handleBackToTop} />
-      )}
+      {/* ★削除: ThanksScreen の分岐を完全に削除しました */}
     </div>
   );
 };

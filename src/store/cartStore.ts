@@ -83,6 +83,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
   addToCart: (item, quantity, options = []) => {
     set((state) => {
+      // 基本価格 + オプション価格の単価を計算
       const basePrice = Number(item.price) || 0;
       const optionsPrice = options.reduce((sum, opt) => {
         if (typeof opt === "object" && opt !== null && "price" in opt) {
@@ -90,21 +91,31 @@ const useCartStore = create<CartState>((set, get) => ({
         }
         return sum;
       }, 0);
-
       const unitPrice = basePrice + optionsPrice;
+
+      // ★重要: カート内に「同じ商品」かつ「同じオプション」のものがあるか探す
+      // ※ JSON.stringify で配列の中身（オプションの組み合わせ）を文字列化して比較します
+      // ※ 念のためオプション配列をソートしてから比較するとより安全です
+      const optionsKey = JSON.stringify(options.sort());
+
       const existingIndex = state.cart.findIndex(
         (c) =>
           c.id === item.id &&
-          JSON.stringify(c.selectedOptions) === JSON.stringify(options)
+          // ★ここでオプションの一致を確認！
+          JSON.stringify((c.selectedOptions || []).sort()) === optionsKey
       );
 
       if (existingIndex > -1) {
+        // A. 全く同じオプションの商品があった場合 → 数量だけ増やす
+        // (例: 「カルボナーラ大盛」が既にあり、さらに「カルボナーラ大盛」を追加した)
         const newCart = [...state.cart];
         newCart[existingIndex].quantity += quantity;
         newCart[existingIndex].totalPrice =
           unitPrice * newCart[existingIndex].quantity;
         return { cart: newCart };
       } else {
+        // B. 同じ商品がない、またはオプションが違う場合 → 新しい行として追加
+        // (例: 「カルボナーラ大盛」はあるが、今入れたのは「カルボナーラ普通」)
         const newItem: CartItem = {
           ...item,
           quantity,
