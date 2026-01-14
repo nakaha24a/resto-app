@@ -21,7 +21,10 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
   const [peopleCount, setPeopleCount] = useState(2);
   const [showGuide, setShowGuide] = useState(false);
 
+  // ★修正ポイント: 画面が表示されるたびに状態をリセットする
   useEffect(() => {
+    setShowGuide(false); // 案内画面をOFFに戻す
+    setPeopleCount(2); // 人数もリセット
     if (tableNumber) fetchOrders(tableNumber);
   }, [tableNumber, fetchOrders]);
 
@@ -50,6 +53,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
   const handleFinalReset = async () => {
     try {
       await checkout(tableNumber);
+      setShowGuide(false); // ★念のためここでもOFFにする
       onPaymentComplete();
     } catch (error) {
       alert("処理に失敗しました");
@@ -59,119 +63,222 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
   return (
     <>
       <style>{`
+        /* 全体のコンテナ */
         .simple-screen {
-          display: flex; height: 100vh; background-color: #f8f9fa;
-          font-family: sans-serif; overflow: hidden;
+          display: flex;
+          height: 100vh;
+          background-color: #f8f9fa;
+          font-family: sans-serif;
+        }
+
+        /* 共通パネルスタイル（スクロール対応） */
+        .scrollable-panel {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          /* 中身が少なくても中央寄せ、多くなったら上から並べる */
+          justify-content: center; 
+          padding: 20px;
+          overflow-y: auto; /* 縦スクロールを許可 */
+          height: 100%;
+          box-sizing: border-box;
         }
 
         /* 左パネル */
         .left-panel {
-          flex: 1; display: flex; flex-direction: column;
-          justify-content: center; align-items: center;
-          padding: 40px; border-right: 1px solid #e0e0e0;
+          border-right: 1px solid #e0e0e0;
         }
-
-        .total-box { text-align: center; margin-bottom: 50px; }
-        .total-label { color: #666; font-size: 1.2rem; margin-bottom: 10px; }
-        .total-price { color: #333; font-size: 4.5rem; font-weight: bold; margin: 0; line-height: 1; }
-
-        .counter-box {
-          background: white; padding: 30px; border-radius: 20px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-          width: 100%; max-width: 400px; text-align: center;
-        }
-        .counter-controls {
-          display: flex; justify-content: space-between; align-items: center; margin-top: 20px;
-        }
-        .count-btn {
-          width: 70px; height: 70px; font-size: 2rem; background: #fff;
-          border: 2px solid #ddd; border-radius: 12px; cursor: pointer; color: #555;
-        }
-        .count-btn:active { background-color: #eee; }
-        .count-display { font-size: 3rem; font-weight: bold; color: #333; }
 
         /* 右パネル */
         .right-panel {
-          flex: 1; display: flex; flex-direction: column;
-          justify-content: center; align-items: center;
-          padding: 40px; background-color: white;
+          background-color: white;
         }
 
+        .total-box { 
+          text-align: center; 
+          margin-bottom: 30px; 
+        }
+        .total-label { 
+          color: #666; 
+          font-size: 1.1rem; 
+          margin-bottom: 5px; 
+        }
+        .total-price { 
+          color: #333; 
+          font-size: 3.5rem; 
+          font-weight: bold; 
+          margin: 0; 
+          line-height: 1.1; 
+        }
+
+        .counter-box {
+          background: white; 
+          padding: 25px; 
+          border-radius: 20px;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+          width: 100%; 
+          max-width: 350px; 
+          text-align: center;
+        }
+        .counter-controls {
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          margin-top: 15px;
+        }
+        .count-btn {
+          width: 60px; 
+          height: 60px; 
+          font-size: 1.8rem; 
+          background: #fff;
+          border: 2px solid #ddd; 
+          border-radius: 12px; 
+          cursor: pointer; 
+          color: #555;
+          touch-action: manipulation;
+        }
+        .count-btn:active { background-color: #eee; }
+        .count-display { 
+          font-size: 2.5rem; 
+          font-weight: bold; 
+          color: #333; 
+        }
+
+        /* 結果ボックス */
         .result-box {
-          width: 100%; max-width: 450px; padding: 30px;
-          border-radius: 20px; margin-bottom: 40px; text-align: center;
+          width: 100%; 
+          max-width: 400px; 
+          padding: 25px;
+          border-radius: 20px; 
+          margin-bottom: 30px; 
+          text-align: center;
         }
         .result-box.equal { background-color: #ecfdf5; border: 2px solid #10b981; }
-        .equal-price { font-size: 4.5rem; font-weight: bold; color: #059669; margin: 0; }
+        .equal-price { 
+          font-size: 3.5rem; 
+          font-weight: bold; 
+          color: #059669; 
+          margin: 0; 
+        }
         
         .result-box.unequal { background-color: #fff7ed; border: 2px solid #f97316; }
         .unequal-row {
-          display: flex; justify-content: space-between; align-items: center;
-          border-bottom: 1px dashed #ccc; padding: 15px 0;
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center;
+          border-bottom: 1px dashed #ccc; 
+          padding: 10px 0;
         }
         .unequal-row:last-child { border-bottom: none; }
-        .u-label { font-size: 1.2rem; color: #555; }
-        .u-price { font-size: 2rem; font-weight: bold; }
+        .u-label { font-size: 1.1rem; color: #555; }
+        .u-price { font-size: 1.8rem; font-weight: bold; }
         .head-price { color: #ea580c; }
         .others-price { color: #059669; }
 
-        .btn-area { width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 15px; }
+        .btn-area { 
+          width: 100%; 
+          max-width: 400px; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 15px; 
+          padding-bottom: 20px;
+        }
         
         .register-btn {
-          width: 100%; padding: 20px; font-size: 1.5rem; font-weight: bold; color: white;
-          background-color: #f97316; border: none; border-radius: 50px; cursor: pointer;
+          width: 100%; 
+          padding: 20px; 
+          font-size: 1.3rem; 
+          font-weight: bold; 
+          color: white;
+          background-color: #f97316; 
+          border: none; 
+          border-radius: 50px; 
+          cursor: pointer;
           box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
         }
         .register-btn:active { transform: translateY(2px); }
 
         .back-btn {
-          width: 100%; padding: 15px; font-size: 1.1rem; font-weight: bold; color: #666;
-          background: transparent; border: 2px solid #ccc; border-radius: 50px; cursor: pointer;
+          width: 100%; 
+          padding: 15px; 
+          font-size: 1.1rem; 
+          font-weight: bold; 
+          color: #666;
+          background: transparent; 
+          border: 2px solid #ccc; 
+          border-radius: 50px; 
+          cursor: pointer;
         }
 
         /* ========= 案内画面（Guide）スタイル ========= */
         .guide-container {
-          width: 100%; height: 100vh;
-          display: flex; flex-direction: column;
-          justify-content: center; align-items: center;
+          width: 100%; 
+          height: 100vh;
+          display: flex; 
+          flex-direction: column;
+          justify-content: center; 
+          align-items: center;
           background-color: #fff;
           animation: fadeIn 0.5s ease-out;
+          overflow-y: auto;
+          padding: 20px;
+          box-sizing: border-box;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ★追加: 感謝メッセージのデザイン */
         .thanks-header {
-          font-size: 2.5rem; font-weight: 900; color: #333;
-          margin-bottom: 10px; text-align: center;
+          font-size: 2.2rem; 
+          font-weight: 900; 
+          color: #333;
+          margin-bottom: 10px; 
+          text-align: center;
         }
         .thanks-sub {
-          font-size: 1.2rem; color: #666; margin-bottom: 40px;
+          font-size: 1.1rem; 
+          color: #666; 
+          margin-bottom: 30px;
         }
 
-        .guide-icon { font-size: 5rem; margin-bottom: 20px; }
+        .guide-icon { font-size: 4rem; margin-bottom: 15px; }
         
         .guide-message-box {
-          font-size: 1.4rem; color: #444; text-align: center;
-          line-height: 1.8; margin-bottom: 50px; 
+          font-size: 1.3rem; 
+          color: #444; 
+          text-align: center;
+          line-height: 1.6; 
+          margin-bottom: 40px; 
           border: 4px solid #f97316;
-          padding: 40px; border-radius: 20px; background-color: #fff7ed;
-          max-width: 600px; width: 90%;
+          padding: 30px; 
+          border-radius: 20px; 
+          background-color: #fff7ed;
+          max-width: 500px; 
+          width: 90%;
         }
         .guide-message-box strong {
-          color: #ea580c; font-size: 1.8rem; display: block; margin: 10px 0;
+          color: #ea580c; 
+          font-size: 1.6rem; 
+          display: block; 
+          margin: 10px 0;
         }
         
         .reset-btn {
-          padding: 20px 50px; font-size: 1.3rem; font-weight: bold; color: white;
-          background-color: #2563eb; border: none; border-radius: 50px; cursor: pointer;
+          padding: 18px 40px; 
+          font-size: 1.2rem; 
+          font-weight: bold; 
+          color: white;
+          background-color: #2563eb; 
+          border: none; 
+          border-radius: 50px; 
+          cursor: pointer;
           box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+          margin-bottom: 20px;
         }
       `}</style>
 
       {showGuide ? (
         // ========= レジ誘導・案内画面 =========
         <div className="guide-container">
-          {/* ★追加: 感謝のメッセージエリア */}
           <div className="thanks-header">ご利用ありがとうございました</div>
           <div className="thanks-sub">またのご来店をお待ちしております</div>
 
@@ -184,7 +291,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
               <br />
               レジへお越しください
             </strong>
-            <p style={{ fontSize: "1rem", color: "#666", marginTop: "20px" }}>
+            <p style={{ fontSize: "1rem", color: "#666", marginTop: "15px" }}>
               （お支払いはレジにて承ります）
             </p>
           </div>
@@ -196,8 +303,8 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
       ) : (
         // ========= 割り勘計算画面 =========
         <div className="simple-screen">
-          {/* 左パネル */}
-          <div className="left-panel">
+          {/* 左パネル (スクロール可) */}
+          <div className="scrollable-panel left-panel">
             <div className="total-box">
               <div className="total-label">お支払い合計</div>
               <div className="total-price">¥{totalAmount.toLocaleString()}</div>
@@ -214,7 +321,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
                 </button>
                 <div className="count-display">
                   {peopleCount}
-                  <span style={{ fontSize: "1.5rem" }}>名</span>
+                  <span style={{ fontSize: "1.2rem" }}>名</span>
                 </div>
                 <button
                   className="count-btn"
@@ -226,8 +333,8 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
             </div>
           </div>
 
-          {/* 右パネル */}
-          <div className="right-panel">
+          {/* 右パネル (スクロール可) */}
+          <div className="scrollable-panel right-panel">
             <div
               className={`result-box ${
                 splitResult.hasRemainder ? "unequal" : "equal"
@@ -249,7 +356,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
                 <>
                   <div
                     style={{
-                      fontSize: "1.3rem",
+                      fontSize: "1.2rem",
                       fontWeight: "bold",
                       color: "#c2410c",
                       marginBottom: "15px",

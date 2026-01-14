@@ -6,7 +6,7 @@ interface CartSidebarProps {
   cart: CartItem[];
   totalAmount: number;
   onPlaceOrder: () => void;
-  onGoToPayment: () => void;
+  onGoToPayment: () => void; // 親コンポーネントとの互換性のため残しておきますが、使いません
   pendingOrderTotalAmount: number;
 }
 
@@ -14,7 +14,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   cart,
   totalAmount,
   onPlaceOrder,
-  onGoToPayment,
+  // onGoToPayment, // ボタンを消すので、ここでは使わなくなります
   pendingOrderTotalAmount,
 }) => {
   const { updateCartItemQuantity, removeFromCart } = useCartStore();
@@ -45,10 +45,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     }, 300);
   };
 
-  const grandTotal = pendingOrderTotalAmount + totalAmount;
+  // 小計（これから注文するもの）のみを表示する場合
+  // もし「注文済み＋今回の注文」の合計を表示したい場合はここを調整
+  // 今回はお会計ボタンを消すので、ここでの合計表示の意味合いも「今回の注文額」に集中させます
+  // const grandTotal = pendingOrderTotalAmount + totalAmount;
 
-  // ★修正: オプション表示用のヘルパー関数
-  // 文字列ならそのまま、オブジェクトなら .name プロパティを表示
   const renderOptions = (options: any[]) => {
     if (!options || options.length === 0) return null;
     return options
@@ -99,7 +100,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           font-weight: bold;
         }
 
-        /* 注文済み金額（控えめな表示） */
+        /* 注文済み金額（ヘッダーで少し控えめに表示するだけ残す） */
         .pending-summary-simple {
           margin-top: 10px;
           padding: 8px 12px;
@@ -154,7 +155,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           color: #333;
         }
 
-        /* オプション表示（シンプルに） */
+        /* オプション表示 */
         .item-options-text {
           font-size: 0.85rem;
           color: #666;
@@ -229,8 +230,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           display: flex;
           justify-content: space-between;
           margin-bottom: 5px;
-          font-size: 0.95rem;
-          color: #666;
+          font-size: 1.1rem; /* 少し大きく */
+          color: #333;
         }
         
         .grand-total {
@@ -247,17 +248,17 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
           font-size: 1.5rem;
         }
 
-        /* ボタン類（フラットデザイン） */
+        /* ボタン類 */
         .btn-base {
           width: 100%;
-          padding: 14px;
+          padding: 16px; /* 少し大きくして押しやすく */
           border-radius: 8px;
           border: none;
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           font-weight: bold;
           cursor: pointer;
           transition: filter 0.2s;
-          margin-bottom: 10px;
+          margin-bottom: 0; /* 下のマージンを削除 */
           text-align: center;
         }
         .btn-base:hover:not(:disabled) {
@@ -270,19 +271,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         .btn-confirm {
           background-color: #34495e;
           color: white;
+          box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);
         }
         .btn-confirm:disabled {
           background-color: #ccc;
+          box-shadow: none;
           cursor: not-allowed;
-        }
-
-        .btn-payment {
-          background-color: #2ecc71; /* シンプルな緑 */
-          color: white;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 14px 20px;
         }
         
         .empty-state {
@@ -307,9 +301,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
               <span className="item-count-badge">{cart.length}</span>
             )}
           </h2>
+          {/* ヘッダーには「現在のお会計額」として参考情報だけ残しておきます */}
           {pendingOrderTotalAmount > 0 && (
             <div className="pending-summary-simple">
-              <span>注文済み金額</span>
+              <span>これまでの注文額</span>
               <span className="pending-amount">
                 ¥{pendingOrderTotalAmount.toLocaleString()}
               </span>
@@ -339,7 +334,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                   </span>
                 </div>
 
-                {/* ★修正箇所: オプション表示ロジックを変更 */}
                 {item.selectedOptions && item.selectedOptions.length > 0 && (
                   <div className="item-options-text">
                     オプション: {renderOptions(item.selectedOptions)}
@@ -381,31 +375,20 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
         {/* フッター */}
         <div className="cart-footer-simple">
-          <div className="total-row">
-            <span>小計</span>
-            <span>¥{totalAmount.toLocaleString()}</span>
-          </div>
+          {/* 今回の注文合計だけをシンプルに表示 */}
           <div className="total-row grand-total">
-            <span>お支払い合計</span>
-            <span className="amount">¥{grandTotal.toLocaleString()}</span>
+            <span>合計</span>
+            <span className="amount">¥{totalAmount.toLocaleString()}</span>
           </div>
 
-          {/* 注文確定ボタン */}
+          {/* 注文確定ボタンのみ配置 */}
           <button
             className="btn-base btn-confirm"
             disabled={cart.length === 0}
             onClick={onPlaceOrder}
           >
-            {cart.length > 0 ? "注文を確定する" : "商品を選択"}
+            {cart.length > 0 ? "注文を確定する" : "商品を選択してください"}
           </button>
-
-          {/* お会計ボタン */}
-          {pendingOrderTotalAmount > 0 && (
-            <button className="btn-base btn-payment" onClick={onGoToPayment}>
-              <span>お会計へ</span>
-              <span>¥{pendingOrderTotalAmount.toLocaleString()}</span>
-            </button>
-          )}
         </div>
       </div>
     </>
