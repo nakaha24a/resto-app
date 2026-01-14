@@ -116,7 +116,7 @@ const App: React.FC = () => {
             cursor: "pointer",
           }}
         >
-          注文を始める
+          設定
         </button>
       </div>
     );

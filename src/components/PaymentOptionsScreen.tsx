@@ -19,14 +19,12 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
   const fetchOrders = useCartStore((state) => state.fetchOrders);
 
   const [peopleCount, setPeopleCount] = useState(2);
-  // 案内画面（レジ誘導）を表示するフラグ
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (tableNumber) fetchOrders(tableNumber);
   }, [tableNumber, fetchOrders]);
 
-  // 割り勘計算
   const splitResult = useMemo(() => {
     if (peopleCount <= 0 || totalAmount <= 0) {
       return { head: 0, others: 0, hasRemainder: false };
@@ -45,16 +43,14 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
     setPeopleCount((prev) => Math.max(1, Math.min(99, prev + delta)));
   };
 
-  // 「レジへ進む」ボタン → 案内画面へ切り替え
   const handleGoToRegister = () => {
     setShowGuide(true);
   };
 
-  // トップへ戻る（ここで初めてデータをリセット）
   const handleFinalReset = async () => {
     try {
-      await checkout(tableNumber); // データ消去
-      onPaymentComplete(); // トップ画面へ遷移
+      await checkout(tableNumber);
+      onPaymentComplete();
     } catch (error) {
       alert("処理に失敗しました");
     }
@@ -64,22 +60,15 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
     <>
       <style>{`
         .simple-screen {
-          display: flex;
-          height: 100vh;
-          background-color: #f8f9fa;
-          font-family: sans-serif;
-          overflow: hidden;
+          display: flex; height: 100vh; background-color: #f8f9fa;
+          font-family: sans-serif; overflow: hidden;
         }
 
         /* 左パネル */
         .left-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          padding: 40px;
-          border-right: 1px solid #e0e0e0;
+          flex: 1; display: flex; flex-direction: column;
+          justify-content: center; align-items: center;
+          padding: 40px; border-right: 1px solid #e0e0e0;
         }
 
         .total-box { text-align: center; margin-bottom: 50px; }
@@ -150,12 +139,21 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .guide-icon { font-size: 6rem; margin-bottom: 20px; }
+        /* ★追加: 感謝メッセージのデザイン */
+        .thanks-header {
+          font-size: 2.5rem; font-weight: 900; color: #333;
+          margin-bottom: 10px; text-align: center;
+        }
+        .thanks-sub {
+          font-size: 1.2rem; color: #666; margin-bottom: 40px;
+        }
+
+        .guide-icon { font-size: 5rem; margin-bottom: 20px; }
         
         .guide-message-box {
           font-size: 1.4rem; color: #444; text-align: center;
           line-height: 1.8; margin-bottom: 50px; 
-          border: 4px solid #f97316; /* オレンジ枠で注意喚起 */
+          border: 4px solid #f97316;
           padding: 40px; border-radius: 20px; background-color: #fff7ed;
           max-width: 600px; width: 90%;
         }
@@ -170,10 +168,13 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
         }
       `}</style>
 
-      {/* ★画面の切り替え */}
       {showGuide ? (
-        // ========= レジ誘導・案内画面（完了画面の代わり） =========
+        // ========= レジ誘導・案内画面 =========
         <div className="guide-container">
+          {/* ★追加: 感謝のメッセージエリア */}
+          <div className="thanks-header">ご利用ありがとうございました</div>
+          <div className="thanks-sub">またのご来店をお待ちしております</div>
+
           <div className="guide-icon">🧾</div>
 
           <div className="guide-message-box">

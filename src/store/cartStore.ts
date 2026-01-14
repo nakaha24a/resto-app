@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { MenuItem, CartItem, Order, MenuData } from "../types";
 
+// 環境変数、またはデフォルトのIPアドレス（学校用に合わせてHTTPS/443にしています）
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
+  process.env.REACT_APP_API_BASE_URL || "https://localhost:443";
 
 interface CartState {
   cart: CartItem[];
@@ -10,7 +11,6 @@ interface CartState {
   menuData: MenuData | null;
   menuLoading: boolean;
   error: string | null;
-  lastCheckoutTime: number;
 
   fetchMenu: () => Promise<void>;
   fetchMenuData: (arg?: any) => Promise<void>;
@@ -28,10 +28,17 @@ interface CartState {
   clearCart: () => void;
 }
 
-// 最後に会計した時間をlocalStorageから取得するヘルパー
-const getLastCheckoutTime = (tableNumber: number) => {
-  const stored = localStorage.getItem(`resto_last_checkout_${tableNumber}`);
-  return stored ? parseInt(stored, 10) : 0;
+// オプション配列をソートして一意なキーを作成するヘルパー
+const generateOptionsKey = (
+  options: (string | { name: string; price: number })[]
+) => {
+  if (!options || options.length === 0) return "";
+  const sorted = [...options].sort((a, b) => {
+    const nameA = typeof a === "string" ? a : a.name;
+    const nameB = typeof b === "string" ? b : b.name;
+    return nameA.localeCompare(nameB);
+  });
+  return JSON.stringify(sorted);
 };
 
 const useCartStore = create<CartState>((set, get) => ({
@@ -40,7 +47,6 @@ const useCartStore = create<CartState>((set, get) => ({
   menuData: null,
   menuLoading: false,
   error: null,
-  lastCheckoutTime: 0,
 
   fetchMenu: async () => {
     set({ menuLoading: true, error: null });
@@ -60,21 +66,13 @@ const useCartStore = create<CartState>((set, get) => ({
 
   fetchOrders: async (tableNumber: number) => {
     try {
+      // サーバーから「会計済み」以外の注文だけを取得
       const response = await fetch(
         `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`
       );
       if (response.ok) {
-        const allOrders: Order[] = await response.json();
-
-        // フィルタリング: 「前回の会計時間」よりあとに作られた注文だけを表示
-        const checkoutTime = getLastCheckoutTime(tableNumber);
-
-        const currentSessionOrders = allOrders.filter((order) => {
-          const orderTime = new Date(order.timestamp).getTime();
-          return orderTime > checkoutTime;
-        });
-
-        set({ orders: currentSessionOrders, lastCheckoutTime: checkoutTime });
+        const currentOrders: Order[] = await response.json();
+        set({ orders: currentOrders });
       }
     } catch (err) {
       console.error("注文履歴の取得に失敗:", err);
@@ -83,7 +81,6 @@ const useCartStore = create<CartState>((set, get) => ({
 
   addToCart: (item, quantity, options = []) => {
     set((state) => {
-      // 基本価格 + オプション価格の単価を計算
       const basePrice = Number(item.price) || 0;
       const optionsPrice = options.reduce((sum, opt) => {
         if (typeof opt === "object" && opt !== null && "price" in opt) {
@@ -92,34 +89,25 @@ const useCartStore = create<CartState>((set, get) => ({
         return sum;
       }, 0);
       const unitPrice = basePrice + optionsPrice;
-
-      // ★重要: カート内に「同じ商品」かつ「同じオプション」のものがあるか探す
-      // ※ JSON.stringify で配列の中身（オプションの組み合わせ）を文字列化して比較します
-      // ※ 念のためオプション配列をソートしてから比較するとより安全です
-      const optionsKey = JSON.stringify(options.sort());
+      const currentOptionsKey = generateOptionsKey(options);
 
       const existingIndex = state.cart.findIndex(
         (c) =>
           c.id === item.id &&
-          // ★ここでオプションの一致を確認！
-          JSON.stringify((c.selectedOptions || []).sort()) === optionsKey
+          generateOptionsKey(c.selectedOptions || []) === currentOptionsKey
       );
 
       if (existingIndex > -1) {
-        // A. 全く同じオプションの商品があった場合 → 数量だけ増やす
-        // (例: 「カルボナーラ大盛」が既にあり、さらに「カルボナーラ大盛」を追加した)
         const newCart = [...state.cart];
         newCart[existingIndex].quantity += quantity;
         newCart[existingIndex].totalPrice =
           unitPrice * newCart[existingIndex].quantity;
         return { cart: newCart };
       } else {
-        // B. 同じ商品がない、またはオプションが違う場合 → 新しい行として追加
-        // (例: 「カルボナーラ大盛」はあるが、今入れたのは「カルボナーラ普通」)
         const newItem: CartItem = {
           ...item,
           quantity,
-          selectedOptions: options as any,
+          selectedOptions: options,
           totalPrice: unitPrice * quantity,
         };
         return { cart: [...state.cart, newItem] };
@@ -139,11 +127,10 @@ const useCartStore = create<CartState>((set, get) => ({
       if (quantity <= 0) {
         return { cart: newCart.filter((_, i) => i !== index) };
       }
-
       const item = newCart[index];
       const basePrice = Number(item.price) || 0;
       const optionsPrice = (item.selectedOptions || []).reduce(
-        (sum: number, opt: any) => {
+        (sum: number, opt: string | { name: string; price: number }) => {
           if (typeof opt === "object" && opt !== null && "price" in opt) {
             return sum + (Number(opt.price) || 0);
           }
@@ -151,7 +138,6 @@ const useCartStore = create<CartState>((set, get) => ({
         },
         0
       );
-
       newCart[index].quantity = quantity;
       newCart[index].totalPrice = (basePrice + optionsPrice) * quantity;
       return { cart: newCart };
@@ -160,16 +146,26 @@ const useCartStore = create<CartState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  // ★修正箇所: ここから fetch を完全に削除しました
+  /* ★ここが最重要修正ポイント！
+   サーバーのDBを更新しないとKDSから消えないので、必ずfetchを行います。
+  */
   checkout: async (tableNumber: number) => {
-    const now = Date.now();
-    // 1. ローカルストレージに今の時間を記録（これが「区切り」になります）
-    localStorage.setItem(`resto_last_checkout_${tableNumber}`, now.toString());
+    try {
+      // 1. サーバーに「このテーブルは会計済みにして！」と頼む
+      const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableNumber }),
+      });
 
-    // 2. 画面の状態をリセット
-    set({ cart: [], orders: [], lastCheckoutTime: now });
+      if (!response.ok) throw new Error("Checkout failed");
 
-    // 通信処理は一切書きません！
+      // 2. サーバーでの更新が成功したら、タブレットの画面もクリアする
+      set({ cart: [], orders: [] });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("通信エラーが発生しました。もう一度試してください。");
+    }
   },
 
   placeOrder: async (tableNumber: number) => {
