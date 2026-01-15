@@ -384,7 +384,7 @@ const PaymentOptionsScreen: React.FC<PaymentOptionsScreenProps> = ({
 
             <div className="btn-area">
               <button className="register-btn" onClick={handleGoToRegister}>
-                ごちそうさま（レジへ進む）
+                レジへ進む
               </button>
               <button className="back-btn" onClick={onBack}>
                 メニューに戻る
