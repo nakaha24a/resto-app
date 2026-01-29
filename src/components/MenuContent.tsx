@@ -9,6 +9,12 @@ interface MenuContentProps {
   searchQuery: string;
 }
 
+const toKatakana = (str: string) => {
+  return str.replace(/[\u3041-\u3096]/g, (match) =>
+    String.fromCharCode(match.charCodeAt(0) + 0x60),
+  );
+};
+
 const MenuContent: React.FC<MenuContentProps> = ({
   selectedCategory,
   searchQuery,
@@ -23,33 +29,36 @@ const MenuContent: React.FC<MenuContentProps> = ({
   const itemsToShow = useMemo(() => {
     if (!menuData || !menuData.categories) return [];
 
+    // ★修正: 変数宣言をここに一本化します（重複削除）
     let items: MenuItemType[] = [];
 
-    // ★ 修正: "TOP" の処理を削除
-    if (!selectedCategory) {
-      // カテゴリが選択されていない場合は空配列
-      return [];
-    } else if (selectedCategory === "おすすめ") {
-      // おすすめタブ: isRecommended が true のアイテムのみ
-      items = menuData.categories.flatMap((cat: Category) =>
-        cat.items.filter((item: MenuItemType) => item.isRecommended)
-      );
-    } else {
-      // 通常カテゴリ: そのカテゴリに属するアイテムのみ
-      const category = menuData.categories.find(
-        (cat: Category) => cat.name === selectedCategory
-      );
-      items = category ? category.items : [];
-    }
+    // 全商品を1つの配列にまとめる（検索用、および「おすすめ」用）
+    const allItems = menuData.categories.flatMap((cat: Category) => cat.items);
 
-    // 検索フィルタリング
+    // 検索ワードがあるかどうかで分岐
     if (searchQuery) {
-      const lowerQ = searchQuery.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(lowerQ) ||
-          item.description?.toLowerCase().includes(lowerQ)
-      );
+      // 【検索モード】全商品から検索（カテゴリ無視）
+      const normalizedQuery = toKatakana(searchQuery).toLowerCase();
+      items = allItems.filter((item) => {
+        const normalizedName = toKatakana(item.name).toLowerCase();
+        const normalizedDesc = toKatakana(item.description || "").toLowerCase();
+        return (
+          normalizedName.includes(normalizedQuery) ||
+          normalizedDesc.includes(normalizedQuery)
+        );
+      });
+    } else {
+      // 【通常モード】選択されたカテゴリの商品を表示
+      if (!selectedCategory) {
+        items = [];
+      } else if (selectedCategory === "おすすめ") {
+        items = allItems.filter((item) => item.isRecommended);
+      } else {
+        const category = menuData.categories.find(
+          (cat: Category) => cat.name === selectedCategory,
+        );
+        items = category ? category.items : [];
+      }
     }
 
     return items;
