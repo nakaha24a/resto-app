@@ -8,7 +8,6 @@ interface OptionModalProps {
   menuItem: MenuItem;
   isOpen: boolean;
   onClose: () => void;
-  // 修正: どんな型でも受け取れるように any[] に変更
   onConfirm: (quantity: number, selectedOptions: any[]) => void;
 }
 
@@ -20,7 +19,7 @@ const OptionModal: React.FC<OptionModalProps> = ({
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const API_BASE_URL =
@@ -46,7 +45,7 @@ const OptionModal: React.FC<OptionModalProps> = ({
   const currentTotalPrice = useMemo(() => {
     const optionsTotal = Array.from(selectedOptions).reduce((sum, optName) => {
       const foundOption = menuItem.options?.find(
-        (opt: any) => (typeof opt === "string" ? opt : opt.name) === optName
+        (opt: any) => (typeof opt === "string" ? opt : opt.name) === optName,
       );
       if (
         typeof foundOption === "object" &&
@@ -72,13 +71,11 @@ const OptionModal: React.FC<OptionModalProps> = ({
     setSelectedOptions(newOptions);
   };
 
-  // ★重要修正: オプション情報を完全な形で渡す
   const handleConfirm = () => {
     const optionsToPass = Array.from(selectedOptions).map((name) => {
       const originalOption = menuItem.options?.find(
-        (opt: any) => (typeof opt === "string" ? opt : opt.name) === name
+        (opt: any) => (typeof opt === "string" ? opt : opt.name) === name,
       );
-      // 文字列ではなく、元のオブジェクト（価格含む）を返す
       return originalOption || name;
     });
 
@@ -89,91 +86,107 @@ const OptionModal: React.FC<OptionModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <style>{`
-        /* ★ Aiwa Tab 10x 用のCSS修正 */
+        /* 横向きレイアウト（タブレット向け） */
         .modal-content {
-            width: 90%;
-            max-width: 500px;
-            /* 画面の高さの90%まで広げる */
-            height: 90vh;
-            max-height: 800px;
-            
-            /* 中身をフレックスボックスにして配置を整理 */
-            display: flex;
-            flex-direction: column;
-            
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden; /* 全体のスクロールは禁止 */
+           width: 90%;
+           max-width: 800px; /* 幅を広げました */
+           height: 80vh;
+           max-height: 600px;
+           background: white;
+           border-radius: 15px;
+           position: relative;
+           overflow: hidden;
+           display: flex; /* 横並びにする */
+           flex-direction: row; 
+           box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        /* 左側：画像エリア */
+        .modal-left-pane {
+           width: 50%;
+           height: 100%;
+           background: #000;
+           display: flex;
+           align-items: center;
+           justify-content: center;
         }
         
         .modal-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            flex-shrink: 0; /* 画像は縮めない */
+           width: 100%;
+           height: 100%;
+           object-fit: cover; /* 枠いっぱいに表示 */
         }
 
-        .modal-header-area {
-            flex-shrink: 0;
-            margin-bottom: 10px;
+        /* 右側：詳細・オプションエリア */
+        .modal-right-pane {
+           width: 50%;
+           height: 100%;
+           display: flex;
+           flex-direction: column;
+           padding: 20px;
+           box-sizing: border-box;
         }
 
-        /* オプションエリアを可変長にする */
+        .modal-header-text {
+           margin-bottom: 10px;
+           border-bottom: 1px solid #eee;
+           padding-bottom: 10px;
+        }
+        .modal-header-text h2 { margin: 0 0 5px 0; font-size: 1.5rem; }
+        .modal-header-text p { margin: 0; color: #666; font-size: 0.9rem; }
+
+        /* オプションエリア（ここだけスクロール） */
         .modal-options {
-            flex: 1;             /* 余ったスペースを全部使う */
-            overflow-y: auto;    /* ここだけスクロールさせる */
-            margin: 10px 0;
-            padding: 10px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            border: 1px solid #eee;
+           flex: 1;
+           overflow-y: auto;
+           margin-bottom: 15px;
+           padding-right: 5px; /* スクロールバーとの被り防止 */
         }
         
         .option-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 1.1rem;
+           display: flex;
+           align-items: center;
+           padding: 10px 0;
+           border-bottom: 1px solid #f0f0f0;
         }
-        .option-item input {
-            transform: scale(1.5);
-            margin-right: 15px;
-        }
+        .option-item input { transform: scale(1.3); margin-right: 10px; }
+        .option-item label { font-size: 1rem; cursor: pointer; flex: 1; }
 
+        /* フッターエリア */
         .modal-footer-area {
-            flex-shrink: 0; /* フッターは縮めない */
-            border-top: 1px solid #eee;
-            padding-top: 15px;
+           margin-top: auto;
         }
 
         .modal-close-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 40px;
-            height: 40px;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            z-index: 10;
+           position: absolute;
+           top: 15px;
+           right: 15px; /* 右上のバツボタンは右パネル内に配置 */
+           width: 36px;
+           height: 36px;
+           background: #eee;
+           color: #333;
+           border: none;
+           border-radius: 50%;
+           font-size: 1.5rem;
+           cursor: pointer;
+           z-index: 10;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+        }
+
+        /* モバイル対応（画面が狭い時だけ縦並びに戻す） */
+        @media (max-width: 600px) {
+           .modal-content { flex-direction: column; }
+           .modal-left-pane { width: 100%; height: 200px; flex-shrink: 0; }
+           .modal-right-pane { width: 100%; height: auto; flex: 1; }
         }
       `}</style>
 
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-button" onClick={onClose}>
-          ×
-        </button>
-
-        {/* ヘッダーエリア（画像・タイトル） */}
-        <div className="modal-header-area">
-          {menuItem.image && (
+        {/* 左側：画像 */}
+        <div className="modal-left-pane">
+          {menuItem.image ? (
             <img
               src={getImageUrl(menuItem.image)}
               alt={menuItem.name}
@@ -183,112 +196,127 @@ const OptionModal: React.FC<OptionModalProps> = ({
                   "https://via.placeholder.com/300x200?text=No+Image";
               }}
             />
+          ) : (
+            <div style={{ color: "white" }}>No Image</div>
           )}
-          <h2 style={{ margin: "10px 0" }}>{menuItem.name}</h2>
-          <p style={{ color: "#666" }}>{menuItem.description}</p>
         </div>
 
-        {/* スクロール可能なオプションエリア */}
-        {menuItem.options && menuItem.options.length > 0 ? (
-          <div className="modal-options">
-            <h4 style={{ marginBottom: "10px" }}>オプションを選択:</h4>
-            {menuItem.options.map((option, idx) => {
-              const isObject = typeof option === "object" && option !== null;
-              // @ts-ignore
-              const optionName = isObject ? option.name : option;
-              // @ts-ignore
-              const optionPrice = isObject ? option.price : 0;
-
-              return (
-                <div key={idx} className="option-item">
-                  <input
-                    type="checkbox"
-                    id={`option-${idx}`}
-                    checked={selectedOptions.has(optionName)}
-                    onChange={() => handleOptionChange(optionName)}
-                  />
-                  <label htmlFor={`option-${idx}`} style={{ width: "100%" }}>
-                    {optionName}
-                    {optionPrice > 0 && (
-                      <span
-                        style={{
-                          color: "#e67e22",
-                          fontWeight: "bold",
-                          marginLeft: "10px",
-                        }}
-                      >
-                        (+¥{optionPrice})
-                      </span>
-                    )}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          // オプションがない場合のスペース埋め
-          <div style={{ flex: 1 }}></div>
-        )}
-
-        {/* フッターエリア（数量・追加ボタン） */}
-        <div className="modal-footer-area">
-          <div
-            className="modal-quantity"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "20px",
-              marginBottom: "15px",
-            }}
-          >
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
-              style={{
-                width: "50px",
-                height: "50px",
-                fontSize: "1.5rem",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-              }}
-            >
-              -
-            </button>
-            <span style={{ fontSize: "2rem", fontWeight: "bold" }}>
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              style={{
-                width: "50px",
-                height: "50px",
-                fontSize: "1.5rem",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                background: "#fff",
-              }}
-            >
-              +
-            </button>
-          </div>
-
-          <button
-            className="add-to-cart-button"
-            onClick={handleConfirm}
-            style={{
-              width: "100%",
-              padding: "15px",
-              fontSize: "1.2rem",
-              background: "#e67e22",
-              color: "white",
-              border: "none",
-              borderRadius: "30px",
-              fontWeight: "bold",
-            }}
-          >
-            カートに追加 (¥{currentTotalPrice.toLocaleString()})
+        {/* 右側：情報＆操作 */}
+        <div className="modal-right-pane">
+          <button className="modal-close-button" onClick={onClose}>
+            ×
           </button>
+
+          <div className="modal-header-text">
+            <h2>{menuItem.name}</h2>
+            <p>{menuItem.description}</p>
+          </div>
+
+          <div className="modal-options">
+            {menuItem.options && menuItem.options.length > 0 ? (
+              <>
+                <h4 style={{ margin: "0 0 10px 0" }}>オプションを選択:</h4>
+                {menuItem.options.map((option, idx) => {
+                  const isObject =
+                    typeof option === "object" && option !== null;
+                  // @ts-ignore
+                  const optionName = isObject ? option.name : option;
+                  // @ts-ignore
+                  const optionPrice = isObject ? option.price : 0;
+
+                  return (
+                    <div key={idx} className="option-item">
+                      <input
+                        type="checkbox"
+                        id={`option-${idx}`}
+                        checked={selectedOptions.has(optionName)}
+                        onChange={() => handleOptionChange(optionName)}
+                      />
+                      <label htmlFor={`option-${idx}`}>
+                        {optionName}
+                        {optionPrice > 0 && (
+                          <span
+                            style={{
+                              color: "#e67e22",
+                              fontWeight: "bold",
+                              marginLeft: "10px",
+                            }}
+                          >
+                            (+¥{optionPrice})
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })}
+              </>
+            ) : (
+              <p style={{ color: "#999", marginTop: "20px" }}>
+                オプションはありません
+              </p>
+            )}
+          </div>
+
+          <div className="modal-footer-area">
+            <div
+              className="modal-quantity"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "20px",
+                marginBottom: "15px",
+              }}
+            >
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={quantity <= 1}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  fontSize: "1.2rem",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                }}
+              >
+                -
+              </button>
+              <span style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  fontSize: "1.2rem",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                }}
+              >
+                +
+              </button>
+            </div>
+
+            <button
+              onClick={handleConfirm}
+              style={{
+                width: "100%",
+                padding: "12px",
+                fontSize: "1.1rem",
+                background: "#e67e22",
+                color: "white",
+                border: "none",
+                borderRadius: "30px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+              }}
+            >
+              カートに追加 (¥{currentTotalPrice.toLocaleString()})
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -90,6 +90,11 @@ const OrderScreen: React.FC<OrderScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    if (searchQuery && activeTab === "TOP") {
+      onNavigate("ORDER");
+    }
+  }, [searchQuery, activeTab, onNavigate]);
+  useEffect(() => {
     if (!menuLoading && menuData && CATEGORIES.length > 0) {
       if (!selectedCategory || !CATEGORIES.includes(selectedCategory)) {
         const initialCategory = CATEGORIES.includes("おすすめ")

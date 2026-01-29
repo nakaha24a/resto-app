@@ -20,7 +20,7 @@ interface CartState {
   addToCart: (
     item: MenuItem,
     quantity: number,
-    options?: (string | { name: string; price: number })[]
+    options?: (string | { name: string; price: number })[],
   ) => void;
   removeFromCart: (index: number) => void;
   updateCartItemQuantity: (index: number, quantity: number) => void;
@@ -32,7 +32,7 @@ interface CartState {
 
 // オプション配列をソートして一意なキーを作成するヘルパー
 const generateOptionsKey = (
-  options: (string | { name: string; price: number })[]
+  options: (string | { name: string; price: number })[],
 ) => {
   if (!options || options.length === 0) return "";
   const sorted = [...options].sort((a, b) => {
@@ -70,7 +70,7 @@ const useCartStore = create<CartState>((set, get) => ({
     try {
       // サーバーから「会計済み」以外の注文だけを取得
       const response = await fetch(
-        `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`
+        `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`,
       );
       if (response.ok) {
         const currentOrders: Order[] = await response.json();
@@ -96,7 +96,7 @@ const useCartStore = create<CartState>((set, get) => ({
       const existingIndex = state.cart.findIndex(
         (c) =>
           c.id === item.id &&
-          generateOptionsKey(c.selectedOptions || []) === currentOptionsKey
+          generateOptionsKey(c.selectedOptions || []) === currentOptionsKey,
       );
 
       if (existingIndex > -1) {
@@ -109,7 +109,9 @@ const useCartStore = create<CartState>((set, get) => ({
         const newItem: CartItem = {
           ...item,
           quantity,
-          selectedOptions: options,
+          // ★重要: メニュー定義の options を、ユーザーが選んだ options で上書きする！
+          options: options,
+          selectedOptions: options, // こっちは念のため残しておく（UI用）
           totalPrice: unitPrice * quantity,
         };
         return { cart: [...state.cart, newItem] };
@@ -138,7 +140,7 @@ const useCartStore = create<CartState>((set, get) => ({
           }
           return sum;
         },
-        0
+        0,
       );
       newCart[index].quantity = quantity;
       newCart[index].totalPrice = (basePrice + optionsPrice) * quantity;
@@ -220,7 +222,7 @@ export const useTotalBillAmount = () => {
       order.totalPrice ||
       (order.items || []).reduce(
         (sub, item) => sub + (item.totalPrice || 0),
-        0
+        0,
       );
     return total + orderTotal;
   }, 0);
