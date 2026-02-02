@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { MenuItem as MenuItemType } from "../types";
 import OptionModal from "./OptionModal";
 import useCartStore from "../store/cartStore";
+import { getConfig } from "../config/runTimeConfig";
 
 interface MenuItemProps {
   item: MenuItemType;
@@ -13,8 +14,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
 
   // パソコンのIPアドレスがわかっている場合はそれに書き換えてください
   // 例: "http://192.168.1.15:3000"
-  const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://172.16.31.16:3000";
+  const API_BASE_URL = getConfig().apiBaseUrl;
 
   // ★ここを修正：どんなパスが来ても確実に「assets」を含めたURLを作る
   const getImageUrl = (imagePath: string | undefined) => {

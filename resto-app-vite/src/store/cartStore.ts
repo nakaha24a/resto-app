@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import type { MenuItem, CartItem, Order, MenuData } from "../types";
+import { getConfig } from "../config/runTimeConfig";
 
 // 環境変数、またはデフォルトのIPアドレス（学校用に合わせてHTTPS/443にしています）
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ;
+const API_BASE_URL = getConfig().apiBaseUrl;
 
 interface CartState {
   cart: CartItem[];

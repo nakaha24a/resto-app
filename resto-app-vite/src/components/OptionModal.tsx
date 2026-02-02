@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import type { MenuItem } from "../types";
+import { getConfig } from "../config/runTimeConfig";
 
 interface OptionModalProps {
   menuItem: MenuItem;
@@ -22,8 +23,7 @@ const OptionModal: React.FC<OptionModalProps> = ({
     new Set(),
   );
 
-  const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "https://localhost:443";
+  const API_BASE_URL = getConfig().apiBaseUrl;
 
   const getImageUrl = (imagePath: string | undefined) => {
     if (!imagePath) return "https://via.placeholder.com/300x200?text=No+Image";
