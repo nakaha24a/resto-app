@@ -5,7 +5,7 @@ import type { MenuItem, CartItem, Order, MenuData } from "../types";
 import { getConfig } from "../config/runTimeConfig";
 
 // 環境変数、またはデフォルトのIPアドレス（学校用に合わせてHTTPS/443にしています）
-const API_BASE_URL = getConfig().apiBaseUrl;
+
 
 interface CartState {
   cart: CartItem[];
@@ -53,6 +53,7 @@ const useCartStore = create<CartState>((set, get) => ({
   fetchMenu: async () => {
     set({ menuLoading: true, error: null });
     try {
+      const API_BASE_URL = getConfig().apiBaseUrl;
       const response = await fetch(`${API_BASE_URL}/api/menu`);
       if (!response.ok) throw new Error("メニューの読み込みに失敗しました");
       const data = await response.json();
@@ -68,6 +69,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
   fetchOrders: async (tableNumber: number) => {
     try {
+      const API_BASE_URL = getConfig().apiBaseUrl;
       // サーバーから「会計済み」以外の注文だけを取得
       const response = await fetch(
         `${API_BASE_URL}/api/orders?tableNumber=${tableNumber}`,
@@ -155,6 +157,7 @@ const useCartStore = create<CartState>((set, get) => ({
   */
   checkout: async (tableNumber: number) => {
     try {
+      const API_BASE_URL = getConfig().apiBaseUrl;
       // 1. サーバーに「このテーブルは会計済みにして！」と頼む
       const response = await fetch(`${API_BASE_URL}/api/checkout`, {
         method: "POST",
@@ -177,6 +180,7 @@ const useCartStore = create<CartState>((set, get) => ({
     if (cart.length === 0) return null;
 
     try {
+      const API_BASE_URL = getConfig().apiBaseUrl;
       const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,6 +201,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
   callStaff: async (tableNumber: number) => {
     try {
+      const API_BASE_URL = getConfig().apiBaseUrl;
       await fetch(`${API_BASE_URL}/api/call`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
