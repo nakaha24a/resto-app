@@ -18,7 +18,7 @@ export default defineConfig({
     // 開発用プロキシ設定（CORS回避）
     proxy: {
       "/api": {
-        target: "https://172.16.31.18", // バックエンドのURLに置き換え
+        target: "https://172.16.31.12", // バックエンドのURLに置き換え
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, "/api"), // パスはそのまま
